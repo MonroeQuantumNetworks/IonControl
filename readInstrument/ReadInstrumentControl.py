@@ -8,7 +8,7 @@ from PyQt4 import QtCore
 import PyQt4.uic
 from functools import partial
 from scan.ScanList import scanList
-from trace.Trace import Trace
+from trace.TraceCollection import TraceCollection
 import numpy
 from datetime import datetime
 from trace.PlottedTrace import PlottedTrace
@@ -79,7 +79,7 @@ class ReadInstrumentControl(Base, Form):
             self.stopLogging()
         
     def startLogging(self):
-        self.trace = Trace()
+        self.trace = TraceCollection()
         self.trace.name = "scan"
         self.plottedTrace =  PlottedTrace(self.trace, self.plotDict['Time']['view'], pens.penList )
         self.plottedTrace.trace.filenameCallback =  partial( self.plottedTrace.traceFilename, self.meterState.filename )           
@@ -116,7 +116,7 @@ class ReadInstrumentControl(Base, Form):
     def startScan(self):
         self.scanList = scanList(self.meterState.start, self.meterState.stop, self.meterState.steps,self.meterState.scanType)
         self.currentIndex = 0
-        self.trace = Trace()
+        self.trace = TraceCollection()
         self.trace.name = "scan"
         self.plottedTrace =  PlottedTrace(self.trace, self.plotDict['Scan']['view'], pens.penList )
         self.plottedTrace.trace.filenameCallback =  partial( self.plottedTrace.traceFilename, self.meterState.filename )           

@@ -4,22 +4,19 @@ Created on Fri Dec 28 18:40:30 2012
 
 @author: pmaunz
 """
-import os.path
 from trace import pens
 
-from PyQt4 import QtGui, QtCore
+from PyQt4 import QtCore
 import numpy
 from pyqtgraph.graphicsItems.ErrorBarItem import ErrorBarItem
 from pyqtgraph.graphicsItems.PlotCurveItem import PlotCurveItem
 
-from modules import DataDirectory 
 from modules import enum
-from trace.Trace import TracePlotting
+from trace.TraceCollection import TracePlotting
 import time 
 from modules import WeakMethod
 from functools import partial
 from itertools import izip
-from ProjectConfig.Project import getProject
 
 def sort_lists_by(lists, key_list=0, desc=False):
     return izip(*sorted(izip(*lists), reverse=desc,
@@ -29,10 +26,11 @@ class PlottedTrace(object):
     Styles = enum.enum('lines','points','linespoints','lines_with_errorbars','points_with_errorbars','linepoints_with_errorbars')
     PointsStyles = [ 1, 4 ]
     Types = enum.enum('default','steps')
-    def __init__(self,Trace,graphicsView,penList=None,pen=0,style=None,plotType=None, isRootTrace=False,
+    def __init__(self,Trace,graphicsView,penList=None,pen=0,style=None,plotType=None,
                  xColumn='x',yColumn='y',topColumn='top',bottomColumn='bottom',heightColumn='height',
                  rawColumn='raw', tracePlotting=None, name="", xAxisLabel = None, xAxisUnit = None,
                  yAxisLabel = None, yAxisUnit = None, fill=True, windowName=None):
+        self.category = None
         self.fill = fill
         if penList is None:
             penList = pens.penList
@@ -48,10 +46,6 @@ class PlottedTrace(object):
         self.errorBarItem = None
         self.style = self.Styles.lines if style is None else style
         self.type = self.Types.default if plotType is None else plotType
-        #Tree related data. Parent and children are set in the model's addTrace method, but declared here
-        self.isRootTrace = isRootTrace
-        self.parentTrace = None
-        self.childTraces = []
         self.curvePen = 0
         self.name = name
         self.xAxisLabel = xAxisLabel
@@ -102,6 +96,20 @@ class PlottedTrace(object):
             self._graphicsView = graphicsView
             self.windowName = name
             self.plot()
+
+    @property
+    def okToDelete(self):
+        """A trace is OK to delete if it has been finalized"""
+        return 'traceFinalized' in self.trace.description
+
+    @property
+    def traceCollection(self):
+        """This is to make the code more readable while maintaining backwards compatibility. self.traceCollection is the same thing as self.trace."""
+        return self.trace
+
+    @traceCollection.setter
+    def traceCollection(self, t):
+        self.trace = t
 
     @property
     def hasTopColumn(self):
@@ -186,36 +194,6 @@ class PlottedTrace(object):
     def isPlotted(self, plotted):
         if plotted != (self.curvePen>0):
             self.plot( -1 if plotted else 0 )
-        
-    def child(self, number):
-        """Return the child at the specified number, from the trace's list of children."""
-        return self.childTraces[number]
-
-    def childCount(self):
-        """Return the number of children of the trace."""
-        return len(self.childTraces)
-
-    def childNumber(self):
-        """Return the row of this trace in its parent's list of traces."""
-        if self.parentTrace != None:
-            return self.parentTrace.childTraces.index(self)
-        else:
-            return 0
-
-    def parent(self):
-        """Return the parent of the trace."""
-        return self.parentTrace
-    
-    def appendChild(self, trace):
-        """Append a child to the trace."""
-        self.childTraces.append(trace)
-        return True
-        
-    def averageChildren(self):
-        """Set the trace data to the average of its children's data."""
-        self.x = self.childTraces[0].x #All child traces should have the same x data!
-        childTraceYvalues = numpy.array([childTrace.y for childTrace in self.childTraces]) #2D array of children's y data
-        self.y = numpy.mean(childTraceYvalues, axis=0) #set parent y to mean of children's y
 
     def removePlots(self):
         if self._graphicsView is not None:
@@ -267,8 +245,7 @@ class PlottedTrace(object):
             else:
                 self.__dict__.setdefault( 'fitFunctionPenIndex', self.curvePen )
                 self.fitcurve = self._graphicsView.plot(self.fitx, self.fity, pen=self.penList[self.fitFunctionPenIndex][0])
-                
- 
+
     def plotErrorBars(self,penindex):
         if self._graphicsView is not None:
             if self.hasHeightColumn:
@@ -279,7 +256,6 @@ class PlottedTrace(object):
                                                            pen=self.penList[penindex][0])
                 self._graphicsView.addItem(self.errorBarItem)
             
-
     def plotLines(self,penindex, errorbars=True ):
         if self._graphicsView is not None:
             if errorbars:
@@ -304,7 +280,6 @@ class PlottedTrace(object):
                 else:
                     self._graphicsView.setLabel('bottom', text = "{0}".format(self.xAxisLabel))
 
-    
     def plotLinespoints(self,penindex, errorbars=True ):
         if self._graphicsView is not None:
             if errorbars:
@@ -318,7 +293,6 @@ class PlottedTrace(object):
                 else:
                     self._graphicsView.setLabel('bottom', text = "{0}".format(self.xAxisLabel))
                 
-    
     def plotSteps(self,penindex):
         if self._graphicsView is not None:
             mycolor = list(self.penList[penindex][4])
@@ -380,20 +354,6 @@ class PlottedTrace(object):
         self.lastPlotTime = time.time()
         self.needsReplot = False
 
-    def traceFilename(self, pattern):
-        directory = DataDirectory.DataDirectory()
-        if self.parent() is None or self.parent().isRootTrace: 
-            if pattern and pattern!='':
-                filename, _ = directory.sequencefile(pattern)
-                return filename
-            else:
-                path = str(QtGui.QFileDialog.getSaveFileName(None, 'Save file',directory.path()))
-                return path
-        else:
-            parentFilename = self.parent().trace.getFilename() 
-            filename, _ = directory.sequencefile( os.path.split(parentFilename)[1] )
-            return filename
-        
     def setView(self, graphicsView ):
         self.removePlots()
         self._graphicsView = graphicsView
@@ -406,16 +366,15 @@ class PlottedTrace(object):
     @fitFunction.setter
     def fitFunction(self, fitfunction):
         self.tracePlotting.fitFunction = fitfunction
-        
-    
+
 #     def __del__(self):
 #         super(PlottedTrace, self)__del__()
-        
+
 if __name__=="__main__":
-    from trace.Trace import Trace
+    from trace.TraceCollection import TraceCollection
     import gc
     import sys
-    plottedTrace = PlottedTrace(Trace(),None,pens.penList)
+    plottedTrace = PlottedTrace(TraceCollection(),None,pens.penList)
     print sys.getrefcount(plottedTrace)
     plottedTrace = None
     del plottedTrace

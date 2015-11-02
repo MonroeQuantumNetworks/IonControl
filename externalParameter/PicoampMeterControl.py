@@ -9,7 +9,7 @@ import PyQt4.uic
 from modules.magnitude import mg
 from functools import partial
 from scan.ScanList import scanList
-from trace.Trace import Trace
+from trace.TraceCollection import TraceCollection
 import numpy
 from datetime import datetime
 from trace.PlottedTrace import PlottedTrace
@@ -193,7 +193,7 @@ class PicoampMeterControl(Base, Form):
             self.stopLogging()
         
     def startLogging(self):
-        self.trace = Trace()
+        self.trace = TraceCollection()
         self.trace.addColumn('voltage')
 #         self.trace.addColumn('voltage_2')
 #         self.trace.addColumn('voltage_3')
@@ -262,7 +262,7 @@ class PicoampMeterControl(Base, Form):
                 index = find_index_nearest(self.scanList, self.meterState.voltage)
                 self.scanList = numpy.roll( self.scanList, -index)
             self.currentIndex = 0
-            self.trace = Trace()
+            self.trace = TraceCollection()
             self.trace.name = "scan"
 #             self.trace.addColumn('current_2')
 #             self.trace.addColumn('current_3')

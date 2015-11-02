@@ -309,7 +309,8 @@ if visaEnabled:
             logger = logging.getLogger(__name__)
             ExternalParameterBase.__init__(self,name,config)
             logger.info( "trying to open '{0}'".format(instrument) )
-            self.instrument = visa.instrument(instrument) #open visa session
+            self.rm = visa.ResourceManager()
+            self.instrument = self.rm.open_resource(instrument)
             logger.info( "opened {0}".format(instrument) )
             self.setDefaults()
 
@@ -337,7 +338,7 @@ if visaEnabled:
                 command, unit = "MEAS:Curr?", "A"
             elif channel=="Volt":
                 command, unit = "Meas:Volt?", "V"
-            value = magnitude.mg(float(self.instrument.ask(command)), unit)
+            value = magnitude.mg(float(self.instrument.query(command)), unit)
             return value
 
         def currentValue(self, channel):
@@ -371,7 +372,8 @@ if visaEnabled:
             logger = logging.getLogger(__name__)
             ExternalParameterBase.__init__(self,name,config)
             logger.info( "trying to open '{0}'".format(instrument) )
-            self.instrument = visa.instrument(instrument) #open visa session
+            self.rm = visa.ResourceManager()
+            self.instrument = self.rm.open_resource(instrument)
             logger.info( "opened {0}".format(instrument) )
             self.setDefaults()
     #        for channel in self._outputChannels:
@@ -393,7 +395,7 @@ if visaEnabled:
         #         command = "OUTP?"
         #     else:
         #         command = "MEAS:{0}?".format(function)
-        #     self.settings.value[channel] = magnitude.mg(float(self.instrument.ask(command)), unit)
+        #     self.settings.value[channel] = magnitude.mg(float(self.instrument.query(command)), unit)
         #     return self.settings.value[channel]
 
         def currentValue(self, channel):
@@ -405,7 +407,7 @@ if visaEnabled:
     #             command = "OUTP?"
     #         else:
     #             command = "MEAS:{0}?".format(function)
-    #         value = magnitude.mg( float( self.instrument.ask(command)), unit )
+    #         value = magnitude.mg( float( self.instrument.query(command)), unit )
     #         return value
 
         def paramDef(self):
@@ -431,7 +433,8 @@ if visaEnabled:
             logger = logging.getLogger(__name__)
             ExternalParameterBase.__init__(self,name,config)
             logger.info( "trying to open '{0}'".format(instrument) )
-            self.instrument = visa.instrument(instrument) #open visa session
+            self.rm = visa.ResourceManager()
+            self.instrument = self.rm.open_resource(instrument)
             logger.info( "opened {0}".format(instrument) )
             self.setDefaults()
     #        for channel in self._outputChannels:
@@ -453,7 +456,7 @@ if visaEnabled:
         # def _getValue(self, channel):
         #     function, unit = self._outputLookup[channel]
         #     command = "MEAS:{0} ?".format(function)
-        #     self.settings.value[channel] = magnitude.mg(float(self.instrument.ask(command)), unit)
+        #     self.settings.value[channel] = magnitude.mg(float(self.instrument.query(command)), unit)
         #     return self.settings.value[channel]
 
         def currentValue(self, channel):
@@ -465,7 +468,7 @@ if visaEnabled:
     #             command = "OUTP?"
     #         else:
     #             command = "MEAS:{0}?".format(function)
-    #         value = magnitude.mg( float( self.instrument.ask(command)), unit )
+    #         value = magnitude.mg( float( self.instrument.query(command)), unit )
     #         return value
 
         def paramDef(self):

@@ -22,7 +22,7 @@ import weakref
 import logging
 import pytz
 import numpy
-from trace.Trace import Trace
+from trace.TraceCollection import TraceCollection
 from trace.PlottedTrace import PlottedTrace
 from modules import WeakMethod
 from modules.GuiAppearance import saveGuiState, restoreGuiState    
@@ -165,8 +165,8 @@ class MeasurementLogUi(Form, Base ):
         self.windowComboBox.currentIndexChanged[QtCore.QString].connect( partial(self.onComboBoxChanged, 'plotWindow') )
         self.xUnitEdit.setText( self.settings.xUnit )
         self.yUnitEdit.setText( self.settings.yUnit )
-        self.xUnitEdit.editingFinished.connect( partial(self.onEditingFinished, 'xUnit'))
-        self.yUnitEdit.editingFinished.connect( partial(self.onEditingFinished, 'yUnit'))
+        self.xUnitEdit.editingFinished.connect( partial(self.onEditingFinished, 'xUnit', 'xUnitEdit'))
+        self.yUnitEdit.editingFinished.connect( partial(self.onEditingFinished, 'yUnit', 'yUnitEdit'))
         restoreGuiState( self, self.config.get(self.configname+".guiSate") )
         
     def addTraceui(self, scan, traceui ):
@@ -175,8 +175,8 @@ class MeasurementLogUi(Form, Base ):
         updateComboBoxItems( self.windowComboBox, sorted(self.plotWindowIndex.keys()), self.settings.plotWindow )
         self.settings.plotWindow = firstNotNone( self.settings.plotWindow, str(self.windowComboBox.currentText()) )
 
-    def onEditingFinished(self, attr, value):
-        setattr( self.settings, str(value) )
+    def onEditingFinished(self, attr, uiElem):
+        setattr( self.settings, attr, str(getattr(self,uiElem).text()) )
         
     def onComboBoxChanged(self, attr, value):
         setattr( self.settings, attr, str(value) )
@@ -278,16 +278,19 @@ class MeasurementLogUi(Form, Base ):
         topList = list()
         xsource, xspace, xname = xDataDef
         ysource, yspace, yname = yDataDef
-        for measurement in self.measurementModel.measurements:
-            xData, _, _ = self.sourceLookup[xsource](measurement, xspace, xname)
-            yData, bottom, top  = self.sourceLookup[ysource](measurement, yspace, yname)
-            if xData is not None and yData is not None:
-                xDataList.append( xData )
-                yDataList.append( yData )
-                if bottom is not None:
-                    bottomList.append( bottom )
-                if top is not None:
-                    topList.append( top )
+        selectedRows = set(unique([ i.row() for i in self.measurementTableView.selectedIndexes() ]))
+        selectedRows = None if len(selectedRows)<2 else selectedRows
+        for index, measurement in enumerate(self.measurementModel.measurements):
+            if not selectedRows or index in selectedRows:
+                xData, _, _ = self.sourceLookup[xsource](measurement, xspace, xname)
+                yData, bottom, top  = self.sourceLookup[ysource](measurement, yspace, yname)
+                if xData is not None and yData is not None:
+                    xDataList.append( xData )
+                    yDataList.append( yData )
+                    if bottom is not None:
+                        bottomList.append( bottom )
+                    if top is not None:
+                        topList.append( top )
         if len(bottomList)==len(topList)==len(xDataList):
             return xDataList, yDataList, bottomList, topList
         return xDataList,yDataList, None, None
@@ -304,61 +307,85 @@ class MeasurementLogUi(Form, Base ):
                 epoch = datetime(1970, 1, 1) - timedelta(seconds=self.utcOffset) if xData[0].tzinfo is None else datetime(1970, 1, 1).replace(tzinfo=pytz.utc)
                 time = numpy.array([(value - epoch).total_seconds() for value in xData])
                 if plottedTrace is None:  # make a new plotted trace
-                    trace = Trace(record_timestamps=False)
+                    trace = TraceCollection(record_timestamps=False)
                     trace.name = "{0} versus {1}".format( yDataDef[2], xDataDef[2 ])
-                    _, yUnit = self.settings.yUnit if self.settings.yUnit else yData[0].toval( returnUnit=True )
+                    _, yUnit = (None,self.settings.yUnit) if self.settings.yUnit else yData[0].toval( returnUnit=True )
                     trace.y = numpy.array( [ d.toval(yUnit) for d in yData ] )
                     trace.x = time
                     if topData is not None and bottomData is not None:
-                        trace.top = topData
-                        trace.bottom = bottomData
+                        trace.top = numpy.array( [ d.toval(yUnit) for d in topData ] )
+                        trace.bottom = numpy.array( [ d.toval(yUnit) for d in bottomData ] )
                     traceui, item, view = self.plotWindowIndex[plotName]
                     plottedTrace = PlottedTrace( trace, view, xAxisLabel = "local time", windowName=item) 
-                    plottedTrace.trace.filenameCallback = partial( WeakMethod.ref(plottedTrace.traceFilename), "" )
+                    #plottedTrace.trace.filenameCallback = partial( WeakMethod.ref(plottedTrace.traceFilename), "" )
                     traceui.addTrace( plottedTrace, pen=-1)
                     traceui.resizeColumnsToContents()
                     self.cache[(xDataDef, yDataDef)] = ( weakref.ref(plottedTrace), (xDataDef, yDataDef, plotName) )
+                    trace.description["traceFinalized"] = datetime.now(pytz.utc)
                 else:  # update the existing plotted trace
                     trace = plottedTrace.trace
-                    _, yUnit = self.settings.yUnit if self.settings.yUnit else yData[0].toval( returnUnit=True )
+                    _, yUnit = (None,self.settings.yUnit) if self.settings.yUnit else yData[0].toval( returnUnit=True )
                     trace.y = numpy.array( [ d.toval(yUnit) for d in yData ] )
                     trace.x = time
                     if topData is not None and bottomData is not None:
-                        trace.top = topData
-                        trace.bottom = bottomData
+                        trace.top = numpy.array( [ d.toval(yUnit) for d in topData ] )
+                        trace.bottom = numpy.array( [ d.toval(yUnit) for d in bottomData ] )
+                    trace.description["traceFinalized"] = datetime.now(pytz.utc)
                     plottedTrace.replot()     
             else:
                 if plottedTrace is None:  # make a new plotted trace
-                    trace = Trace(record_timestamps=False)
+                    trace = TraceCollection(record_timestamps=False)
                     trace.name = "{0} versus {1}".format( yDataDef[2], xDataDef[2 ])
-                    _, yUnit = self.settings.yUnit if self.settings.yUnit else yData[0].toval( returnUnit=True )
-                    _, xUnit = self.settings.xUnit if self.settings.xUnit else xData[0].toval( returnUnit=True )
+                    _, yUnit = (None,self.settings.yUnit) if self.settings.yUnit else yData[0].toval( returnUnit=True )
+                    _, xUnit = (None,self.settings.xUnit) if self.settings.xUnit else xData[0].toval( returnUnit=True )
                     trace.y = numpy.array( [ d.toval(yUnit) for d in yData ] )
                     trace.x = numpy.array( [ d.toval(xUnit) for d in xData ] )
                     if topData is not None and bottomData is not None:
-                        trace.top = topData
-                        trace.bottom = bottomData
+                        trace.top = numpy.array( [ d.toval(yUnit) for d in topData ] )
+                        trace.bottom = numpy.array( [ d.toval(yUnit) for d in bottomData ] )
                     traceui, item, view = self.plotWindowIndex[plotName]
                     plottedTrace = PlottedTrace( trace, view, xAxisLabel = xDataDef[2], windowName=item) 
-                    plottedTrace.trace.filenameCallback = partial( WeakMethod.ref(plottedTrace.traceFilename), "" )
                     traceui.addTrace( plottedTrace, pen=-1)
                     traceui.resizeColumnsToContents()
                     self.cache[(xDataDef, yDataDef)] = ( weakref.ref(plottedTrace), (xDataDef, yDataDef, plotName) )
+                    trace.description["traceFinalized"] = datetime.now(pytz.utc)
                 else:  # update the existing plotted trace
                     trace = plottedTrace.trace
-                    _, yUnit = self.settings.yUnit if self.settings.yUnit else yData[0].toval( returnUnit=True )
-                    _, xUnit = self.settings.xUnit if self.settings.xUnit else xData[0].toval( returnUnit=True )
+                    _, yUnit = (None,self.settings.yUnit) if self.settings.yUnit else yData[0].toval( returnUnit=True )
+                    _, xUnit = (None,self.settings.xUnit) if self.settings.xUnit else xData[0].toval( returnUnit=True )
                     trace.y = numpy.array( [ d.toval(yUnit) for d in yData ] )
                     trace.x = numpy.array( [ d.toval(xUnit) for d in xData ] )
                     if topData is not None and bottomData is not None:
-                        trace.top = topData
-                        trace.bottom = bottomData
-                    plottedTrace.replot()     
+                        trace.top = numpy.array( [ d.toval(yUnit) for d in topData ] )
+                        trace.bottom = numpy.array( [ d.toval(yUnit) for d in bottomData ] )
+                    plottedTrace.replot()
+                    trace.description["traceFinalized"] = datetime.now(pytz.utc)
                 
     def onUpdateAll(self):
         for ref, context in self.cache.values():
             if ref() is not None:
                 self.doCreatePlot(*context, update=True )
         self.cacheGarbageCollect()
-            
-        
+
+    @QtCore.pyqtSlot(list)
+    def onOpenMeasurementLog(self, traceCreationList):
+        """Called when traceui emits signal to open the corresponding measurement log entry"""
+        self.show()
+        self.raise_()
+        self.activateWindow()
+        measurementDict = self.measurementModel.container.measurementDict
+        measurements = self.measurementModel.measurements
+        selection = QtGui.QItemSelection()
+        self.measurementTableView.selectionModel().select(selection, QtGui.QItemSelectionModel.Clear) #clear selection
+        leftInd=None
+        for traceCreation in traceCreationList:
+            measurement = measurementDict.get(traceCreation)
+            row = measurements.index(measurement) if measurement in measurements else -1
+            if row >= 0:
+                leftInd = self.measurementModel.index(row,0)
+                rightInd = self.measurementModel.index(row,self.measurementModel.columnCount()-1)
+                selection.select(leftInd, rightInd) #add the specified measurement to the selection
+        self.measurementTableView.selectionModel().select(selection, QtGui.QItemSelectionModel.Select) #select full selection
+        if leftInd:
+            self.measurementTableView.scrollTo(leftInd) #scroll to left column of last measurement in list
+        self.measurementTableView.setFocus(True)

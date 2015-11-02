@@ -4,7 +4,7 @@ import logging
 from PyQt4 import QtCore
 from modules.MagnitudeUtilit import setSignificantDigits
 from trace.PlottedTrace import PlottedTrace 
-from trace.Trace import Trace
+from trace.TraceCollection import TraceCollection
 from operator import attrgetter, methodcaller
 import numpy
 import functools
@@ -247,7 +247,7 @@ class LockStatus(Form, Base):
             bottom = numpy.array( map( methodcaller('toval','V'), numpy.array(to_plot[0])-numpy.array(to_plot[1]) ) ) 
             top = numpy.array( map( methodcaller('toval','V'), numpy.array(to_plot[2])-numpy.array(to_plot[0]) ) )          
             if self.trace is None:
-                self.trace = Trace()
+                self.trace = TraceCollection()
                 self.trace.x = x
                 self.trace.y = y
                 self.trace.bottom = bottom

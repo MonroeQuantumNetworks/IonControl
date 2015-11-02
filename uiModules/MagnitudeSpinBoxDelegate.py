@@ -7,10 +7,10 @@ from MagnitudeSpinBox import MagnitudeSpinBox
 from modules.MagnitudeParser import isValueExpression
 
 
-class MagnitudeSpinBoxDelegate(QtGui.QItemDelegate):
+class MagnitudeSpinBoxDelegate(QtGui.QStyledItemDelegate):
 
     def __init__(self, globalDict=None, emptyStringValue=0):
-        QtGui.QItemDelegate.__init__(self)
+        QtGui.QStyledItemDelegate.__init__(self)
         self.globalDict = globalDict if globalDict is not None else dict()
         self.emptyStringValue = emptyStringValue
         

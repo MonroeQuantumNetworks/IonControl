@@ -5,7 +5,7 @@ Created on Fri Dec 14 15:37:21 2012
 @author: plmaunz
 """
 
-from trace import Trace
+from trace import TraceCollection
 
 import numpy
 import visa #@UnresolvedImport
@@ -19,7 +19,7 @@ class E5100B(ReadGeneric.ReadGeneric):
         self.GPIB = self.rm.open_resource( address)
         
     def readTrace(self):
-        self.t = Trace.Trace()
+        self.t = TraceCollection.TraceCollection()
         self.t.addColumn('real')
         self.t.addColumn('imaginary')
         self.t.addColumn('amplitude')       

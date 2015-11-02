@@ -21,13 +21,11 @@ class ScanProgress(Form,Base):
         self.range = 1
         self.startTime = time.time()     # time of last start
         self.previouslyElapsedTime = 0      # time spent on run before last start 
-        self.averagingMode = False
         self.expected = 0
         self.timer = None
     
     def setupUi(self):
         super(ScanProgress,self).setupUi(self)
-        self.scansAveraged.hide()
         self.statusLabel.setText("Idle")
         self.progressBar.setFormat("%p%")
         self.scanLabel.setText("")
@@ -43,16 +41,6 @@ class ScanProgress(Form,Base):
     def setAnalysisLabel(self, scanName):        
         self.analysisLabel.setText(firstNotNone(scanName,""))
         
-    def setAveraged(self, num):
-        if num is None:
-            self.scansAveraged.hide()
-            self.averagingMode = False
-        else:
-            self.scansAveraged.setText("Scans averaged: {0}".format(num))
-            self.scansAveraged.show()
-            self.averagingMode = True
-
-            
     def startTimer(self):
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect( self.setTimeLabel )

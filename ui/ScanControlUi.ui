@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>406</width>
+    <width>488</width>
     <height>720</height>
    </rect>
   </property>
@@ -173,7 +173,7 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>386</width>
+        <width>468</width>
         <height>643</height>
        </rect>
       </property>
@@ -263,29 +263,8 @@
          <widget class="QTableView" name="tableView"/>
          <widget class="QWidget" name="layoutWidget">
           <layout class="QGridLayout" name="gridLayout">
-           <item row="5" column="2" colspan="2">
+           <item row="4" column="2" colspan="2">
             <widget class="QLineEdit" name="filenameEdit"/>
-           </item>
-           <item row="1" column="2">
-            <widget class="QLineEdit" name="xExprEdit">
-             <property name="toolTip">
-              <string>expression x is current value</string>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="2" colspan="2">
-            <widget class="QComboBox" name="scanRepeatComboBox">
-             <item>
-              <property name="text">
-               <string>Single Scan</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>Repeated Scan</string>
-              </property>
-             </item>
-            </widget>
            </item>
            <item row="2" column="2" colspan="2">
             <widget class="QComboBox" name="scanTypeCombo">
@@ -311,17 +290,10 @@
              </item>
             </widget>
            </item>
-           <item row="4" column="2" colspan="2">
+           <item row="3" column="2" colspan="2">
             <widget class="QComboBox" name="loadPPComboBox">
              <property name="maxVisibleItems">
               <number>100</number>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="3">
-            <widget class="QLineEdit" name="xUnitEdit">
-             <property name="toolTip">
-              <string>unit</string>
              </property>
             </widget>
            </item>
@@ -332,7 +304,7 @@
              </property>
             </widget>
            </item>
-           <item row="5" column="0">
+           <item row="4" column="0">
             <widget class="QCheckBox" name="autoSaveCheckBox">
              <property name="toolTip">
               <string>Checkbox: automatically save file</string>
@@ -342,7 +314,7 @@
              </property>
             </widget>
            </item>
-           <item row="4" column="0">
+           <item row="3" column="0">
             <widget class="QCheckBox" name="loadPPcheckBox">
              <property name="text">
               <string>Load PP</string>
@@ -356,17 +328,10 @@
              </property>
             </widget>
            </item>
-           <item row="3" column="0">
-            <widget class="QLabel" name="label_4">
-             <property name="text">
-              <string>Repeat</string>
-             </property>
-            </widget>
-           </item>
-           <item row="6" column="2" colspan="2">
+           <item row="5" column="2" colspan="2">
             <widget class="QLineEdit" name="histogramFilenameEdit"/>
            </item>
-           <item row="6" column="0">
+           <item row="5" column="0">
             <widget class="QCheckBox" name="histogramSaveCheckBox">
              <property name="toolTip">
               <string>Checkbox: automatically save file</string>
@@ -376,10 +341,10 @@
              </property>
             </widget>
            </item>
-           <item row="7" column="2" colspan="2">
+           <item row="6" column="2" colspan="2">
             <widget class="QLineEdit" name="rawFilenameEdit"/>
            </item>
-           <item row="7" column="0">
+           <item row="6" column="0">
             <widget class="QCheckBox" name="saveRawCheckBox">
              <property name="toolTip">
               <string>Checkbox: automatically save file</string>
@@ -402,6 +367,42 @@
               <enum>QAbstractSpinBox::NoButtons</enum>
              </property>
             </widget>
+           </item>
+           <item row="1" column="2">
+            <layout class="QHBoxLayout" name="horizontalLayout_9">
+             <item>
+              <widget class="QLabel" name="label">
+               <property name="text">
+                <string>expression</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLineEdit" name="xExprEdit">
+               <property name="toolTip">
+                <string>expression x is current value</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item row="1" column="3">
+            <layout class="QHBoxLayout" name="horizontalLayout_10">
+             <item>
+              <widget class="QLabel" name="label_2">
+               <property name="text">
+                <string>unit</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLineEdit" name="xUnitEdit">
+               <property name="toolTip">
+                <string>unit</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
            </item>
           </layout>
          </widget>
@@ -442,9 +443,7 @@
   <tabstop>comboBox</tabstop>
   <tabstop>saveButton</tabstop>
   <tabstop>scanModeComboBox</tabstop>
-  <tabstop>xExprEdit</tabstop>
   <tabstop>scanTypeCombo</tabstop>
-  <tabstop>scanRepeatComboBox</tabstop>
   <tabstop>filenameEdit</tabstop>
   <tabstop>autoSaveCheckBox</tabstop>
  </tabstops>

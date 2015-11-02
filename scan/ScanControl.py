@@ -39,7 +39,6 @@ ScanControlForm, ScanControlBase = PyQt4.uic.loadUiType(uipath)
 class Scan:
     ScanMode = enum('ParameterScan','StepInPlace','GateSequenceScan','Freerunning')
     ScanType = enum('LinearStartToStop','LinearStopToStart','Randomized','CenterOut')
-    ScanRepeat = enum('SingleScan','RepeatedScan')
     XMLTagName = "Scan"
     def __init__(self):
         # Scan
@@ -54,7 +53,6 @@ class Scan:
         self.stepsSelect = 0
         self.scantype = 0
         self.scanMode = 0
-        self.scanRepeat = 0
         self.filename = ""
         self.histogramFilename = ""
         self.autoSave = True
@@ -77,7 +75,6 @@ class Scan:
         self.__dict__ = state
         self.__dict__.setdefault('xUnit', '')
         self.__dict__.setdefault('xExpression', '')
-        self.__dict__.setdefault('scanRepeat', 0)
         self.__dict__.setdefault('loadPP', False)
         self.__dict__.setdefault('loadPPName', "")
         self.__dict__.setdefault('stepSize',1)
@@ -106,12 +103,12 @@ class Scan:
     def __hash__(self):
         return hash(tuple(getattr(self,field) for field in self.stateFields))
         
-    stateFields = ['scanParameter', 'scanTarget', 'scantype', 'scanMode', 'scanRepeat', 
-                'filename', 'histogramFilename', 'autoSave', 'histogramSave', 'xUnit', 'xExpression', 'loadPP', 'loadPPName', 'gateSequenceSettings',
-                'scanSegmentList', 'saveRawData', 'rawFilename', 'maxPoints' ]
+    stateFields = ['scanParameter', 'scanTarget', 'scantype', 'scanMode', 'filename', 'histogramFilename',
+                   'autoSave', 'histogramSave', 'xUnit', 'xExpression', 'loadPP', 'loadPPName',
+                   'gateSequenceSettings', 'scanSegmentList', 'saveRawData', 'rawFilename', 'maxPoints']
 
-    documentationList = [ 'scanParameter', 'scanTarget', 'scantype', 'scanMode', 'scanRepeat', 
-                'xUnit', 'xExpression', 'loadPP', 'loadPPName' ]
+    documentationList = ['scanParameter', 'scanTarget', 'scantype', 'scanMode',
+                         'xUnit', 'xExpression', 'loadPP', 'loadPPName']
         
     def exportXml(self, element, attrib=dict()):
         myElement = ElementTree.SubElement(element, self.XMLTagName, attrib=attrib )
@@ -159,7 +156,7 @@ class ScanControlParameters:
             self.scanTargetCache = dict()
 
 class ScanControl(ScanControlForm, ScanControlBase ):
-    ScanModes = enum('SingleScan','RepeatedScan','StepInPlace','GateSequenceScan')
+    ScanModes = enum('SingleScan','StepInPlace','GateSequenceScan')
     currentScanChanged = QtCore.pyqtSignal( object )
     integrationMode = enum('IntegrateAll','IntegrateRun','NoIntegration')
     scanConfigurationListChanged = QtCore.pyqtSignal( object )
@@ -230,7 +227,6 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.xUnitEdit.editingFinished.connect( functools.partial(self.onEditingFinished, self.xUnitEdit, 'xUnit') )
         self.xExprEdit.editingFinished.connect( functools.partial(self.onEditingFinished, self.xExprEdit, 'xExpression') )
         self.maxPointsBox.valueChanged.connect( self.onMaxPointsChanged )
-        self.scanRepeatComboBox.currentIndexChanged[int].connect( functools.partial(self.onCurrentIndexChanged,'scanRepeat') )
         self.loadPPcheckBox.stateChanged.connect( functools.partial(self.onStateChanged, 'loadPP' ) )
         self.loadPPComboBox.currentIndexChanged[QtCore.QString].connect( self.onLoadPP )
         self.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
@@ -336,7 +332,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.xUnitEdit.setText( self.settings.xUnit )
         self.xExprEdit.setText( self.settings.xExpression )
         self.maxPointsBox.setValue( self.settings.maxPoints )
-        self.scanRepeatComboBox.setCurrentIndex( self.settings.scanRepeat )
+
         self.loadPPcheckBox.setChecked( self.settings.loadPP )
         if self.settings.loadPPName: 
             index = self.loadPPComboBox.findText(self.settings.loadPPName)
@@ -428,11 +424,12 @@ class ScanControl(ScanControlForm, ScanControlBase ):
     def onModeChanged(self, index):       
         self.settings.scanMode = index
         self.scanTypeCombo.setEnabled(index in [0,2])
-        self.scanRepeatComboBox.setEnabled( index in [0,2] )
         self.xUnitEdit.setEnabled( index in [0,3] )
         self.xExprEdit.setEnabled( index in [0,3] )
         self.comboBoxParameter.setEnabled( index==0 )
-        self.comboBoxScanTarget.setEnabled( index==0 )    
+        self.comboBoxScanTarget.setEnabled( index==0 )
+        self.addSegmentButton.setEnabled( index==0 )
+        self.removeSegmentButton.setEnabled( index==0 )
         self.tableView.setEnabled( index==0 )
         self.maxPointsLabel.setVisible( index==1 )
         self.maxPointsBox.setVisible( index==1 )

@@ -204,7 +204,7 @@
 </ol>
 </div></blockquote>
 </li>
-<li><p class="first"><a class="reference internal" href="DedicatedCounters.html#dedicatedcounters"><span>Dedicated Counters</span></a>. The dedicated counters interface allows continuous monitoring of the counters and ADCs connected to the FPGA. It displays counts whether or not a scan is running, and is therefore useful for continuous monitoring. It also has an interface for automatic ion loading.</p>
+<li><p class="first"><a class="reference internal" href="DedicatedCounters.html#dedicatedcounters"><span>Dedicated Counters</span></a>. The dedicated counters interface allows continuous monitoring of the counters, ADCs, and PI Loops controlled by the FPGA. It displays counts whether or not a scan is running, and is therefore useful for continuous monitoring. It also has an interface for automatic ion loading.</p>
 </li>
 <li><p class="first"><a class="reference internal" href="Scripting.html#scripting"><span>Scripting</span></a>. The scripting interface allows for the creation of extremely complex, automated experiments. It executes Python scripts, but adds a number of commands which allow control over the experiment.</p>
 </li>
@@ -216,7 +216,7 @@
 <p>A few general points about the interface:</p>
 <div class="section" id="units">
 <h3>Units<a class="headerlink" href="#units" title="Permalink to this headline">¶</a></h3>
-<p>Almost all quantities referenced in the program have units. This is for the simple reason that real physical quantities have units, and using them avoids any ambiguity. This means a few things:</p>
+<p>Almost all quantities referenced in the program have units. This is for the simple reason that real physical quantities have units, and using them avoids any ambiguity. (It also helps avoid spacecraft crashing into planets.) This means a few things:</p>
 <ul>
 <li><p class="first">quantities can be typed as 0.365 MHz or as 365 kHz or as 365000 Hz, they are all equivalent.</p>
 </li>

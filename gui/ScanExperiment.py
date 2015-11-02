@@ -41,7 +41,7 @@ from modules import enum
 from modules import stringutilit
 from modules import magnitude
 from trace.PlottedTrace import PlottedTrace
-from trace.Trace import Trace
+from trace.TraceCollection import TraceCollection
 from uiModules.CoordinatePlotWidget import CoordinatePlotWidget
 from modules import WeakMethod
 from modules.SceneToPrint import SceneToPrint
@@ -85,7 +85,6 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.deviceSettings = settings
         self.pulserHardware = pulserHardware
         self.plottedTraceList = list()
-        self.averagePlottedTraceList = list()
         self.currentIndex = 0
         self.activated = False
         self.histogramCurveList = list()
@@ -112,6 +111,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.accumulatedTimingViolations = set()
         self.project = getProject()
         self.timestampsEnabled = self.project.isEnabled('software', 'Timestamps')
+        self.unsavedTraceCount = 0
 
     def setupUi(self,MainWindow,config):
         logger = logging.getLogger(__name__)
@@ -146,9 +146,14 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
 
         # Traceui
         self.penicons = pens.penicons().penicons()
-        self.traceui = Traceui.Traceui(self.penicons,self.config,self.experimentName,self.plotDict)
+        self.traceui = Traceui.Traceui(self.penicons,self.config,self.experimentName,self.plotDict,hasMeasurementLog=True,highlightUnsaved=True)
         self.traceui.setupUi(self.traceui)
         self.measurementLog.addTraceui( 'Scan', self.traceui )
+        self.measurementLog.traceuiLookup['Script'] = self.traceui
+        self.traceui.model.traceModelDataChanged.connect(self.measurementLog.measurementModel.onTraceModelDataChanged)
+        self.measurementLog.measurementModel.measurementModelDataChanged.connect(self.traceui.model.onMeasurementModelDataChanged)
+        self.traceui.model.traceRemoved.connect(self.measurementLog.measurementModel.onTraceRemoved)
+        self.traceui.openMeasurementLog.connect(self.measurementLog.onOpenMeasurementLog)
         # traceui for timestamps
         if self.timestampsEnabled:
             self.timestampTraceui = Traceui.Traceui(self.penicons,self.config,self.experimentName+"-timestamps",self.plotDict)
@@ -296,11 +301,6 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.scan = self.scanControlWidget.getScan()
         self.evaluation = self.evaluationControlWidget.getEvaluation()
         self.displayUi.setNames( [evaluation.name for evaluation in self.evaluation.evalList ])
-        if (self.scan.scanRepeat == 1) and (self.scan.scanMode != 1): #scanMode == 1 corresponds to step in place.
-            self.createAverageTrace(self.evaluation.evalList)
-            self.progressUi.setAveraged(0)
-        else:
-            self.progressUi.setAveraged(None)
         self.scanMethod = ScanMethodsDict[self.scan.scanTarget](self)
         self.progressUi.setStarting()
         self.ppStartSignal.emit()
@@ -312,21 +312,6 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.rawDataFile = open(DataDirectory.DataDirectory().sequencefile(self.scan.rawFilename)[0],'w')
         self.dataFinalized = False
 
-    def createAverageTrace(self,evalList):
-        trace = Trace()
-        self.averagePlottedTraceList = list()
-        for index, evaluation in enumerate(evalList):
-            yColumnName = 'y{0}'.format(index)
-#             rawColumnName = 'raw{0}'.format(index)
-            trace.addColumn( yColumnName )
-            thisAveragePlottedTrace = PlottedTrace(trace, self.plotDict[evaluation.plotname]["view"], pens.penList, yColumn=yColumnName, xAxisUnit = self.scan.xUnit,
-                                                    xAxisLabel = self.scan.scanParameter, windowName=evaluation.plotname)
-            thisAveragePlottedTrace.trace.name = self.scan.settingsName + " Average"
-            thisAveragePlottedTrace.trace.description["comment"] = "Average Trace"
-            thisAveragePlottedTrace.trace.filenameCallback = functools.partial( thisAveragePlottedTrace.traceFilename, self.scan.filename)
-            self.averagePlottedTraceList.append( thisAveragePlottedTrace  )                
-            self.traceui.addTrace(thisAveragePlottedTrace, pen=0)
-        
     def startScan(self):
         logger = logging.getLogger(__name__)
         if self.progressUi.state in [self.OpStates.idle, self.OpStates.starting, self.OpStates.stopping, self.OpStates.running, self.OpStates.paused, self.OpStates.interrupted]:
@@ -376,10 +361,12 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.pulserHardware.ppWriteData(mycode)
             self.displayUi.onClear()
             self.timestampsNewRun = True
-            if self.plottedTraceList and self.traceui.unplotLastTrace():
+            if self.plottedTraceList and self.traceui.unplotLastTrace:
                 for plottedTrace in self.plottedTraceList:
                     plottedTrace.plot(0) #unplot previous trace
-            self.plottedTraceList = list() #reset plotted trace
+            if self.plottedTraceList and self.traceui.collapseLastTrace:
+                self.traceui.collapse(self.plottedTraceList[0])
+            self.plottedTraceList = list() #reset plotted trace list
             self.otherDataFile = None
             self.histogramBuffer = defaultdict( list )
             self.scanMethod.startScan()
@@ -437,32 +424,35 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         queuesize is the size of waiting messages, dont't do expensive unnecessary stuff if queue is deep
         """
         logger = logging.getLogger(__name__)
-        if data.other and self.scan.gateSequenceSettings.debug:
-            if self.otherDataFile is None:
-                dumpFilename, _ = DataDirectory.DataDirectory().sequencefile("other_data.bin")
-                self.otherDataFile = open( dumpFilename, "wb" )
-            self.otherDataFile.write( self.pulserHardware.wordListToBytearray(data.other))
-        if data.overrun:
-            logger.warning( "Read Pipe Overrun" )
-            self.onInterrupt("Read Pipe Overrun")
-        if data.timingViolations:
-            oldlength = len(self.accumulatedTimingViolations)
-            self.accumulatedTimingViolations.update(data.timingViolations)
-            if len(self.accumulatedTimingViolations)>oldlength:
-                self.pulseProgramUi.setTimingViolations( [self.pulseProgramUi.lineOfInstruction(l) for l in self.accumulatedTimingViolations])
-                lineInPP = self.pulseProgramUi.lineOfInstruction(data.timingViolations[0])
-                logger.warning( "PP Timing violation at address {0}".format(lineInPP))
-        if data.final and data.exitcode not in [0,0xffff]:
-            self.onInterrupt( self.pulseProgramUi.exitcode(data.exitcode) )
+        if self.progressUi.state == self.OpStates.running:
+            if data.other and self.scan.gateSequenceSettings.debug:
+                if self.otherDataFile is None:
+                    dumpFilename, _ = DataDirectory.DataDirectory().sequencefile("other_data.bin")
+                    self.otherDataFile = open( dumpFilename, "wb" )
+                self.otherDataFile.write( self.pulserHardware.wordListToBytearray(data.other))
+            if data.overrun:
+                logger.warning( "Read Pipe Overrun" )
+                self.onInterrupt("Read Pipe Overrun")
+            if data.timingViolations:
+                oldlength = len(self.accumulatedTimingViolations)
+                self.accumulatedTimingViolations.update(data.timingViolations)
+                if len(self.accumulatedTimingViolations)>oldlength:
+                    self.pulseProgramUi.setTimingViolations( [self.pulseProgramUi.lineOfInstruction(l) for l in self.accumulatedTimingViolations])
+                    lineInPP = self.pulseProgramUi.lineOfInstruction(data.timingViolations[0])
+                    logger.warning( "PP Timing violation at address {0}".format(lineInPP))
+            if data.final and data.exitcode not in [0,0xffff]:
+                self.onInterrupt( self.pulseProgramUi.exitcode(data.exitcode) )
+            else:
+                logger.info( "onData {0} {1} {2}".format( self.currentIndex, dict((i,len(data.count[i])) for i in sorted(data.count.keys())), data.scanvalue ) )
+                x = self.generator.xValue(self.currentIndex, data)
+                self.scanMethod.onData( data, queuesize, x )
+                if self.rawDataFile is not None:
+                    self.rawDataFile.write( data.dataString() )
+                    self.rawDataFile.write( '\n' )
+                    self.rawDataFile.flush()
         else:
-            logger.info( "onData {0} {1} {2}".format( self.currentIndex, dict((i,len(data.count[i])) for i in sorted(data.count.keys())), data.scanvalue ) )
-            x = self.generator.xValue(self.currentIndex, data)
-            self.scanMethod.onData( data, queuesize, x )
-            if self.rawDataFile is not None:
-                self.rawDataFile.write( data.dataString() )
-                self.rawDataFile.write( '\n' )
-                self.rawDataFile.flush()
-                
+            logger.info( "pp not running ignoring onData {0} {1} {2}".format( self.currentIndex, dict((i,len(data.count[i])) for i in sorted(data.count.keys())), data.scanvalue ) )
+
         
     def dataMiddlePart(self, data, queuesize, x):
         if is_magnitude(x):
@@ -489,8 +479,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         
     def updateMainGraph(self, x, evaluated, timeinterval, timeTickOffset, queuesize): # evaluated is list of mean, error, raw
         if not self.plottedTraceList:
-            trace = Trace(record_timestamps=True)
-            trace.recordTimeinterval(timeTickOffset)
+            traceCollection = TraceCollection(record_timestamps=True)
+            traceCollection.recordTimeinterval(timeTickOffset)
             self.plottedTraceList = list()
             for index, result in enumerate(evaluated):
                 if result is not None:  # result is None if there were no counter results
@@ -498,20 +488,20 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                     showerror = error is not None
                     yColumnName = 'y{0}'.format(index) 
                     rawColumnName = 'raw{0}'.format(index)
-                    trace.addColumn( yColumnName )
-                    trace.addColumn( rawColumnName )
+                    traceCollection.addColumn( yColumnName )
+                    traceCollection.addColumn( rawColumnName )
                     if showerror:
                         topColumnName = 'top{0}'.format(index)
                         bottomColumnName = 'bottom{0}'.format(index)
-                        trace.addColumn( topColumnName )
-                        trace.addColumn( bottomColumnName )                                    
-                        plottedTrace = PlottedTrace(trace, self.plotDict[self.evaluation.evalList[index].plotname]["view"] if self.evaluation.evalList[index].plotname != 'None' else None, 
+                        traceCollection.addColumn( topColumnName )
+                        traceCollection.addColumn( bottomColumnName )
+                        plottedTrace = PlottedTrace(traceCollection, self.plotDict[self.evaluation.evalList[index].plotname]["view"] if self.evaluation.evalList[index].plotname != 'None' else None,
                                                     pens.penList, xColumn=self.evaluation.evalList[index].abszisse.columnName,
                                                     yColumn=yColumnName, topColumn=topColumnName, bottomColumn=bottomColumnName, 
                                                     rawColumn=rawColumnName, name=self.evaluation.evalList[index].name, xAxisUnit = self.scan.xUnit,
                                                     xAxisLabel = self.scan.scanParameter, windowName=self.evaluation.evalList[index].plotname) 
                     else:                
-                        plottedTrace = PlottedTrace(trace, self.plotDict[self.evaluation.evalList[index].plotname]["view"] if self.evaluation.evalList[index].plotname != 'None' else None,
+                        plottedTrace = PlottedTrace(traceCollection, self.plotDict[self.evaluation.evalList[index].plotname]["view"] if self.evaluation.evalList[index].plotname != 'None' else None,
                                                     pens.penList, xColumn=self.evaluation.evalList[index].abszisse.columnName, yColumn=yColumnName, rawColumn=rawColumnName, name=self.evaluation.evalList[index].name,
                                                     xAxisUnit = self.scan.xUnit, xAxisLabel = self.scan.scanParameter, windowName=self.evaluation.evalList[index].plotname)               
                     xRange = self.generator.xRange() if isinstance(self.scan.start, magnitude.Magnitude) and magnitude.mg(self.scan.xUnit).dimension()==self.scan.start.dimension() else None
@@ -520,17 +510,21 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                     else:
                         self.plotDict["Scan Data"]["view"].enableAutoRange(axis=ViewBox.XAxis)     
                     self.plottedTraceList.append( plottedTrace )
-            self.plottedTraceList[0].trace.name = self.scan.settingsName
-            self.plottedTraceList[0].trace.description["comment"] = ""
-            self.plottedTraceList[0].trace.description["PulseProgram"] = self.pulseProgramUi.description() 
-            self.plottedTraceList[0].trace.description["Scan"] = self.scan.description()
-            self.plottedTraceList[0].trace.filenameCallback = functools.partial( WeakMethod.ref(self.plottedTraceList[0].traceFilename), self.scan.filename )
+            self.plottedTraceList[0].traceCollection.name = self.scan.settingsName
+            self.plottedTraceList[0].traceCollection.description["comment"] = ""
+            self.plottedTraceList[0].traceCollection.description["PulseProgram"] = self.pulseProgramUi.description()
+            self.plottedTraceList[0].traceCollection.description["Scan"] = self.scan.description()
+            self.plottedTraceList[0].traceCollection.autoSave = self.scan.autoSave
+            self.plottedTraceList[0].traceCollection.filenamePattern = self.scan.filename
+            if len(self.plottedTraceList) > 1:
+                for plottedTrace in self.plottedTraceList:
+                    plottedTrace.category = plottedTrace.traceCollection.fileleaf if self.scan.autoSave else "UNSAVED_"+plottedTrace.traceCollection.filenamePattern+"_{0}".format(self.unsavedTraceCount)
+            if not self.scan.autoSave: self.unsavedTraceCount+=1
             self.generator.appendData( self.plottedTraceList, x, evaluated, timeinterval )
             for index, plottedTrace in reversed(list(enumerate(self.plottedTraceList))):
-                if (self.scan.scanRepeat == 1) and (self.scan.scanMode != 1): #scanMode == 1 corresponds to step in place.           
-                    self.traceui.addTrace( plottedTrace, pen=-1, parentTrace=self.averagePlottedTraceList[index])
-                else:
-                    self.traceui.addTrace( plottedTrace, pen=-1)
+                self.traceui.addTrace(plottedTrace, pen=-1)
+            if self.traceui.expandNew:
+                self.traceui.expand(self.plottedTraceList[0])
             self.traceui.resizeColumnsToContents()
         else:
             self.generator.appendData(self.plottedTraceList, x, evaluated, timeinterval )
@@ -550,22 +544,14 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 self.rawDataFile.close()
                 self.rawDataFile = None
                 logging.getLogger(__name__).info("Closed raw data file")
-            for trace in ([self.currentTimestampTrace]+[self.plottedTraceList[0].trace] if self.plottedTraceList else[]):
+            for trace in ([self.currentTimestampTrace]+[self.plottedTraceList[0].traceCollection] if self.plottedTraceList else[]):
                 if trace:
                     trace.description["traceFinalized"] = datetime.now(pytz.utc)
-                    trace.resave(saveIfUnsaved=self.scan.autoSave and saveData)
+                    if trace.autoSave:
+                        trace.save()
             if saveData:
                 failedList = self.dataAnalysis()
                 self.registerMeasurement(failedList)
-            if (self.scan.scanRepeat == 1) and (self.scan.scanMode != 1): #scanMode == 1 corresponds to step in place.
-                if reason == 'end of scan': #We only re-average the data if finalizeData is called because a scan ended
-                    averagePlottedTrace = None
-                    for averagePlottedTrace in self.averagePlottedTraceList:
-                        averagePlottedTrace.averageChildren()
-                        averagePlottedTrace.plot(7) #average trace is plotted in black
-                    if averagePlottedTrace:
-                        self.progressUi.setAveraged(averagePlottedTrace.childCount())
-                        averagePlottedTrace.trace.resave(saveIfUnsaved=self.scan.autoSave)
             if self.scan.histogramSave:
                 self.onSaveHistogram(self.scan.histogramFilename if self.scan.histogramFilename else None)
             self.dataFinalized = reason
@@ -593,7 +579,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             if self.currentTimestampTrace.rawdata:
                 self.currentTimestampTrace.rawdata.addInt(data.timestamp[self.evaluation.timestampsChannel])
         else:    
-            self.currentTimestampTrace = Trace()
+            self.currentTimestampTrace = TraceCollection()
             if self.evaluation.saveRawData:
                 self.currentTimestampTrace.rawdata = RawData()
                 self.currentTimestampTrace.rawdata.addInt(data.timestamp[self.evaluation.timestampsChannel])
@@ -625,7 +611,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         numberTraces = index
         del self.histogramList[numberTraces:]   # remove elements that are not needed any more
         if not self.histogramTrace:
-            self.histogramTrace = Trace()            
+            self.histogramTrace = TraceCollection()
         for index, histogram in enumerate(self.histogramList):
             if index<len(self.histogramCurveList):
                 self.histogramCurveList[index].x = histogram[1]
@@ -637,7 +623,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 self.histogramTrace.addColumn( yColumnName, ignoreExisting=True )
                 plottedHistogramTrace = PlottedTrace(self.histogramTrace,self.plotDict["Histogram"]["view"],pens.penList,plotType=PlottedTrace.Types.steps, #@UndefinedVariable
                                                      yColumn=yColumnName, name="Histogram "+(histogram[2] if histogram[2] else ""), windowName="Histogram" )
-                self.histogramTrace.filenameCallback = functools.partial( plottedHistogramTrace.traceFilename, "Hist"+self.scan.filename )
+                self.histogramTrace.filenamePattern = "Hist_"+self.scan.filename
                 plottedHistogramTrace.x = histogram[1]
                 plottedHistogramTrace.y = histogram[0]
                 plottedHistogramTrace.trace.name = self.scan.settingsName
@@ -651,7 +637,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     def onCopyHistogram(self):
         for plottedtrace in self.histogramCurveList:
             self.traceui.addTrace(plottedtrace,pen=-1)   
-        self.histogramTrace = Trace()    
+        self.histogramTrace = TraceCollection()
         self.histogramCurveList = []        
              
     
@@ -816,8 +802,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         measurement = Measurement(scanType= 'Scan', scanName=self.scan.settingsName, scanParameter=self.scan.scanParameter, scanTarget=self.scan.scanTarget,
                                   scanPP = self.scan.loadPPName,
                                   evaluation=self.evaluation.settingsName, 
-                                  startDate=self.plottedTraceList[0].trace.description['traceCreation'] if self.plottedTraceList else datetime.now(pytz.utc), 
-                                  duration=None, filename=self.plottedTraceList[0].trace.filename if self.plottedTraceList else "none", 
+                                  startDate=self.plottedTraceList[0].traceCollection.description['traceCreation'] if self.plottedTraceList else datetime.now(pytz.utc),
+                                  duration=None, filename=self.plottedTraceList[0].traceCollection.filename if self.plottedTraceList else "none",
                                   comment=None, longComment=None, failedAnalysis=failedEntry)
         # add parameters
         space = self.measurementLog.container.getSpace('PulseProgram')

@@ -13,11 +13,12 @@ from datetime import datetime
 from modules import magnitude
 from Script import ScriptException
 from trace.PlottedTrace import PlottedTrace
-from trace.Trace import Trace
+from trace.TraceCollection import TraceCollection
 from trace import pens
 from pyqtgraph.graphicsItems.ViewBox import ViewBox
 import functools
 import pytz
+from persist.MeasurementLog import  Measurement, Parameter, Result
 
 class ScriptHandler:
     """The ScriptHandler is what handles all the interfacing between the Script and the GUI. The Script
@@ -64,6 +65,7 @@ class ScriptHandler:
         self.script.stopScanSignal.connect(self.onStopScan)
         self.script.abortScanSignal.connect(self.onAbortScan)
         self.script.createTraceSignal.connect(self.onCreateTrace)
+        self.script.closeTraceSignal.connect(self.onCloseTrace)
         self.script.fitSignal.connect(self.onFit)
 
         #finished signal
@@ -244,20 +246,38 @@ class ScriptHandler:
             message = "plot {0} does not exist".format(plotName)
             error = True
         else:
-            trace = Trace()
+            traceCollection = TraceCollection()
             yColumnName = 'y0'
-            trace.addColumn( yColumnName )
-            plottedTrace = PlottedTrace(trace, self.scanExperiment.plotDict[plotName]["view"], pens.penList, xColumn = 'x',
+            traceCollection.addColumn( yColumnName )
+            plottedTrace = PlottedTrace(traceCollection, self.scanExperiment.plotDict[plotName]["view"], pens.penList, xColumn = 'x',
                                         yColumn=yColumnName, name=traceName, xAxisUnit = xUnit, xAxisLabel = xLabel, windowName=plotName)
             self.scanExperiment.plotDict[plotName]["view"].enableAutoRange(axis=ViewBox.XAxis)
-            plottedTrace.trace.name = self.script.shortname
-            plottedTrace.trace.description["comment"] = comment
-            plottedTrace.trace.filenameCallback = functools.partial( plottedTrace.traceFilename, traceName)
+            plottedTrace.traceCollection.name = self.script.shortname
+            commentIntro = "Created by script {0}".format(self.script.shortname)
+            plottedTrace.traceCollection.comment = commentIntro + " -- " + comment if comment else commentIntro
+            plottedTrace.traceCollection.autoSave = True
+            plottedTrace.traceCollection.filenamePattern = traceName
             self.scriptTraces[traceName] = plottedTrace
             self.traceAlreadyCreated[traceName] = False #Keep track of whether the trace has already been added
             error = False
             message = "Added trace {0}\n plot: {1}\n xUnit: {2}\n xLabel: {3}\n comment: {4}".format(traceName, plotName, xUnit, xLabel, comment)
         return (error, message)
+
+    @QtCore.pyqtSlot(str)
+    @scriptCommand
+    def onCloseTrace(self, traceName):
+        traceName = str(traceName)
+        if traceName not in self.scriptTraces:
+            message = "Trace {0} does not exist".format(traceName)
+            error = True
+        else:
+            plottedTrace = self.scriptTraces.pop(traceName) #remove from the list of script traces
+            plottedTrace.traceCollection.description["traceFinalized"] = datetime.now(pytz.utc)
+            plottedTrace.traceCollection.save()
+            self.registerMeasurement(plottedTrace)
+            message = "Trace {0} closed".format(traceName)
+            error = False
+        return error, message
 
     @QtCore.pyqtSlot(str, str)
     @scriptCommand
@@ -312,6 +332,9 @@ class ScriptHandler:
                 plottedTrace.x = numpy.array(xList)
                 plottedTrace.y = numpy.array(yList)
                 self.scanExperiment.traceui.addTrace(plottedTrace, pen=-1)
+                if self.scanExperiment.traceui.expandNew:
+                    self.scanExperiment.traceui.expand(plottedTrace)
+                self.scanExperiment.traceui.resizeColumnsToContents()
                 self.traceAlreadyCreated[traceName] = True
             message = '{0}, {1} plotted to trace: {2}'.format(xList, yList, traceName)
             error = False
@@ -421,8 +444,9 @@ class ScriptHandler:
     @QtCore.pyqtSlot()
     def onFinished(self):
         for plottedTrace in self.scriptTraces.values():
-            plottedTrace.trace.resave()
-            plottedTrace.trace.description["traceFinalized"] = datetime.now(pytz.utc)
+            plottedTrace.traceCollection.description["traceFinalized"] = datetime.now(pytz.utc)
+            plottedTrace.traceCollection.save()
+            self.registerMeasurement(plottedTrace)
 
     @QtCore.pyqtSlot(str, bool, str)
     def onConsoleSignal(self, message, error, color):
@@ -459,3 +483,22 @@ class ScriptHandler:
     def writeToConsole(self, message, error=False, color=''):
         """write a message to the console."""
         self.experimentUi.scriptingWindow.writeToConsole(message, error, color)
+
+    def registerMeasurement(self, plottedTrace):
+        """register a script created trace in the measurement log"""
+        measurement = Measurement(scanType= 'Script', scanName=plottedTrace.traceCollection.filenamePattern,
+                                  scanParameter='', scanTarget='',
+                                  scanPP = '',
+                                  evaluation='<Script {0}>'.format(self.script.shortname),
+                                  startDate=plottedTrace.traceCollection.description['traceCreation'],
+                                  duration=None,
+                                  filename=plottedTrace.traceCollection.filename,
+                                  comment=plottedTrace.traceCollection.comment,
+                                  longComment=None,
+                                  failedAnalysis=None)
+        space = self.scanExperiment.measurementLog.container.getSpace('GlobalVariables')
+        for name, value in self.experimentUi.globalVariablesUi.variables.iteritems():
+            measurement.parameters.append( Parameter(name=name, value=value, space=space) )
+        measurement.plottedTraceList = [plottedTrace]
+        self.scanExperiment.measurementLog.container.addMeasurement(measurement)
+

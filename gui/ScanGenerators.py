@@ -79,10 +79,7 @@ class ParameterScanGenerator:
         return []
         
     def dataOnFinal(self, experiment, currentState):
-        if self.scan.scanRepeat == 1 and currentState == OpStates.running:
-            experiment.startScan()
-        else:
-            experiment.onStop()                   
+        experiment.onStop()
     
     def xRange(self):
         return self.scan.start.ounit(self.scan.xUnit).toval(), self.scan.stop.ounit(self.scan.xUnit).toval()
@@ -276,10 +273,7 @@ class GateSequenceScanGenerator:
                 trace.top = numpy.append(trace.top, error[1])
 
     def dataOnFinal(self, experiment, currentState):
-        if self.scan.scanRepeat == 1 and currentState==OpStates.running:
-            experiment.startScan()
-        else:
-            experiment.onStop()                   
+        experiment.onStop()
 
     def expected(self, index):
         if self.gateSequenceAttributes is not None:

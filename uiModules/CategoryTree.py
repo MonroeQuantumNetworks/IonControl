@@ -2,7 +2,8 @@ __author__ = 'jmizrahi'
 
 from PyQt4 import QtCore, QtGui
 from modules.enum import enum
-import functools
+from modules.Utility import indexWithDefault
+from sys import getrefcount
 from uiModules.KeyboardFilter import KeyListFilter
 nodeTypes = enum('category', 'data')
 
@@ -83,11 +84,12 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
         self.categoryDataLookup = {(QtCore.Qt.DisplayRole, 0): lambda node: node.content}
         self.categoryDataAllColLookup = {QtCore.Qt.FontRole: lambda node: self.fontLookup.get(getattr(node, 'isBold', False))}
         self.setDataLookup = {} #overwrite to set data. key: (role, col). val: function that takes (index, value)
-        self.flagsLookup = {
-                            0: QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable #default, normally overwritten
-                            }
+        self.categorySetDataLookup = {} #overwrite to set data. key: (role, col). val: function that takes (index, value)
+        self.flagsLookup = {0: QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable} #default, normally overwritten
+        self.categoryFlagsLookup = {0: QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable}
         self.numColumns = 1 #Overwrite with number of columns
         self.allowReordering = False #If True, nodes can be moved around
+        self.allowDeletion = False #If True, nodes can be deleted
         self.root = Node(parent=None, id='', nodeType=nodeTypes.category, content=None)
         self.nodeDict = {'': self.root} #dictionary of all nodes, with string indicating hierarchy to that item
         #contentList is a list of objects. Can be anything. If the objects have a category attribute, a tree will result.
@@ -137,7 +139,7 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
     def setData(self, index, value, role):
         node, col = self.getLocation(index)
         if node.nodeType==nodeTypes.category:
-            return None
+            return self.categorySetDataLookup.get( (role, col), lambda index, value: False)(index, value)
         else:
             return self.setDataLookup.get( (role, col), lambda index, value: False)(index, value)
 
@@ -149,7 +151,7 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
     def flags(self, index ):
         node, col = self.getLocation(index)
         if node.nodeType==nodeTypes.category:
-            return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
+            return self.categoryFlagsLookup.get(col, QtCore.Qt.NoItemFlags)
         else:
             return self.flagsLookup.get(col, QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable)
 
@@ -162,18 +164,46 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
             name = getattr(content, self.nodeNameAttr, str(listIndex))
             self.addNode(content, name)
 
-    def addNode(self, content, name):
-        """Add a node to the tree containing 'content' with id 'id'"""
+    def addNode(self, content, name=None):
+        """Add a node to the tree containing 'content' with name 'name'. Return new Node."""
+        if not name:
+            name = getattr(content, self.nodeNameAttr, '')
         name = str(name)
         categories = getattr(content, self.categoriesAttr, None)
         categories = [categories] if categories.__class__==str else categories # make a list of one if it's a string
         categories = None if categories.__class__!=list else categories #no categories if it's not a list
         categories = map(str, categories) if categories else categories #turn into list of strings
         parent = self.makeCategoryNodes(categories) if categories else self.root
-        id, nodeType = parent.id+'_'+name if parent.id else name, nodeTypes.data
-        node = Node(parent, id, nodeType, content)
+        nodeID = parent.id+'_'+name if parent.id else name
+        nodeType = nodeTypes.data
+        if nodeID in self.nodeDict: #nodeIDs must be unique. If the nodeID has already been used, we add "_n" to the ID and increment 'n' until we find an available ID
+            count=0
+            baseNodeID = nodeID
+            while nodeID in self.nodeDict:
+                nodeID = baseNodeID+"_{0}".format(count)
+                count+=1
+        node = Node(parent, nodeID, nodeType, content)
         self.addRow(parent, node)
-        self.nodeDict[id] = node
+        self.nodeDict[nodeID] = node
+        return node
+
+    def removeNode(self, node):
+        """Remove the specified node from the tree"""
+        if self.allowDeletion and node!=self.root:
+            dataNodes = self.getDataNodes(node)
+            okToDelete = [getattr(dataNode.content, 'okToDelete', True) for dataNode in dataNodes]
+            if all(okToDelete):
+                for childNode in node.children:
+                    self.removeNode(childNode) #recursively delete children
+                parent = node.parent
+                row = node.row
+                nodeID = node.id
+                parentIndex = self.indexFromNode(parent)
+                self.beginRemoveRows(parentIndex, row, row)
+                del parent.children[row]
+                del self.nodeDict[nodeID]
+                del node
+                self.endRemoveRows()
 
     def makeCategoryNodes(self, categories):
         """Recursively creates tree nodes from the provided list of categories"""
@@ -187,13 +217,18 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
         return self.nodeDict[key]
 
     def addRow(self, parent, node):
-        """Add 'node' the table under 'parent'"""
+        """Add 'node' to the table under 'parent'"""
         parentIndex = self.indexFromNode(parent)
         self.beginInsertRows(parentIndex, parent.childCount(), parent.childCount())
         parent.children.append(node)
         self.endInsertRows()
 
     def nodeFromContent(self, content):
+        """Get the node associated with the specified content.
+
+        This is an inefficient O(n) search. However, there is no other way to do this reverse lookup without
+        making assumptions about the nature of 'content'. Child classes can re-implement this function to
+        make it more efficient."""
         success=False
         for node in self.nodeDict.itervalues():
             if node.content==content:
@@ -202,14 +237,11 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
         return node if success else None
 
     def nodeFromId(self, id):
-        success=False
-        for node in self.nodeDict.itervalues():
-            if node.id==id:
-                success=True
-                break
-        return node if success else None
+        """return the node associated with the specified node id"""
+        return self.nodeDict.get(id)
 
     def clear(self):
+        """clear the tree content"""
         self.root.children = []
         self.nodeDict = {'': self.root}
 
@@ -224,33 +256,120 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
                 node.row += delta
                 self.endMoveRows()
 
+    def contentFromIndex(self, index):
+        """Get the content associated with the given index"""
+        return self.nodeFromIndex(index).content
+
+    def getTopNode(self, node):
+        """Return the highest level category node before root in the tree above node"""
+        return None if node is self.root else (node if node.parent is self.root else self.getTopNode(node.parent)) #recursive
+
+    def getFirstDataNode(self, node):
+        """Return the first data node under (and including) node"""
+        return node if node.nodeType==nodeTypes.data else (self.getFirstDataNode(node.children[0]) if node.children else None)
+
+    def getLastDataNode(self, node):
+        """Return the last data node under (and including) node"""
+        return node if node.nodeType==nodeTypes.data else (self.getLastDataNode(node.children[-1]) if node.children else None)
+
+    def getDataNodes(self, node):
+        """Get a list of all data nodes under (and including) node"""
+        dataNodes = []
+        if node.nodeType==nodeTypes.data:
+            dataNodes=[node]
+        else:
+            for childNode in node.children:
+                childSubNodes = self.getDataNodes(childNode) #recursive step
+                if childSubNodes:
+                    dataNodes.extend(childSubNodes)
+        return dataNodes
+
 
 class CategoryTreeView(QtGui.QTreeView):
     """Class for viewing category trees"""
     def __init__(self, parent=None):
         super(CategoryTreeView, self).__init__(parent)
-        self.filter = KeyListFilter( [QtCore.Qt.Key_PageUp, QtCore.Qt.Key_PageDown], [QtCore.Qt.Key_B] )
-        self.filter.keyPressed.connect(self.onReorder)
-        self.filter.controlKeyPressed.connect(self.onBold)
+        self.filter = KeyListFilter( [QtCore.Qt.Key_PageUp, QtCore.Qt.Key_PageDown, QtCore.Qt.Key_Delete], [QtCore.Qt.Key_B] )
+        self.filter.keyPressed.connect(self.onKey)
+        self.filter.controlKeyPressed.connect(self.onControl)
         self.installEventFilter(self.filter)
 
+    def onKey(self, key):
+        if key==QtCore.Qt.Key_Delete:
+            self.onDelete()
+        elif key in [QtCore.Qt.Key_PageUp, QtCore.Qt.Key_PageDown]:
+            up = key==QtCore.Qt.Key_PageUp
+            self.onReorder(up)
+
+    def onControl(self, key):
+        if key==QtCore.Qt.Key_B:
+            self.onBold()
+
     def onBold(self):
-        indexes = self.selectionModel().selectedRows(0)
+        indexList = self.selectedRowIndexes()
         model=self.model()
-        for leftIndex in indexes:
+        for leftIndex in indexList:
             node=model.nodeFromIndex(leftIndex)
             node.isBold = not node.isBold if hasattr(node,'isBold') else True
             rightIndex = model.indexFromNode(node, model.numColumns-1)
             model.dataChanged.emit(leftIndex, rightIndex)
 
-    def onReorder(self, key):
-        if self.model().allowReordering and key in [QtCore.Qt.Key_PageUp, QtCore.Qt.Key_PageDown]:
-            up = key==QtCore.Qt.Key_PageUp
-            indexList = self.selectionModel().selectedRows(0)
-            indexList.sort(key=lambda index: index.row())
+    def onDelete(self):
+        model=self.model()
+        if model.allowDeletion:
+            selectedNodes = self.selectedNodes()
+            topNodeList = [node for node in selectedNodes if node.parent not in selectedNodes]
+            for node in topNodeList:
+                if node!=model.root: #don't delete root
+                    model.removeNode(node)
+
+    def onReorder(self, up):
+        if self.model().allowReordering:
+            indexList = self.selectedRowIndexes()
             if not up: indexList.reverse()
             for index in indexList:
                 self.model().moveRow(index, up)
+
+    def selectedRowIndexes(self, col=0):
+        """Returns a list of unique model indexes corresponding to column 'col' of each selected element, sorted by row.
+
+        Built-in selectionModel().selectedRows function seems to have a bug"""
+        return [self.model().indexFromNode(node, col) for node in self.selectedNodes()]
+
+    def selectedNodes(self):
+        """Same as selectedRows, but returns list of nodes rather than list of model indexes"""
+        allIndexList = self.selectedIndexes()
+        nodes = set()
+        for index in allIndexList:
+            node = self.model().nodeFromIndex(index)
+            nodes.add(node)
+        nodeList = list(nodes)
+        nodeList.sort(key=lambda node: node.row)
+        return nodeList
+
+    def selectedTopIndexes(self, col=0):
+        """Returns list of unique top level model indexes corresponding to column 'col' of the top level of each selected element, sorted by row."""
+        return [self.model().indexFromNode(node, col) for node in self.selectedTopNodes()]
+
+    def selectedTopNodes(self):
+        """Same as selectedTopIndexes, but returns list of nodes rather than list of model indexes"""
+        nodeList = self.selectedNodes()
+        topNodeList = []
+        for node in nodeList:
+            topNode=self.model().getTopNode(node)
+            if topNode not in topNodeList:
+                topNodeList.append(topNode)
+        return topNodeList
+
+    def selectedDataNodes(self):
+        """Returns list of first data nodes of selected nodes"""
+        nodeList = self.selectedNodes()
+        dataNodeList = []
+        for node in nodeList:
+            firstDataNode=self.model().getFirstDataNode(node)
+            if firstDataNode:
+                dataNodeList.append(firstDataNode)
+        return dataNodeList
 
     def treeState(self):
         """Returns tree state for saving config"""
@@ -275,7 +394,8 @@ class CategoryTreeView(QtGui.QTreeView):
             self.model().beginResetModel()
             for id, childList in idTree.iteritems():
                 node=self.model().nodeFromId(id)
-                node.children.sort(key=lambda node: self.indexWithDefault(childList, node.id))
+                if node:
+                    node.children.sort(key=lambda node: indexWithDefault(childList, node.id))
             self.model().endResetModel()
         if columnWidths:
             self.header().restoreState(columnWidths)
@@ -291,9 +411,6 @@ class CategoryTreeView(QtGui.QTreeView):
                     node = self.model().nodeDict[key]
                     node.isBold=True
 
-    def indexWithDefault(self, itemList, item):
-        """Return the index of item in itemList if it's present, otherwise -1"""
-        return itemList.index(item) if item in itemList else -1
 
 if __name__ == "__main__":
     import sys
@@ -313,6 +430,7 @@ if __name__ == "__main__":
             super(myModel, self).__init__(contentList,parent,categoriesAttr,nodeNameAttr)
             self.numColumns=2
             self.allowReordering=True
+            self.allowDeletion=True
             self.headerLookup.update({
                     (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, 0): 'Name',
                     (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, 1): 'Value'
@@ -339,6 +457,7 @@ if __name__ == "__main__":
             return True
 
     model = myModel([myContent('hot dog', 3, ['Foods', 'Red'], True, 'qq',isBold=True),
+                     myContent('grapes', 3, ['Foods'], True, 'qq',isBold=True),
                      myContent('strawberry', 4, ['Foods', 'Red']),
                      myContent('blueberry', 12, ['Foods', 'Blue'],isBold=True),
                      myContent('golf',2,['Games', 'ball based'],True,'abc'),

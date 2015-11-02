@@ -361,6 +361,20 @@ the wait condition once the action has been done.</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="scripting.Script.Script.closeTrace">
+<code class="descname">closeTrace</code><span class="sig-paren">(</span><em>traceName</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/scripting/Script.html#Script.closeTrace"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#scripting.Script.Script.closeTrace" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finalize trace. Registers in the measurement log and saves. No new data can be added to the trace.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>traceName</strong> (<em>str</em>) &#8211; name of trace to close</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="scripting.Script.Script.createTrace">
 <code class="descname">createTrace</code><span class="sig-paren">(</span><em>traceName</em>, <em>plotName</em>, <em>xUnit=''</em>, <em>xLabel=''</em>, <em>comment=''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/scripting/Script.html#Script.createTrace"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#scripting.Script.Script.createTrace" title="Permalink to this definition">¶</a></dt>
 <dd><p>create a new trace</p>
@@ -814,6 +828,12 @@ GUI.</p>
 <dt id="scripting.ScriptHandler.ScriptHandler.plotList">
 <code class="descname">plotList</code><span class="sig-paren">(</span><em>xList</em>, <em>yList</em>, <em>traceName</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/scripting/ScriptHandler.html#ScriptHandler.plotList"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#scripting.ScriptHandler.ScriptHandler.plotList" title="Permalink to this definition">¶</a></dt>
 <dd><p>Plot [x1, x2,...], [y1, y2,...] to traceName</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="scripting.ScriptHandler.ScriptHandler.registerMeasurement">
+<code class="descname">registerMeasurement</code><span class="sig-paren">(</span><em>plottedTrace</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/scripting/ScriptHandler.html#ScriptHandler.registerMeasurement"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#scripting.ScriptHandler.ScriptHandler.registerMeasurement" title="Permalink to this definition">¶</a></dt>
+<dd><p>register a script created trace in the measurement log</p>
 </dd></dl>
 
 <dl class="method">

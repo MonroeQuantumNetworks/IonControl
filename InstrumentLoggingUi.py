@@ -91,7 +91,7 @@ class InstrumentLoggingUi(WidgetContainerBase,WidgetContainerForm):
         
         self.preferencesUi = PreferencesUi(config, self)
         self.preferencesUi.setupUi(self.preferencesUi)
-        self.preferencesUiDock = QtGui.QDockWidget("Preferences")
+        self.preferencesUiDock = QtGui.QDockWidget("Print Preferences")
         self.preferencesUiDock.setWidget(self.preferencesUi)
         self.preferencesUiDock.setObjectName("_preferencesUi")
         self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.preferencesUiDock)
@@ -101,12 +101,18 @@ class InstrumentLoggingUi(WidgetContainerBase,WidgetContainerForm):
         self.penicons = pens.penicons().penicons()
         self.traceui = Traceui.Traceui(self.penicons,self.config,"Main",self.plotDict)
         self.traceui.setupUi(self.traceui)
-        self.setupAsDockWidget(self.traceui, "Traces", QtCore.Qt.LeftDockWidgetArea)
+        setattr(self.traceui, 'autoSaveTraces', self.config.get('autoSaveTraces', False))
+        self.traceui.autoSaveAction = QtGui.QAction('Autosave traces', self.traceui)
+        self.traceui.autoSaveAction.setCheckable(True)
+        self.traceui.autoSaveAction.setChecked(self.traceui.autoSaveTraces)
+        self.traceui.autoSaveAction.triggered.connect(lambda checked: setattr(self.traceui, 'autoSaveTraces', checked))
+        self.traceui.addAction(self.traceui.autoSaveAction)
+        traceuiDock = self.setupAsDockWidget(self.traceui, "Traces", QtCore.Qt.LeftDockWidgetArea)
 
         # new fit widget
         self.fitWidget = FitUi(self.traceui,self.config,"Main")
         self.fitWidget.setupUi(self.fitWidget)
-        self.fitWidgetDock = self.setupAsDockWidget(self.fitWidget, "Fit", QtCore.Qt.LeftDockWidgetArea)
+        self.fitWidgetDock = self.setupAsDockWidget(self.fitWidget, "Fit", QtCore.Qt.LeftDockWidgetArea, stackBelow=traceuiDock)
 
         self.instrumentLoggingHandler = InstrumentLoggingHandler(self.traceui, self.plotDict, self.config, 'externalInput')
 
@@ -286,7 +292,8 @@ class InstrumentLoggingUi(WidgetContainerBase,WidgetContainerForm):
         self.config['pyqtgraph-dockareastate'] = self.area.saveState()
         self.config['Settings.loggingLevel'] = self.loggingLevel
         self.config['Settings.consoleMaximumLinesNew'] = self.consoleMaximumLines
-        self.config['Settings.consoleEnable'] = self.consoleEnable 
+        self.config['Settings.consoleEnable'] = self.consoleEnable
+        self.config['autoSaveTraces'] = self.traceui.autoSaveTraces
         self.ExternalParametersSelectionUi.saveConfig()
         self.instrumentLoggingHandler.saveConfig()
         self.instrumentLoggingQueryUi.saveConfig()
