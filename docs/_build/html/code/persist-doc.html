@@ -1,0 +1,2068 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>persist &mdash; IonControl 0.8 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="IonControl 0.8 documentation" href="../index.html"/>
+        <link rel="up" title="Code Documentation" href="codeDocs.html"/>
+        <link rel="next" title="pppCompiler" href="pppCompiler-doc.html"/>
+        <link rel="prev" title="mylogging" href="mylogging-doc.html"/> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> IonControl
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.8
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FPGAhardware.html">Hardware</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../manual/experimentUi_manual.html">User Manual</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../manual/instrumentLoggerUi_manual.html">Instrument Logger User Manual</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="codeDocs.html">Code Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="AWG-doc.html">AWG</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ProjectConfig-doc.html">ProjectConfig</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dedicatedCounters-doc.html">dedicatedCounters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="digitalLock-doc.html">digitalLock</a></li>
+<li class="toctree-l2"><a class="reference internal" href="externalParameter-doc.html">externalParameter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fit-doc.html">fit</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gateSequence-doc.html">gateSequence</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gui-doc.html">gui</a></li>
+<li class="toctree-l2"><a class="reference internal" href="logicAnalyzer-doc.html">logicAnalyzer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules-doc.html">modules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mylogging-doc.html">mylogging</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="">persist</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#module-persist.configshelve">configshelve</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-persist.DatabaseConnectionSettings">DatabaseConnectionSettings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-persist.LoadingEvent">LoadingEvent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-persist.MeasurementLog">MeasurementLog</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-persist.ValueHistory">ValueHistory</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pppCompiler-doc.html">pppCompiler</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pulseProgram-doc.html">pulseProgram</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pulser-doc.html">pulser</a></li>
+<li class="toctree-l2"><a class="reference internal" href="scan-doc.html">scan</a></li>
+<li class="toctree-l2"><a class="reference internal" href="scripting-doc.html">scripting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="trace-doc.html">trace</a></li>
+<li class="toctree-l2"><a class="reference internal" href="uiModules-doc.html">uiModules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="voltageControl-doc.html">voltageControl</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DigitalLockUi-doc.html">DigitalLockUi</a></li>
+<li class="toctree-l2"><a class="reference internal" href="InstrumentLoggingUi-doc.html">InstrumentLoggingUi</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ExperimentUi-doc.html">ExperimentUi</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../index.html">IonControl</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="codeDocs.html">Code Documentation</a> &raquo;</li>
+      
+    <li>persist</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/code/persist-doc.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="persist">
+<h1>persist<a class="headerlink" href="#persist" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-persist.configshelve">
+<span id="configshelve"></span><h2>configshelve<a class="headerlink" href="#module-persist.configshelve" title="Permalink to this headline">¶</a></h2>
+<p>Created on Sun Dec 30 22:39:45 2012</p>
+<p>Wrapper for python shelve module to be able to use it with the with expression.
+It also includes default directory for storing of config files.</p>
+<p>&#64;author: pmaunz</p>
+<dl class="class">
+<dt id="persist.configshelve.ShelveEntry">
+<em class="property">class </em><code class="descname">ShelveEntry</code><span class="sig-paren">(</span><em>key</em>, <em>value</em>, <em>category='main'</em><span class="sig-paren">)</span><a class="headerlink" href="#persist.configshelve.ShelveEntry" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="attribute">
+<dt id="persist.configshelve.ShelveEntry.category">
+<code class="descname">category</code><a class="headerlink" href="#persist.configshelve.ShelveEntry.category" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="persist.configshelve.ShelveEntry.key">
+<code class="descname">key</code><a class="headerlink" href="#persist.configshelve.ShelveEntry.key" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="persist.configshelve.ShelveEntry.pvalue">
+<code class="descname">pvalue</code><a class="headerlink" href="#persist.configshelve.ShelveEntry.pvalue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="persist.configshelve.ShelveEntry.value">
+<code class="descname">value</code><a class="headerlink" href="#persist.configshelve.ShelveEntry.value" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="persist.configshelve.configshelve">
+<em class="property">class </em><code class="descname">configshelve</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="headerlink" href="#persist.configshelve.configshelve" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="persist.configshelve.configshelve.close">
+<code class="descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#persist.configshelve.configshelve.close" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="persist.configshelve.configshelve.get">
+<code class="descname">get</code><span class="sig-paren">(</span><em>key</em>, <em>default=None</em><span class="sig-paren">)</span><a class="headerlink" href="#persist.configshelve.configshelve.get" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="persist.configshelve.configshelve.next">
+<code class="descname">next</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#persist.configshelve.configshelve.next" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="persist.configshelve.configshelve.open">
+<code class="descname">open</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#persist.configshelve.configshelve.open" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="persist.configshelve.configshelve.saveConfig">
+<code class="descname">saveConfig</code><span class="sig-paren">(</span><em>copyTo=None</em><span class="sig-paren">)</span><a class="headerlink" href="#persist.configshelve.configshelve.saveConfig" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-persist.DatabaseConnectionSettings">
+<span id="databaseconnectionsettings"></span><h2>DatabaseConnectionSettings<a class="headerlink" href="#module-persist.DatabaseConnectionSettings" title="Permalink to this headline">¶</a></h2>
+<p>Created on Dec 2, 2014</p>
+<p>&#64;author: pmaunz</p>
+<dl class="class">
+<dt id="persist.DatabaseConnectionSettings.DatabaseConnectionSettings">
+<em class="property">class </em><code class="descname">DatabaseConnectionSettings</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#persist.DatabaseConnectionSettings.DatabaseConnectionSettings" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class to encapsulate database connection settings</p>
+<dl class="attribute">
+<dt id="persist.DatabaseConnectionSettings.DatabaseConnectionSettings.connectionString">
+<code class="descname">connectionString</code><a class="headerlink" href="#persist.DatabaseConnectionSettings.DatabaseConnectionSettings.connectionString" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create database connection string</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-persist.LoadingEvent">
+<span id="loadingevent"></span><h2>LoadingEvent<a class="headerlink" href="#module-persist.LoadingEvent" title="Permalink to this headline">¶</a></h2>
+<p>Created on Dec 28, 2014</p>
+<p>&#64;author: pmaunz</p>
+<dl class="class">
+<dt id="persist.LoadingEvent.LoadingEvent">
+<em class="property">class </em><code class="descname">LoadingEvent</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#persist.LoadingEvent.LoadingEvent" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="attribute">
+<dt id="persist.LoadingEvent.LoadingEvent.ionCount">
+<code class="descname">ionCount</code><a class="headerlink" href="#persist.LoadingEvent.LoadingEvent.ionCount" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="persist.LoadingEvent.LoadingEvent.loadingDuration">
+<code class="descname">loadingDuration</code><a class="headerlink" href="#persist.LoadingEvent.LoadingEvent.loadingDuration" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="persist.LoadingEvent.LoadingEvent.loadingProfile">
+<code class="descname">loadingProfile</code><a class="headerlink" href="#persist.LoadingEvent.LoadingEvent.loadingProfile" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="persist.LoadingEvent.LoadingEvent.trappingDuration">
+<code class="descname">trappingDuration</code><a class="headerlink" href="#persist.LoadingEvent.LoadingEvent.trappingDuration" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="persist.LoadingEvent.LoadingEvent.trappingTime">
+<code class="descname">trappingTime</code><a class="headerlink" href="#persist.LoadingEvent.LoadingEvent.trappingTime" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="persist.LoadingEvent.LoadingEvent.valid">
+<code class="descname">valid</code><a class="headerlink" href="#persist.LoadingEvent.LoadingEvent.valid" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="persist.LoadingEvent.LoadingHistory">
+<em class="property">class </em><code class="descname">LoadingHistory</code><span class="sig-paren">(</span><em>dbConnection</em><span class="sig-paren">)</span><a class="headerlink" href="#persist.LoadingEvent.LoadingHistory" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="persist.LoadingEvent.LoadingHistory.addLoadingEvent">
+<code class="descname">addLoadingEvent</code><span class="sig-paren">(</span><em>loadingEvent</em><span class="sig-paren">)</span><a class="headerlink" href="#persist.LoadingEvent.LoadingHistory.addLoadingEvent" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="persist.LoadingEvent.LoadingHistory.close">
+<code class="descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#persist.LoadingEvent.LoadingHistory.close" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="persist.LoadingEvent.LoadingHistory.commit">
+<code class="descname">commit</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#persist.LoadingEvent.LoadingHistory.commit" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="persist.LoadingEvent.LoadingHistory.getProfiles">
+<code class="descname">getProfiles</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#persist.LoadingEvent.LoadingHistory.getProfiles" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="persist.LoadingEvent.LoadingHistory.lastEvent">
+<code class="descname">lastEvent</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#persist.LoadingEvent.LoadingHistory.lastEvent" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="persist.LoadingEvent.LoadingHistory.loadingEvents">
+<code class="descname">loadingEvents</code><a class="headerlink" href="#persist.LoadingEvent.LoadingHistory.loadingEvents" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="persist.LoadingEvent.LoadingHistory.open">
+<code class="descname">open</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#persist.LoadingEvent.LoadingHistory.open" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="persist.LoadingEvent.LoadingHistory.query">
+<code class="descname">query</code><span class="sig-paren">(</span><em>fromTime</em>, <em>toTime</em>, <em>loadingProfile</em><span class="sig-paren">)</span><a class="headerlink" href="#persist.LoadingEvent.LoadingHistory.query" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="persist.LoadingEvent.LoadingHistory.setTrappingDuration">
+<code class="descname">setTrappingDuration</code><span class="sig-paren">(</span><em>duration</em><span class="sig-paren">)</span><a class="headerlink" href="#persist.LoadingEvent.LoadingHistory.setTrappingDuration" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-persist.MeasurementLog">
+<span id="measurementlog"></span><h2>MeasurementLog<a class="headerlink" href="#module-persist.MeasurementLog" title="Permalink to this headline">¶</a></h2>
+<p>Created on Nov 21, 2014</p>
+<p>&#64;author: pmaunz</p>
+<dl class="class">
+<dt id="persist.MeasurementLog.Measurement">
+<em class="property">class </em><code class="descname">Measurement</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#persist.MeasurementLog.Measurement" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="persist.MeasurementLog.Measurement.addResult">
+<code class="descname">addResult</code><span class="sig-paren">(</span><em>result</em><span class="sig-paren">)</span><a class="headerlink" href="#persist.MeasurementLog.Measurement.addResult" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="persist.MeasurementLog.Measurement.comment">
+<code class="descname">comment</code><a class="headerlink" href="#persist.MeasurementLog.Measurement.comment" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="persist.MeasurementLog.Measurement.duration">
+<code class="descname">duration</code><a class="headerlink" href="#persist.MeasurementLog.Measurement.duration" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="persist.MeasurementLog.Measurement.evaluation">
+<code class="descname">evaluation</code><a class="headerlink" href="#persist.MeasurementLog.Measurement.evaluation" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="persist.MeasurementLog.Measurement.failedAnalysis">
+<code class="descname">failedAnalysis</code><a class="headerlink" href="#persist.MeasurementLog.Measurement.failedAnalysis" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="persist.MeasurementLog.Measurement.filename">
+<code class="descname">filename</code><a class="headerlink" href="#persist.MeasurementLog.Measurement.filename" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="persist.MeasurementLog.Measurement.id">
+<code class="descname">id</code><a class="headerlink" href="#persist.MeasurementLog.Measurement.id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="persist.MeasurementLog.Measurement.longComment">
+<code class="descname">longComment</code><a class="headerlink" href="#persist.MeasurementLog.Measurement.longComment" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="persist.MeasurementLog.Measurement.parameterByName">
+<code class="descname">parameterByName</code><span class="sig-paren">(</span><em>space</em>, <em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#persist.MeasurementLog.Measurement.parameterByName" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="persist.MeasurementLog.Measurement.parameters">
+<code class="descname">parameters</code><a class="headerlink" href="#persist.MeasurementLog.Measurement.parameters" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="persist.MeasurementLog.Measurement.plottedTraceList">
+<code class="descname">plottedTraceList</code><a class="headerlink" href="#persist.MeasurementLog.Measurement.plottedTraceList" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="persist.MeasurementLog.Measurement.resultByName">
+<code class="descname">resultByName</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#persist.MeasurementLog.Measurement.resultByName" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="persist.MeasurementLog.Measurement.results">
+<code class="descname">results</code><a class="headerlink" href="#persist.MeasurementLog.Measurement.results" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="persist.MeasurementLog.Measurement.scanName">
+<code class="descname">scanName</code><a class="headerlink" href="#persist.MeasurementLog.Measurement.scanName" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="persist.MeasurementLog.Measurement.scanPP">
+<code class="descname">scanPP</code><a class="headerlink" href="#persist.MeasurementLog.Measurement.scanPP" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="persist.MeasurementLog.Measurement.scanParameter">
+<code class="descname">scanParameter</code><a class="headerlink" href="#persist.MeasurementLog.Measurement.scanParameter" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="persist.MeasurementLog.Measurement.scanTarget">
+<code class="descname">scanTarget</code><a class="headerlink" href="#persist.MeasurementLog.Measurement.scanTarget" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="persist.MeasurementLog.Measurement.scanType">
+<code class="descname">scanType</code><a class="headerlink" href="#persist.MeasurementLog.Measurement.scanType" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="persist.MeasurementLog.Measurement.startDate">
+<code class="descname">startDate</code><a class="headerlink" href="#persist.MeasurementLog.Measurement.startDate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="persist.MeasurementLog.Measurement.study">
+<code class="descname">study</code><a class="headerlink" href="#persist.MeasurementLog.Measurement.study" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="persist.MeasurementLog.Measurement.study_id">
+<code class="descname">study_id</code><a class="headerlink" href="#persist.MeasurementLog.Measurement.study_id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="persist.MeasurementLog.MeasurementContainer">
+<em class="property">class </em><code class="descname">MeasurementContainer</code><span class="sig-paren">(</span><em>dbConnection</em><span class="sig-paren">)</span><a class="headerlink" href="#persist.MeasurementLog.MeasurementContainer" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="persist.MeasurementLog.MeasurementContainer.addMeasurement">
+<code class="descname">addMeasurement</code><span class="sig-paren">(</span><em>measurement</em><span class="sig-paren">)</span><a class="headerlink" href="#persist.MeasurementLog.MeasurementContainer.addMeasurement" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="persist.MeasurementLog.MeasurementContainer.close">
+<code class="descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#persist.MeasurementLog.MeasurementContainer.close" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="persist.MeasurementLog.MeasurementContainer.commit">
+<code class="descname">commit</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#persist.MeasurementLog.MeasurementContainer.commit" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="persist.MeasurementLog.MeasurementContainer.getSpace">
+<code class="descname">getSpace</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#persist.MeasurementLog.MeasurementContainer.getSpace" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="persist.MeasurementLog.MeasurementContainer.open">
+<code class="descname">open</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#persist.MeasurementLog.MeasurementContainer.open" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="persist.MeasurementLog.MeasurementContainer.query">
+<code class="descname">query</code><span class="sig-paren">(</span><em>fromTime</em>, <em>toTime</em>, <em>scanNameFilter=None</em><span class="sig-paren">)</span><a class="headerlink" href="#persist.MeasurementLog.MeasurementContainer.query" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="persist.MeasurementLog.MeasurementContainer.refreshLookups">
+<code class="descname">refreshLookups</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#persist.MeasurementLog.MeasurementContainer.refreshLookups" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load the basic short tables into memory
+those are: Space</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="persist.MeasurementLog.MeasurementContainer.scanNames">
+<code class="descname">scanNames</code><a class="headerlink" href="#persist.MeasurementLog.MeasurementContainer.scanNames" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="persist.MeasurementLog.MeasurementContainer.setScanNameFilter">
+<code class="descname">setScanNameFilter</code><span class="sig-paren">(</span><em>scanNameFilter</em><span class="sig-paren">)</span><a class="headerlink" href="#persist.MeasurementLog.MeasurementContainer.setScanNameFilter" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="persist.MeasurementLog.Parameter">
+<em class="property">class </em><code class="descname">Parameter</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#persist.MeasurementLog.Parameter" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="attribute">
+<dt id="persist.MeasurementLog.Parameter.definition">
+<code class="descname">definition</code><a class="headerlink" href="#persist.MeasurementLog.Parameter.definition" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="persist.MeasurementLog.Parameter.id">
+<code class="descname">id</code><a class="headerlink" href="#persist.MeasurementLog.Parameter.id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="persist.MeasurementLog.Parameter.manual">
+<code class="descname">manual</code><a class="headerlink" href="#persist.MeasurementLog.Parameter.manual" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="persist.MeasurementLog.Parameter.measurement">
+<code class="descname">measurement</code><a class="headerlink" href="#persist.MeasurementLog.Parameter.measurement" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="persist.MeasurementLog.Parameter.measurement_id">
+<code class="descname">measurement_id</code><a class="headerlink" href="#persist.MeasurementLog.Parameter.measurement_id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="persist.MeasurementLog.Parameter.name">
+<code class="descname">name</code><a class="headerlink" href="#persist.MeasurementLog.Parameter.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="persist.MeasurementLog.Parameter.space">
+<code class="descname">space</code><a class="headerlink" href="#persist.MeasurementLog.Parameter.space" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="persist.MeasurementLog.Parameter.space_id">
+<code class="descname">space_id</code><a class="headerlink" href="#persist.MeasurementLog.Parameter.space_id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="persist.MeasurementLog.Parameter.unit">
+<code class="descname">unit</code><a class="headerlink" href="#persist.MeasurementLog.Parameter.unit" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="persist.MeasurementLog.Parameter.value">
+<code class="descname">value</code><a class="headerlink" href="#persist.MeasurementLog.Parameter.value" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="persist.MeasurementLog.Result">
+<em class="property">class </em><code class="descname">Result</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#persist.MeasurementLog.Result" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="attribute">
+<dt id="persist.MeasurementLog.Result.bottom">
+<code class="descname">bottom</code><a class="headerlink" href="#persist.MeasurementLog.Result.bottom" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="persist.MeasurementLog.Result.id">
+<code class="descname">id</code><a class="headerlink" href="#persist.MeasurementLog.Result.id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="persist.MeasurementLog.Result.manual">
+<code class="descname">manual</code><a class="headerlink" href="#persist.MeasurementLog.Result.manual" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="persist.MeasurementLog.Result.measurement">
+<code class="descname">measurement</code><a class="headerlink" href="#persist.MeasurementLog.Result.measurement" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="persist.MeasurementLog.Result.measurement_id">
+<code class="descname">measurement_id</code><a class="headerlink" href="#persist.MeasurementLog.Result.measurement_id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="persist.MeasurementLog.Result.name">
+<code class="descname">name</code><a class="headerlink" href="#persist.MeasurementLog.Result.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="persist.MeasurementLog.Result.top">
+<code class="descname">top</code><a class="headerlink" href="#persist.MeasurementLog.Result.top" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="persist.MeasurementLog.Result.unit">
+<code class="descname">unit</code><a class="headerlink" href="#persist.MeasurementLog.Result.unit" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="persist.MeasurementLog.Result.value">
+<code class="descname">value</code><a class="headerlink" href="#persist.MeasurementLog.Result.value" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="persist.MeasurementLog.Space">
+<em class="property">class </em><code class="descname">Space</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#persist.MeasurementLog.Space" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="attribute">
+<dt id="persist.MeasurementLog.Space.id">
+<code class="descname">id</code><a class="headerlink" href="#persist.MeasurementLog.Space.id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="persist.MeasurementLog.Space.name">
+<code class="descname">name</code><a class="headerlink" href="#persist.MeasurementLog.Space.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="persist.MeasurementLog.Space.parameters">
+<code class="descname">parameters</code><a class="headerlink" href="#persist.MeasurementLog.Space.parameters" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="persist.MeasurementLog.Study">
+<em class="property">class </em><code class="descname">Study</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#persist.MeasurementLog.Study" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="attribute">
+<dt id="persist.MeasurementLog.Study.endDate">
+<code class="descname">endDate</code><a class="headerlink" href="#persist.MeasurementLog.Study.endDate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="persist.MeasurementLog.Study.id">
+<code class="descname">id</code><a class="headerlink" href="#persist.MeasurementLog.Study.id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="persist.MeasurementLog.Study.measurements">
+<code class="descname">measurements</code><a class="headerlink" href="#persist.MeasurementLog.Study.measurements" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="persist.MeasurementLog.Study.name">
+<code class="descname">name</code><a class="headerlink" href="#persist.MeasurementLog.Study.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="persist.MeasurementLog.Study.startDate">
+<code class="descname">startDate</code><a class="headerlink" href="#persist.MeasurementLog.Study.startDate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="persist.MeasurementLog.relationship">
+<code class="descname">relationship</code><span class="sig-paren">(</span><em>argument</em>, <em>secondary=None</em>, <em>primaryjoin=None</em>, <em>secondaryjoin=None</em>, <em>foreign_keys=None</em>, <em>uselist=None</em>, <em>order_by=False</em>, <em>backref=None</em>, <em>back_populates=None</em>, <em>post_update=False</em>, <em>cascade=False</em>, <em>extension=None</em>, <em>viewonly=False</em>, <em>lazy=True</em>, <em>collection_class=None</em>, <em>passive_deletes=False</em>, <em>passive_updates=True</em>, <em>remote_side=None</em>, <em>enable_typechecks=True</em>, <em>join_depth=None</em>, <em>comparator_factory=None</em>, <em>single_parent=False</em>, <em>innerjoin=False</em>, <em>distinct_target_key=None</em>, <em>doc=None</em>, <em>active_history=False</em>, <em>cascade_backrefs=True</em>, <em>load_on_pending=False</em>, <em>strategy_class=None</em>, <em>_local_remote_pairs=None</em>, <em>query_class=None</em>, <em>info=None</em><span class="sig-paren">)</span><a class="headerlink" href="#persist.MeasurementLog.relationship" title="Permalink to this definition">¶</a></dt>
+<dd><p>Provide a relationship between two mapped classes.</p>
+<p>This corresponds to a parent-child or associative table relationship.
+The constructed class is an instance of
+<code class="xref py py-class docutils literal"><span class="pre">RelationshipProperty</span></code>.</p>
+<p>A typical <a class="reference internal" href="#persist.MeasurementLog.relationship" title="persist.MeasurementLog.relationship"><code class="xref py py-func docutils literal"><span class="pre">relationship()</span></code></a>, used in a classical mapping:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">mapper</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">properties</span><span class="o">=</span><span class="p">{</span>
+  <span class="s">&#39;children&#39;</span><span class="p">:</span> <span class="n">relationship</span><span class="p">(</span><span class="n">Child</span><span class="p">)</span>
+<span class="p">})</span>
+</pre></div>
+</div>
+<p>Some arguments accepted by <a class="reference internal" href="#persist.MeasurementLog.relationship" title="persist.MeasurementLog.relationship"><code class="xref py py-func docutils literal"><span class="pre">relationship()</span></code></a> optionally accept a
+callable function, which when called produces the desired value.
+The callable is invoked by the parent <code class="xref py py-class docutils literal"><span class="pre">Mapper</span></code> at &#8220;mapper
+initialization&#8221; time, which happens only when mappers are first used,
+and is assumed to be after all mappings have been constructed.  This
+can be used to resolve order-of-declaration and other dependency
+issues, such as if <code class="docutils literal"><span class="pre">Child</span></code> is declared below <code class="docutils literal"><span class="pre">Parent</span></code> in the same
+file:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">mapper</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">properties</span><span class="o">=</span><span class="p">{</span>
+    <span class="s">&quot;children&quot;</span><span class="p">:</span><span class="n">relationship</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">Child</span><span class="p">,</span>
+                        <span class="n">order_by</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="n">Child</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+<span class="p">})</span>
+</pre></div>
+</div>
+<p>When using the <span class="xref std std-ref">declarative_toplevel</span> extension, the Declarative
+initializer allows string arguments to be passed to
+<a class="reference internal" href="#persist.MeasurementLog.relationship" title="persist.MeasurementLog.relationship"><code class="xref py py-func docutils literal"><span class="pre">relationship()</span></code></a>.  These string arguments are converted into
+callables that evaluate the string as Python code, using the
+Declarative class-registry as a namespace.  This allows the lookup of
+related classes to be automatic via their string name, and removes the
+need to import related classes at all into the local module space:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">sqlalchemy.ext.declarative</span> <span class="kn">import</span> <span class="n">declarative_base</span>
+
+<span class="n">Base</span> <span class="o">=</span> <span class="n">declarative_base</span><span class="p">()</span>
+
+<span class="k">class</span> <span class="nc">Parent</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s">&#39;parent&#39;</span>
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">children</span> <span class="o">=</span> <span class="n">relationship</span><span class="p">(</span><span class="s">&quot;Child&quot;</span><span class="p">,</span> <span class="n">order_by</span><span class="o">=</span><span class="s">&quot;Child.id&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p><span class="xref std std-ref">relationship_config_toplevel</span> - Full introductory and
+reference documentation for <a class="reference internal" href="#persist.MeasurementLog.relationship" title="persist.MeasurementLog.relationship"><code class="xref py py-func docutils literal"><span class="pre">relationship()</span></code></a>.</p>
+<p class="last"><span class="xref std std-ref">orm_tutorial_relationship</span> - ORM tutorial introduction.</p>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>argument</strong> &#8211; <p>a mapped class, or actual <code class="xref py py-class docutils literal"><span class="pre">Mapper</span></code> instance, representing
+the target of the relationship.</p>
+<p><a href="#id1"><span class="problematic" id="id2">:paramref:`~.relationship.argument`</span></a> may also be passed as a callable
+function which is evaluated at mapper initialization time, and may
+be passed as a Python-evaluable string when using Declarative.</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><span class="xref std std-ref">declarative_configuring_relationships</span> - further detail
+on relationship configuration when using Declarative.</p>
+</div>
+</li>
+<li><strong>secondary</strong> &#8211; <p>for a many-to-many relationship, specifies the intermediary
+table, and is typically an instance of <code class="xref py py-class docutils literal"><span class="pre">Table</span></code>.
+In less common circumstances, the argument may also be specified
+as an <code class="xref py py-class docutils literal"><span class="pre">Alias</span></code> construct, or even a <code class="xref py py-class docutils literal"><span class="pre">Join</span></code> construct.</p>
+<p><a href="#id3"><span class="problematic" id="id4">:paramref:`~.relationship.secondary`</span></a> may
+also be passed as a callable function which is evaluated at
+mapper initialization time.  When using Declarative, it may also
+be a string argument noting the name of a <code class="xref py py-class docutils literal"><span class="pre">Table</span></code> that is
+present in the <code class="xref py py-class docutils literal"><span class="pre">MetaData</span></code> collection associated with the
+parent-mapped <code class="xref py py-class docutils literal"><span class="pre">Table</span></code>.</p>
+<p>The <a href="#id5"><span class="problematic" id="id6">:paramref:`~.relationship.secondary`</span></a> keyword argument is
+typically applied in the case where the intermediary <code class="xref py py-class docutils literal"><span class="pre">Table</span></code>
+is not otherwise exprssed in any direct class mapping. If the
+&#8220;secondary&#8221; table is also explicitly mapped elsewhere (e.g. as in
+<span class="xref std std-ref">association_pattern</span>), one should consider applying the
+<a href="#id7"><span class="problematic" id="id8">:paramref:`~.relationship.viewonly`</span></a> flag so that this
+<a class="reference internal" href="#persist.MeasurementLog.relationship" title="persist.MeasurementLog.relationship"><code class="xref py py-func docutils literal"><span class="pre">relationship()</span></code></a> is not used for persistence operations which
+may conflict with those of the association object pattern.</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p><span class="xref std std-ref">relationships_many_to_many</span> - Reference example of &#8220;many
+to many&#8221;.</p>
+<p><span class="xref std std-ref">orm_tutorial_many_to_many</span> - ORM tutorial introduction to
+many-to-many relationships.</p>
+<p><span class="xref std std-ref">self_referential_many_to_many</span> - Specifics on using
+many-to-many in a self-referential case.</p>
+<p><span class="xref std std-ref">declarative_many_to_many</span> - Additional options when using
+Declarative.</p>
+<p><span class="xref std std-ref">association_pattern</span> - an alternative to
+<a href="#id9"><span class="problematic" id="id10">:paramref:`~.relationship.secondary`</span></a> when composing association
+table relationships, allowing additional attributes to be
+specified on the association table.</p>
+<p class="last"><span class="xref std std-ref">composite_secondary_join</span> - a lesser-used pattern which
+in some cases can enable complex <a class="reference internal" href="#persist.MeasurementLog.relationship" title="persist.MeasurementLog.relationship"><code class="xref py py-func docutils literal"><span class="pre">relationship()</span></code></a> SQL
+conditions to be used.</p>
+</div>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 0.9.2: </span><a href="#id11"><span class="problematic" id="id12">:paramref:`~.relationship.secondary`</span></a> works
+more effectively when referring to a <code class="xref py py-class docutils literal"><span class="pre">Join</span></code> instance.</p>
+</div>
+</li>
+<li><strong>active_history=False</strong> &#8211; When <code class="docutils literal"><span class="pre">True</span></code>, indicates that the &#8220;previous&#8221; value for a
+many-to-one reference should be loaded when replaced, if
+not already loaded. Normally, history tracking logic for
+simple many-to-ones only needs to be aware of the &#8220;new&#8221;
+value in order to perform a flush. This flag is available
+for applications that make use of
+<code class="xref py py-func docutils literal"><span class="pre">attributes.get_history()</span></code> which also need to know
+the &#8220;previous&#8221; value of the attribute.</li>
+<li><strong>backref</strong> &#8211; <p>indicates the string name of a property to be placed on the related
+mapper&#8217;s class that will handle this relationship in the other
+direction. The other property will be created automatically
+when the mappers are configured.  Can also be passed as a
+<code class="xref py py-func docutils literal"><span class="pre">backref()</span></code> object to control the configuration of the
+new relationship.</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p><span class="xref std std-ref">relationships_backref</span> - Introductory documentation and
+examples.</p>
+<p><a href="#id13"><span class="problematic" id="id14">:paramref:`~.relationship.back_populates`</span></a> - alternative form
+of backref specification.</p>
+<p class="last"><code class="xref py py-func docutils literal"><span class="pre">backref()</span></code> - allows control over <a class="reference internal" href="#persist.MeasurementLog.relationship" title="persist.MeasurementLog.relationship"><code class="xref py py-func docutils literal"><span class="pre">relationship()</span></code></a>
+configuration when using <a href="#id15"><span class="problematic" id="id16">:paramref:`~.relationship.backref`</span></a>.</p>
+</div>
+</li>
+<li><strong>back_populates</strong> &#8211; <p>Takes a string name and has the same meaning as
+<a href="#id17"><span class="problematic" id="id18">:paramref:`~.relationship.backref`</span></a>, except the complementing
+property is <strong>not</strong> created automatically, and instead must be
+configured explicitly on the other mapper.  The complementing
+property should also indicate
+<a href="#id19"><span class="problematic" id="id20">:paramref:`~.relationship.back_populates`</span></a> to this relationship to
+ensure proper functioning.</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p><span class="xref std std-ref">relationships_backref</span> - Introductory documentation and
+examples.</p>
+<p class="last"><a href="#id21"><span class="problematic" id="id22">:paramref:`~.relationship.backref`</span></a> - alternative form
+of backref specification.</p>
+</div>
+</li>
+<li><strong>cascade</strong> &#8211; <p>a comma-separated list of cascade rules which determines how
+Session operations should be &#8220;cascaded&#8221; from parent to child.
+This defaults to <code class="docutils literal"><span class="pre">False</span></code>, which means the default cascade
+should be used - this default cascade is <code class="docutils literal"><span class="pre">&quot;save-update,</span> <span class="pre">merge&quot;</span></code>.</p>
+<p>The available cascades are <code class="docutils literal"><span class="pre">save-update</span></code>, <code class="docutils literal"><span class="pre">merge</span></code>,
+<code class="docutils literal"><span class="pre">expunge</span></code>, <code class="docutils literal"><span class="pre">delete</span></code>, <code class="docutils literal"><span class="pre">delete-orphan</span></code>, and <code class="docutils literal"><span class="pre">refresh-expire</span></code>.
+An additional option, <code class="docutils literal"><span class="pre">all</span></code> indicates shorthand for
+<code class="docutils literal"><span class="pre">&quot;save-update,</span> <span class="pre">merge,</span> <span class="pre">refresh-expire,</span>
+<span class="pre">expunge,</span> <span class="pre">delete&quot;</span></code>, and is often used as in <code class="docutils literal"><span class="pre">&quot;all,</span> <span class="pre">delete-orphan&quot;</span></code>
+to indicate that related objects should follow along with the
+parent object in all cases, and be deleted when de-associated.</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p><span class="xref std std-ref">unitofwork_cascades</span> - Full detail on each of the available
+cascade options.</p>
+<p class="last"><span class="xref std std-ref">tutorial_delete_cascade</span> - Tutorial example describing
+a delete cascade.</p>
+</div>
+</li>
+<li><strong>cascade_backrefs=True</strong> &#8211; <p>a boolean value indicating if the <code class="docutils literal"><span class="pre">save-update</span></code> cascade should
+operate along an assignment event intercepted by a backref.
+When set to <code class="docutils literal"><span class="pre">False</span></code>, the attribute managed by this relationship
+will not cascade an incoming transient object into the session of a
+persistent parent, if the event is received via backref.</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><span class="xref std std-ref">backref_cascade</span> - Full discussion and examples on how
+the <a href="#id23"><span class="problematic" id="id24">:paramref:`~.relationship.cascade_backrefs`</span></a> option is used.</p>
+</div>
+</li>
+<li><strong>collection_class</strong> &#8211; <p>a class or callable that returns a new list-holding object. will
+be used in place of a plain list for storing elements.</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><span class="xref std std-ref">custom_collections</span> - Introductory documentation and
+examples.</p>
+</div>
+</li>
+<li><strong>comparator_factory</strong> &#8211; <p>a class which extends <code class="xref py py-class docutils literal"><span class="pre">RelationshipProperty.Comparator</span></code>
+which provides custom SQL clause generation for comparison
+operations.</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p><code class="xref py py-class docutils literal"><span class="pre">PropComparator</span></code> - some detail on redefining comparators
+at this level.</p>
+<p class="last"><span class="xref std std-ref">custom_comparators</span> - Brief intro to this feature.</p>
+</div>
+</li>
+<li><strong>distinct_target_key=None</strong> &#8211; <p>Indicate if a &#8220;subquery&#8221; eager load should apply the DISTINCT
+keyword to the innermost SELECT statement.  When left as <code class="docutils literal"><span class="pre">None</span></code>,
+the DISTINCT keyword will be applied in those cases when the target
+columns do not comprise the full primary key of the target table.
+When set to <code class="docutils literal"><span class="pre">True</span></code>, the DISTINCT keyword is applied to the
+innermost SELECT unconditionally.</p>
+<p>It may be desirable to set this flag to False when the DISTINCT is
+reducing performance of the innermost subquery beyond that of what
+duplicate innermost rows may be causing.</p>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 0.8.3: </span>-
+<a href="#id25"><span class="problematic" id="id26">:paramref:`~.relationship.distinct_target_key`</span></a> allows the
+subquery eager loader to apply a DISTINCT modifier to the
+innermost SELECT.</p>
+</div>
+<div class="versionchanged">
+<p><span class="versionmodified">Changed in version 0.9.0: </span>-
+<a href="#id27"><span class="problematic" id="id28">:paramref:`~.relationship.distinct_target_key`</span></a> now defaults to
+<code class="docutils literal"><span class="pre">None</span></code>, so that the feature enables itself automatically for
+those cases where the innermost query targets a non-unique
+key.</p>
+</div>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><span class="xref std std-ref">loading_toplevel</span> - includes an introduction to subquery
+eager loading.</p>
+</div>
+</li>
+<li><strong>doc</strong> &#8211; docstring which will be applied to the resulting descriptor.</li>
+<li><strong>extension</strong> &#8211; <p>an <code class="xref py py-class docutils literal"><span class="pre">AttributeExtension</span></code> instance, or list of extensions,
+which will be prepended to the list of attribute listeners for
+the resulting descriptor placed on the class.</p>
+<div class="deprecated">
+<p><span class="versionmodified">Deprecated since version 0.7: </span>Please see <code class="xref py py-class docutils literal"><span class="pre">AttributeEvents</span></code>.</p>
+</div>
+</li>
+<li><strong>foreign_keys</strong> &#8211; <p>a list of columns which are to be used as &#8220;foreign key&#8221;
+columns, or columns which refer to the value in a remote
+column, within the context of this <a class="reference internal" href="#persist.MeasurementLog.relationship" title="persist.MeasurementLog.relationship"><code class="xref py py-func docutils literal"><span class="pre">relationship()</span></code></a>
+object&#8217;s <a href="#id29"><span class="problematic" id="id30">:paramref:`~.relationship.primaryjoin`</span></a> condition.
+That is, if the <a href="#id31"><span class="problematic" id="id32">:paramref:`~.relationship.primaryjoin`</span></a>
+condition of this <a class="reference internal" href="#persist.MeasurementLog.relationship" title="persist.MeasurementLog.relationship"><code class="xref py py-func docutils literal"><span class="pre">relationship()</span></code></a> is <code class="docutils literal"><span class="pre">a.id</span> <span class="pre">==</span>
+<span class="pre">b.a_id</span></code>, and the values in <code class="docutils literal"><span class="pre">b.a_id</span></code> are required to be
+present in <code class="docutils literal"><span class="pre">a.id</span></code>, then the &#8220;foreign key&#8221; column of this
+<a class="reference internal" href="#persist.MeasurementLog.relationship" title="persist.MeasurementLog.relationship"><code class="xref py py-func docutils literal"><span class="pre">relationship()</span></code></a> is <code class="docutils literal"><span class="pre">b.a_id</span></code>.</p>
+<p>In normal cases, the <a href="#id33"><span class="problematic" id="id34">:paramref:`~.relationship.foreign_keys`</span></a>
+parameter is <strong>not required.</strong> <a class="reference internal" href="#persist.MeasurementLog.relationship" title="persist.MeasurementLog.relationship"><code class="xref py py-func docutils literal"><span class="pre">relationship()</span></code></a> will
+automatically determine which columns in the
+<a href="#id35"><span class="problematic" id="id36">:paramref:`~.relationship.primaryjoin`</span></a> conditition are to be
+considered &#8220;foreign key&#8221; columns based on those
+<code class="xref py py-class docutils literal"><span class="pre">Column</span></code> objects that specify <code class="xref py py-class docutils literal"><span class="pre">ForeignKey</span></code>,
+or are otherwise listed as referencing columns in a
+<code class="xref py py-class docutils literal"><span class="pre">ForeignKeyConstraint</span></code> construct.
+<a href="#id37"><span class="problematic" id="id38">:paramref:`~.relationship.foreign_keys`</span></a> is only needed when:</p>
+<blockquote>
+<div><ol class="arabic">
+<li>There is more than one way to construct a join from the local
+table to the remote table, as there are multiple foreign key
+references present.  Setting <code class="docutils literal"><span class="pre">foreign_keys</span></code> will limit the
+<a class="reference internal" href="#persist.MeasurementLog.relationship" title="persist.MeasurementLog.relationship"><code class="xref py py-func docutils literal"><span class="pre">relationship()</span></code></a> to consider just those columns specified
+here as &#8220;foreign&#8221;.<div class="versionchanged">
+<p><span class="versionmodified">Changed in version 0.8: </span>A multiple-foreign key join ambiguity can be resolved by
+setting the <a href="#id39"><span class="problematic" id="id40">:paramref:`~.relationship.foreign_keys`</span></a>
+parameter alone, without the need to explicitly set
+<a href="#id41"><span class="problematic" id="id42">:paramref:`~.relationship.primaryjoin`</span></a> as well.</p>
+</div>
+</li>
+<li>The <code class="xref py py-class docutils literal"><span class="pre">Table</span></code> being mapped does not actually have
+<code class="xref py py-class docutils literal"><span class="pre">ForeignKey</span></code> or <code class="xref py py-class docutils literal"><span class="pre">ForeignKeyConstraint</span></code>
+constructs present, often because the table
+was reflected from a database that does not support foreign key
+reflection (MySQL MyISAM).</li>
+<li>The <a href="#id43"><span class="problematic" id="id44">:paramref:`~.relationship.primaryjoin`</span></a> argument is used to
+construct a non-standard join condition, which makes use of
+columns or expressions that do not normally refer to their
+&#8220;parent&#8221; column, such as a join condition expressed by a
+complex comparison using a SQL function.</li>
+</ol>
+</div></blockquote>
+<p>The <a class="reference internal" href="#persist.MeasurementLog.relationship" title="persist.MeasurementLog.relationship"><code class="xref py py-func docutils literal"><span class="pre">relationship()</span></code></a> construct will raise informative
+error messages that suggest the use of the
+<a href="#id45"><span class="problematic" id="id46">:paramref:`~.relationship.foreign_keys`</span></a> parameter when
+presented with an ambiguous condition.   In typical cases,
+if <a class="reference internal" href="#persist.MeasurementLog.relationship" title="persist.MeasurementLog.relationship"><code class="xref py py-func docutils literal"><span class="pre">relationship()</span></code></a> doesn&#8217;t raise any exceptions, the
+<a href="#id47"><span class="problematic" id="id48">:paramref:`~.relationship.foreign_keys`</span></a> parameter is usually
+not needed.</p>
+<p><a href="#id49"><span class="problematic" id="id50">:paramref:`~.relationship.foreign_keys`</span></a> may also be passed as a
+callable function which is evaluated at mapper initialization time,
+and may be passed as a Python-evaluable string when using
+Declarative.</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p><span class="xref std std-ref">relationship_foreign_keys</span></p>
+<p><span class="xref std std-ref">relationship_custom_foreign</span></p>
+<p class="last"><code class="xref py py-func docutils literal"><span class="pre">foreign()</span></code> - allows direct annotation of the &#8220;foreign&#8221;
+columns within a <a href="#id51"><span class="problematic" id="id52">:paramref:`~.relationship.primaryjoin`</span></a> condition.</p>
+</div>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 0.8: </span>The <code class="xref py py-func docutils literal"><span class="pre">foreign()</span></code> annotation can also be applied
+directly to the <a href="#id53"><span class="problematic" id="id54">:paramref:`~.relationship.primaryjoin`</span></a>
+expression, which is an alternate, more specific system of
+describing which columns in a particular
+<a href="#id55"><span class="problematic" id="id56">:paramref:`~.relationship.primaryjoin`</span></a> should be considered
+&#8220;foreign&#8221;.</p>
+</div>
+</li>
+<li><strong>info</strong> &#8211; <p>Optional data dictionary which will be populated into the
+<code class="xref py py-attr docutils literal"><span class="pre">MapperProperty.info</span></code> attribute of this object.</p>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 0.8.</span></p>
+</div>
+</li>
+<li><strong>innerjoin=False</strong> &#8211; <p>when <code class="docutils literal"><span class="pre">True</span></code>, joined eager loads will use an inner join to join
+against related tables instead of an outer join.  The purpose
+of this option is generally one of performance, as inner joins
+generally perform better than outer joins.</p>
+<p>This flag can be set to <code class="docutils literal"><span class="pre">True</span></code> when the relationship references an
+object via many-to-one using local foreign keys that are not
+nullable, or when the reference is one-to-one or a collection that
+is guaranteed to have one or at least one entry.</p>
+<p>If the joined-eager load is chained onto an existing LEFT OUTER
+JOIN, <code class="docutils literal"><span class="pre">innerjoin=True</span></code> will be bypassed and the join will continue
+to chain as LEFT OUTER JOIN so that the results don&#8217;t change.  As an
+alternative, specify the value <code class="docutils literal"><span class="pre">&quot;nested&quot;</span></code>.  This will instead nest
+the join on the right side, e.g. using the form &#8220;a LEFT OUTER JOIN
+(b JOIN c)&#8221;.</p>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 0.9.4: </span>Added <code class="docutils literal"><span class="pre">innerjoin=&quot;nested&quot;</span></code> option to
+support nesting of eager &#8220;inner&#8221; joins.</p>
+</div>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p><span class="xref std std-ref">what_kind_of_loading</span> - Discussion of some details of
+various loader options.</p>
+<p class="last"><a href="#id57"><span class="problematic" id="id58">:paramref:`.joinedload.innerjoin`</span></a> - loader option version</p>
+</div>
+</li>
+<li><strong>join_depth</strong> &#8211; <p>when non-<code class="docutils literal"><span class="pre">None</span></code>, an integer value indicating how many levels
+deep &#8220;eager&#8221; loaders should join on a self-referring or cyclical
+relationship.  The number counts how many times the same Mapper
+shall be present in the loading condition along a particular join
+branch.  When left at its default of <code class="docutils literal"><span class="pre">None</span></code>, eager loaders
+will stop chaining when they encounter a the same target mapper
+which is already higher up in the chain.  This option applies
+both to joined- and subquery- eager loaders.</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><span class="xref std std-ref">self_referential_eager_loading</span> - Introductory documentation
+and examples.</p>
+</div>
+</li>
+<li><strong>lazy='select'</strong> &#8211; <p>specifies
+how the related items should be loaded.  Default value is
+<code class="docutils literal"><span class="pre">select</span></code>.  Values include:</p>
+<ul>
+<li><code class="docutils literal"><span class="pre">select</span></code> - items should be loaded lazily when the property is
+first accessed, using a separate SELECT statement, or identity map
+fetch for simple many-to-one references.</li>
+<li><code class="docutils literal"><span class="pre">immediate</span></code> - items should be loaded as the parents are loaded,
+using a separate SELECT statement, or identity map fetch for
+simple many-to-one references.</li>
+<li><code class="docutils literal"><span class="pre">joined</span></code> - items should be loaded &#8220;eagerly&#8221; in the same query as
+that of the parent, using a JOIN or LEFT OUTER JOIN.  Whether
+the join is &#8220;outer&#8221; or not is determined by the
+<a href="#id59"><span class="problematic" id="id60">:paramref:`~.relationship.innerjoin`</span></a> parameter.</li>
+<li><code class="docutils literal"><span class="pre">subquery</span></code> - items should be loaded &#8220;eagerly&#8221; as the parents are
+loaded, using one additional SQL statement, which issues a JOIN to
+a subquery of the original statement, for each collection
+requested.</li>
+<li><code class="docutils literal"><span class="pre">noload</span></code> - no loading should occur at any time.  This is to
+support &#8220;write-only&#8221; attributes, or attributes which are
+populated in some manner specific to the application.</li>
+<li><code class="docutils literal"><span class="pre">dynamic</span></code> - the attribute will return a pre-configured
+<code class="xref py py-class docutils literal"><span class="pre">Query</span></code> object for all read
+operations, onto which further filtering operations can be
+applied before iterating the results.  See
+the section <span class="xref std std-ref">dynamic_relationship</span> for more details.</li>
+<li>True - a synonym for &#8216;select&#8217;</li>
+<li>False - a synonym for &#8216;joined&#8217;</li>
+<li>None - a synonym for &#8216;noload&#8217;</li>
+</ul>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p><code class="xref doc docutils literal"><span class="pre">/orm/loading_relationships</span></code> - Full documentation on relationship loader
+configuration.</p>
+<p class="last"><span class="xref std std-ref">dynamic_relationship</span> - detail on the <code class="docutils literal"><span class="pre">dynamic</span></code> option.</p>
+</div>
+</li>
+<li><strong>load_on_pending=False</strong> &#8211; <p>Indicates loading behavior for transient or pending parent objects.</p>
+<p>When set to <code class="docutils literal"><span class="pre">True</span></code>, causes the lazy-loader to
+issue a query for a parent object that is not persistent, meaning it
+has never been flushed.  This may take effect for a pending object
+when autoflush is disabled, or for a transient object that has been
+&#8220;attached&#8221; to a <code class="xref py py-class docutils literal"><span class="pre">Session</span></code> but is not part of its pending
+collection.</p>
+<p>The <a href="#id61"><span class="problematic" id="id62">:paramref:`~.relationship.load_on_pending`</span></a> flag does not improve
+behavior when the ORM is used normally - object references should be
+constructed at the object level, not at the foreign key level, so
+that they are present in an ordinary way before a flush proceeds.
+This flag is not not intended for general use.</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><code class="xref py py-meth docutils literal"><span class="pre">Session.enable_relationship_loading()</span></code> - this method
+establishes &#8220;load on pending&#8221; behavior for the whole object, and
+also allows loading on objects that remain transient or
+detached.</p>
+</div>
+</li>
+<li><strong>order_by</strong> &#8211; <p>indicates the ordering that should be applied when loading these
+items.  <a href="#id63"><span class="problematic" id="id64">:paramref:`~.relationship.order_by`</span></a> is expected to refer to
+one of the <code class="xref py py-class docutils literal"><span class="pre">Column</span></code> objects to which the target class is
+mapped, or the attribute itself bound to the target class which
+refers to the column.</p>
+<p><a href="#id65"><span class="problematic" id="id66">:paramref:`~.relationship.order_by`</span></a> may also be passed as a callable
+function which is evaluated at mapper initialization time, and may
+be passed as a Python-evaluable string when using Declarative.</p>
+</li>
+<li><strong>passive_deletes=False</strong> &#8211; <p>Indicates loading behavior during delete operations.</p>
+<p>A value of True indicates that unloaded child items should not
+be loaded during a delete operation on the parent.  Normally,
+when a parent item is deleted, all child items are loaded so
+that they can either be marked as deleted, or have their
+foreign key to the parent set to NULL.  Marking this flag as
+True usually implies an ON DELETE &lt;CASCADE|SET NULL&gt; rule is in
+place which will handle updating/deleting child rows on the
+database side.</p>
+<p>Additionally, setting the flag to the string value &#8216;all&#8217; will
+disable the &#8220;nulling out&#8221; of the child foreign keys, when there
+is no delete or delete-orphan cascade enabled.  This is
+typically used when a triggering or error raise scenario is in
+place on the database side.  Note that the foreign key
+attributes on in-session child objects will not be changed
+after a flush occurs so this is a very special use-case
+setting.</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><span class="xref std std-ref">passive_deletes</span> - Introductory documentation
+and examples.</p>
+</div>
+</li>
+<li><strong>passive_updates=True</strong> &#8211; <p>Indicates loading and INSERT/UPDATE/DELETE behavior when the
+source of a foreign key value changes (i.e. an &#8220;on update&#8221;
+cascade), which are typically the primary key columns of the
+source row.</p>
+<p>When True, it is assumed that ON UPDATE CASCADE is configured on
+the foreign key in the database, and that the database will
+handle propagation of an UPDATE from a source column to
+dependent rows.  Note that with databases which enforce
+referential integrity (i.e. PostgreSQL, MySQL with InnoDB tables),
+ON UPDATE CASCADE is required for this operation.  The
+relationship() will update the value of the attribute on related
+items which are locally present in the session during a flush.</p>
+<p>When False, it is assumed that the database does not enforce
+referential integrity and will not be issuing its own CASCADE
+operation for an update.  The relationship() will issue the
+appropriate UPDATE statements to the database in response to the
+change of a referenced key, and items locally present in the
+session during a flush will also be refreshed.</p>
+<p>This flag should probably be set to False if primary key changes
+are expected and the database in use doesn&#8217;t support CASCADE
+(i.e. SQLite, MySQL MyISAM tables).</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p><span class="xref std std-ref">passive_updates</span> - Introductory documentation and
+examples.</p>
+<p class="last"><a href="#id67"><span class="problematic" id="id68">:paramref:`.mapper.passive_updates`</span></a> - a similar flag which
+takes effect for joined-table inheritance mappings.</p>
+</div>
+</li>
+<li><strong>post_update</strong> &#8211; <p>this indicates that the relationship should be handled by a
+second UPDATE statement after an INSERT or before a
+DELETE. Currently, it also will issue an UPDATE after the
+instance was UPDATEd as well, although this technically should
+be improved. This flag is used to handle saving bi-directional
+dependencies between two individual rows (i.e. each row
+references the other), where it would otherwise be impossible to
+INSERT or DELETE both rows fully since one row exists before the
+other. Use this flag when a particular mapping arrangement will
+incur two rows that are dependent on each other, such as a table
+that has a one-to-many relationship to a set of child rows, and
+also has a column that references a single child row within that
+list (i.e. both tables contain a foreign key to each other). If
+a flush operation returns an error that a &#8220;cyclical
+dependency&#8221; was detected, this is a cue that you might want to
+use <a href="#id69"><span class="problematic" id="id70">:paramref:`~.relationship.post_update`</span></a> to &#8220;break&#8221; the cycle.</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><span class="xref std std-ref">post_update</span> - Introductory documentation and examples.</p>
+</div>
+</li>
+<li><strong>primaryjoin</strong> &#8211; <p>a SQL expression that will be used as the primary
+join of this child object against the parent object, or in a
+many-to-many relationship the join of the primary object to the
+association table. By default, this value is computed based on the
+foreign key relationships of the parent and child tables (or
+association table).</p>
+<p><a href="#id71"><span class="problematic" id="id72">:paramref:`~.relationship.primaryjoin`</span></a> may also be passed as a
+callable function which is evaluated at mapper initialization time,
+and may be passed as a Python-evaluable string when using
+Declarative.</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><span class="xref std std-ref">relationship_primaryjoin</span></p>
+</div>
+</li>
+<li><strong>remote_side</strong> &#8211; <p>used for self-referential relationships, indicates the column or
+list of columns that form the &#8220;remote side&#8221; of the relationship.</p>
+<p><a href="#id73"><span class="problematic" id="id74">:paramref:`.relationship.remote_side`</span></a> may also be passed as a
+callable function which is evaluated at mapper initialization time,
+and may be passed as a Python-evaluable string when using
+Declarative.</p>
+<div class="versionchanged">
+<p><span class="versionmodified">Changed in version 0.8: </span>The <code class="xref py py-func docutils literal"><span class="pre">remote()</span></code> annotation can also be applied
+directly to the <code class="docutils literal"><span class="pre">primaryjoin</span></code> expression, which is an
+alternate, more specific system of describing which columns in a
+particular <code class="docutils literal"><span class="pre">primaryjoin</span></code> should be considered &#8220;remote&#8221;.</p>
+</div>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p><span class="xref std std-ref">self_referential</span> - in-depth explanation of how
+<a href="#id75"><span class="problematic" id="id76">:paramref:`~.relationship.remote_side`</span></a>
+is used to configure self-referential relationships.</p>
+<p class="last"><code class="xref py py-func docutils literal"><span class="pre">remote()</span></code> - an annotation function that accomplishes the
+same purpose as <a href="#id77"><span class="problematic" id="id78">:paramref:`~.relationship.remote_side`</span></a>, typically
+when a custom <a href="#id79"><span class="problematic" id="id80">:paramref:`~.relationship.primaryjoin`</span></a> condition
+is used.</p>
+</div>
+</li>
+<li><strong>query_class</strong> &#8211; <p>a <code class="xref py py-class docutils literal"><span class="pre">Query</span></code> subclass that will be used as the base of the
+&#8220;appender query&#8221; returned by a &#8220;dynamic&#8221; relationship, that
+is, a relationship that specifies <code class="docutils literal"><span class="pre">lazy=&quot;dynamic&quot;</span></code> or was
+otherwise constructed using the <code class="xref py py-func docutils literal"><span class="pre">orm.dynamic_loader()</span></code>
+function.</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><span class="xref std std-ref">dynamic_relationship</span> - Introduction to &#8220;dynamic&#8221;
+relationship loaders.</p>
+</div>
+</li>
+<li><strong>secondaryjoin</strong> &#8211; <p>a SQL expression that will be used as the join of
+an association table to the child object. By default, this value is
+computed based on the foreign key relationships of the association
+and child tables.</p>
+<p><a href="#id81"><span class="problematic" id="id82">:paramref:`~.relationship.secondaryjoin`</span></a> may also be passed as a
+callable function which is evaluated at mapper initialization time,
+and may be passed as a Python-evaluable string when using
+Declarative.</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><span class="xref std std-ref">relationship_primaryjoin</span></p>
+</div>
+</li>
+<li><strong>single_parent</strong> &#8211; <p>when True, installs a validator which will prevent objects
+from being associated with more than one parent at a time.
+This is used for many-to-one or many-to-many relationships that
+should be treated either as one-to-one or one-to-many.  Its usage
+is optional, except for <a class="reference internal" href="#persist.MeasurementLog.relationship" title="persist.MeasurementLog.relationship"><code class="xref py py-func docutils literal"><span class="pre">relationship()</span></code></a> constructs which
+are many-to-one or many-to-many and also
+specify the <code class="docutils literal"><span class="pre">delete-orphan</span></code> cascade option.  The
+<a class="reference internal" href="#persist.MeasurementLog.relationship" title="persist.MeasurementLog.relationship"><code class="xref py py-func docutils literal"><span class="pre">relationship()</span></code></a> construct itself will raise an error
+instructing when this option is required.</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><span class="xref std std-ref">unitofwork_cascades</span> - includes detail on when the
+<a href="#id83"><span class="problematic" id="id84">:paramref:`~.relationship.single_parent`</span></a> flag may be appropriate.</p>
+</div>
+</li>
+<li><strong>uselist</strong> &#8211; <p>a boolean that indicates if this property should be loaded as a
+list or a scalar. In most cases, this value is determined
+automatically by <a class="reference internal" href="#persist.MeasurementLog.relationship" title="persist.MeasurementLog.relationship"><code class="xref py py-func docutils literal"><span class="pre">relationship()</span></code></a> at mapper configuration
+time, based on the type and direction
+of the relationship - one to many forms a list, many to one
+forms a scalar, many to many is a list. If a scalar is desired
+where normally a list would be present, such as a bi-directional
+one-to-one relationship, set <a href="#id85"><span class="problematic" id="id86">:paramref:`~.relationship.uselist`</span></a> to
+False.</p>
+<p>The <a href="#id87"><span class="problematic" id="id88">:paramref:`~.relationship.uselist`</span></a> flag is also available on an
+existing <a class="reference internal" href="#persist.MeasurementLog.relationship" title="persist.MeasurementLog.relationship"><code class="xref py py-func docutils literal"><span class="pre">relationship()</span></code></a> construct as a read-only attribute,
+which can be used to determine if this <a class="reference internal" href="#persist.MeasurementLog.relationship" title="persist.MeasurementLog.relationship"><code class="xref py py-func docutils literal"><span class="pre">relationship()</span></code></a> deals
+with collections or scalar attributes:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">User</span><span class="o">.</span><span class="n">addresses</span><span class="o">.</span><span class="n">property</span><span class="o">.</span><span class="n">uselist</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><span class="xref std std-ref">relationships_one_to_one</span> - Introduction to the &#8220;one to
+one&#8221; relationship pattern, which is typically when the
+<a href="#id89"><span class="problematic" id="id90">:paramref:`~.relationship.uselist`</span></a> flag is needed.</p>
+</div>
+</li>
+<li><strong>viewonly=False</strong> &#8211; when set to True, the relationship is used only for loading objects,
+and not for any persistence operation.  A <a class="reference internal" href="#persist.MeasurementLog.relationship" title="persist.MeasurementLog.relationship"><code class="xref py py-func docutils literal"><span class="pre">relationship()</span></code></a>
+which specifies <a href="#id91"><span class="problematic" id="id92">:paramref:`~.relationship.viewonly`</span></a> can work
+with a wider range of SQL operations within the
+<a href="#id93"><span class="problematic" id="id94">:paramref:`~.relationship.primaryjoin`</span></a> condition, including
+operations that feature the use of a variety of comparison operators
+as well as SQL functions such as <code class="xref py py-func docutils literal"><span class="pre">cast()</span></code>.  The
+<a href="#id95"><span class="problematic" id="id96">:paramref:`~.relationship.viewonly`</span></a> flag is also of general use when
+defining any kind of <a class="reference internal" href="#persist.MeasurementLog.relationship" title="persist.MeasurementLog.relationship"><code class="xref py py-func docutils literal"><span class="pre">relationship()</span></code></a> that doesn&#8217;t represent
+the full set of related objects, to prevent modifications of the
+collection from resulting in persistence operations.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-persist.ValueHistory">
+<span id="valuehistory"></span><h2>ValueHistory<a class="headerlink" href="#module-persist.ValueHistory" title="Permalink to this headline">¶</a></h2>
+<p>Created on Aug 27, 2014</p>
+<p>&#64;author: pmaunz</p>
+<dl class="exception">
+<dt id="persist.ValueHistory.HistoryException">
+<em class="property">exception </em><code class="descname">HistoryException</code><a class="headerlink" href="#persist.ValueHistory.HistoryException" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="persist.ValueHistory.HistorySource">
+<em class="property">class </em><code class="descname">HistorySource</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#persist.ValueHistory.HistorySource" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="attribute">
+<dt id="persist.ValueHistory.HistorySource.history">
+<code class="descname">history</code><a class="headerlink" href="#persist.ValueHistory.HistorySource.history" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="persist.ValueHistory.HistorySource.id">
+<code class="descname">id</code><a class="headerlink" href="#persist.ValueHistory.HistorySource.id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="persist.ValueHistory.HistorySource.name">
+<code class="descname">name</code><a class="headerlink" href="#persist.ValueHistory.HistorySource.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="persist.ValueHistory.HistorySource.space">
+<code class="descname">space</code><a class="headerlink" href="#persist.ValueHistory.HistorySource.space" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="persist.ValueHistory.ValueHistoryEntry">
+<em class="property">class </em><code class="descname">ValueHistoryEntry</code><span class="sig-paren">(</span><em>sourceObj</em>, <em>value</em>, <em>unit</em>, <em>upd_date</em><span class="sig-paren">)</span><a class="headerlink" href="#persist.ValueHistory.ValueHistoryEntry" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="attribute">
+<dt id="persist.ValueHistory.ValueHistoryEntry.bottom">
+<code class="descname">bottom</code><a class="headerlink" href="#persist.ValueHistory.ValueHistoryEntry.bottom" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="persist.ValueHistory.ValueHistoryEntry.source">
+<code class="descname">source</code><a class="headerlink" href="#persist.ValueHistory.ValueHistoryEntry.source" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="persist.ValueHistory.ValueHistoryEntry.source_id">
+<code class="descname">source_id</code><a class="headerlink" href="#persist.ValueHistory.ValueHistoryEntry.source_id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="persist.ValueHistory.ValueHistoryEntry.top">
+<code class="descname">top</code><a class="headerlink" href="#persist.ValueHistory.ValueHistoryEntry.top" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="persist.ValueHistory.ValueHistoryEntry.unit">
+<code class="descname">unit</code><a class="headerlink" href="#persist.ValueHistory.ValueHistoryEntry.unit" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="persist.ValueHistory.ValueHistoryEntry.upd_date">
+<code class="descname">upd_date</code><a class="headerlink" href="#persist.ValueHistory.ValueHistoryEntry.upd_date" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="persist.ValueHistory.ValueHistoryEntry.value">
+<code class="descname">value</code><a class="headerlink" href="#persist.ValueHistory.ValueHistoryEntry.value" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="persist.ValueHistory.ValueHistoryStore">
+<em class="property">class </em><code class="descname">ValueHistoryStore</code><span class="sig-paren">(</span><em>dbConnection</em><span class="sig-paren">)</span><a class="headerlink" href="#persist.ValueHistory.ValueHistoryStore" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="persist.ValueHistory.ValueHistoryStore.add">
+<code class="descname">add</code><span class="sig-paren">(</span><em>space</em>, <em>source</em>, <em>value</em>, <em>unit</em>, <em>upd_date</em>, <em>bottom=None</em>, <em>top=None</em><span class="sig-paren">)</span><a class="headerlink" href="#persist.ValueHistory.ValueHistoryStore.add" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="persist.ValueHistory.ValueHistoryStore.close">
+<code class="descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#persist.ValueHistory.ValueHistoryStore.close" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="persist.ValueHistory.ValueHistoryStore.close_session">
+<code class="descname">close_session</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#persist.ValueHistory.ValueHistoryStore.close_session" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="persist.ValueHistory.ValueHistoryStore.commit">
+<code class="descname">commit</code><span class="sig-paren">(</span><em>copyTo=None</em><span class="sig-paren">)</span><a class="headerlink" href="#persist.ValueHistory.ValueHistoryStore.commit" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="persist.ValueHistory.ValueHistoryStore.get">
+<code class="descname">get</code><span class="sig-paren">(</span><em>space</em>, <em>source</em><span class="sig-paren">)</span><a class="headerlink" href="#persist.ValueHistory.ValueHistoryStore.get" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="persist.ValueHistory.ValueHistoryStore.getHistory">
+<code class="descname">getHistory</code><span class="sig-paren">(</span><em>space</em>, <em>source</em>, <em>fromTime</em>, <em>toTime</em><span class="sig-paren">)</span><a class="headerlink" href="#persist.ValueHistory.ValueHistoryStore.getHistory" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="persist.ValueHistory.ValueHistoryStore.getSource">
+<code class="descname">getSource</code><span class="sig-paren">(</span><em>space</em>, <em>source</em><span class="sig-paren">)</span><a class="headerlink" href="#persist.ValueHistory.ValueHistoryStore.getSource" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="persist.ValueHistory.ValueHistoryStore.open">
+<code class="descname">open</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#persist.ValueHistory.ValueHistoryStore.open" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="persist.ValueHistory.ValueHistoryStore.open_session">
+<code class="descname">open_session</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#persist.ValueHistory.ValueHistoryStore.open_session" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="persist.ValueHistory.ValueHistoryStore.refreshSourceDict">
+<code class="descname">refreshSourceDict</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#persist.ValueHistory.ValueHistoryStore.refreshSourceDict" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="persist.ValueHistory.relationship">
+<code class="descname">relationship</code><span class="sig-paren">(</span><em>argument</em>, <em>secondary=None</em>, <em>primaryjoin=None</em>, <em>secondaryjoin=None</em>, <em>foreign_keys=None</em>, <em>uselist=None</em>, <em>order_by=False</em>, <em>backref=None</em>, <em>back_populates=None</em>, <em>post_update=False</em>, <em>cascade=False</em>, <em>extension=None</em>, <em>viewonly=False</em>, <em>lazy=True</em>, <em>collection_class=None</em>, <em>passive_deletes=False</em>, <em>passive_updates=True</em>, <em>remote_side=None</em>, <em>enable_typechecks=True</em>, <em>join_depth=None</em>, <em>comparator_factory=None</em>, <em>single_parent=False</em>, <em>innerjoin=False</em>, <em>distinct_target_key=None</em>, <em>doc=None</em>, <em>active_history=False</em>, <em>cascade_backrefs=True</em>, <em>load_on_pending=False</em>, <em>strategy_class=None</em>, <em>_local_remote_pairs=None</em>, <em>query_class=None</em>, <em>info=None</em><span class="sig-paren">)</span><a class="headerlink" href="#persist.ValueHistory.relationship" title="Permalink to this definition">¶</a></dt>
+<dd><p>Provide a relationship between two mapped classes.</p>
+<p>This corresponds to a parent-child or associative table relationship.
+The constructed class is an instance of
+<code class="xref py py-class docutils literal"><span class="pre">RelationshipProperty</span></code>.</p>
+<p>A typical <a class="reference internal" href="#persist.ValueHistory.relationship" title="persist.ValueHistory.relationship"><code class="xref py py-func docutils literal"><span class="pre">relationship()</span></code></a>, used in a classical mapping:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">mapper</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">properties</span><span class="o">=</span><span class="p">{</span>
+  <span class="s">&#39;children&#39;</span><span class="p">:</span> <span class="n">relationship</span><span class="p">(</span><span class="n">Child</span><span class="p">)</span>
+<span class="p">})</span>
+</pre></div>
+</div>
+<p>Some arguments accepted by <a class="reference internal" href="#persist.ValueHistory.relationship" title="persist.ValueHistory.relationship"><code class="xref py py-func docutils literal"><span class="pre">relationship()</span></code></a> optionally accept a
+callable function, which when called produces the desired value.
+The callable is invoked by the parent <code class="xref py py-class docutils literal"><span class="pre">Mapper</span></code> at &#8220;mapper
+initialization&#8221; time, which happens only when mappers are first used,
+and is assumed to be after all mappings have been constructed.  This
+can be used to resolve order-of-declaration and other dependency
+issues, such as if <code class="docutils literal"><span class="pre">Child</span></code> is declared below <code class="docutils literal"><span class="pre">Parent</span></code> in the same
+file:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">mapper</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">properties</span><span class="o">=</span><span class="p">{</span>
+    <span class="s">&quot;children&quot;</span><span class="p">:</span><span class="n">relationship</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">Child</span><span class="p">,</span>
+                        <span class="n">order_by</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="n">Child</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+<span class="p">})</span>
+</pre></div>
+</div>
+<p>When using the <span class="xref std std-ref">declarative_toplevel</span> extension, the Declarative
+initializer allows string arguments to be passed to
+<a class="reference internal" href="#persist.ValueHistory.relationship" title="persist.ValueHistory.relationship"><code class="xref py py-func docutils literal"><span class="pre">relationship()</span></code></a>.  These string arguments are converted into
+callables that evaluate the string as Python code, using the
+Declarative class-registry as a namespace.  This allows the lookup of
+related classes to be automatic via their string name, and removes the
+need to import related classes at all into the local module space:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">sqlalchemy.ext.declarative</span> <span class="kn">import</span> <span class="n">declarative_base</span>
+
+<span class="n">Base</span> <span class="o">=</span> <span class="n">declarative_base</span><span class="p">()</span>
+
+<span class="k">class</span> <span class="nc">Parent</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s">&#39;parent&#39;</span>
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">children</span> <span class="o">=</span> <span class="n">relationship</span><span class="p">(</span><span class="s">&quot;Child&quot;</span><span class="p">,</span> <span class="n">order_by</span><span class="o">=</span><span class="s">&quot;Child.id&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p><span class="xref std std-ref">relationship_config_toplevel</span> - Full introductory and
+reference documentation for <a class="reference internal" href="#persist.ValueHistory.relationship" title="persist.ValueHistory.relationship"><code class="xref py py-func docutils literal"><span class="pre">relationship()</span></code></a>.</p>
+<p class="last"><span class="xref std std-ref">orm_tutorial_relationship</span> - ORM tutorial introduction.</p>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>argument</strong> &#8211; <p>a mapped class, or actual <code class="xref py py-class docutils literal"><span class="pre">Mapper</span></code> instance, representing
+the target of the relationship.</p>
+<p><a href="#id97"><span class="problematic" id="id98">:paramref:`~.relationship.argument`</span></a> may also be passed as a callable
+function which is evaluated at mapper initialization time, and may
+be passed as a Python-evaluable string when using Declarative.</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><span class="xref std std-ref">declarative_configuring_relationships</span> - further detail
+on relationship configuration when using Declarative.</p>
+</div>
+</li>
+<li><strong>secondary</strong> &#8211; <p>for a many-to-many relationship, specifies the intermediary
+table, and is typically an instance of <code class="xref py py-class docutils literal"><span class="pre">Table</span></code>.
+In less common circumstances, the argument may also be specified
+as an <code class="xref py py-class docutils literal"><span class="pre">Alias</span></code> construct, or even a <code class="xref py py-class docutils literal"><span class="pre">Join</span></code> construct.</p>
+<p><a href="#id99"><span class="problematic" id="id100">:paramref:`~.relationship.secondary`</span></a> may
+also be passed as a callable function which is evaluated at
+mapper initialization time.  When using Declarative, it may also
+be a string argument noting the name of a <code class="xref py py-class docutils literal"><span class="pre">Table</span></code> that is
+present in the <code class="xref py py-class docutils literal"><span class="pre">MetaData</span></code> collection associated with the
+parent-mapped <code class="xref py py-class docutils literal"><span class="pre">Table</span></code>.</p>
+<p>The <a href="#id101"><span class="problematic" id="id102">:paramref:`~.relationship.secondary`</span></a> keyword argument is
+typically applied in the case where the intermediary <code class="xref py py-class docutils literal"><span class="pre">Table</span></code>
+is not otherwise exprssed in any direct class mapping. If the
+&#8220;secondary&#8221; table is also explicitly mapped elsewhere (e.g. as in
+<span class="xref std std-ref">association_pattern</span>), one should consider applying the
+<a href="#id103"><span class="problematic" id="id104">:paramref:`~.relationship.viewonly`</span></a> flag so that this
+<a class="reference internal" href="#persist.ValueHistory.relationship" title="persist.ValueHistory.relationship"><code class="xref py py-func docutils literal"><span class="pre">relationship()</span></code></a> is not used for persistence operations which
+may conflict with those of the association object pattern.</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p><span class="xref std std-ref">relationships_many_to_many</span> - Reference example of &#8220;many
+to many&#8221;.</p>
+<p><span class="xref std std-ref">orm_tutorial_many_to_many</span> - ORM tutorial introduction to
+many-to-many relationships.</p>
+<p><span class="xref std std-ref">self_referential_many_to_many</span> - Specifics on using
+many-to-many in a self-referential case.</p>
+<p><span class="xref std std-ref">declarative_many_to_many</span> - Additional options when using
+Declarative.</p>
+<p><span class="xref std std-ref">association_pattern</span> - an alternative to
+<a href="#id105"><span class="problematic" id="id106">:paramref:`~.relationship.secondary`</span></a> when composing association
+table relationships, allowing additional attributes to be
+specified on the association table.</p>
+<p class="last"><span class="xref std std-ref">composite_secondary_join</span> - a lesser-used pattern which
+in some cases can enable complex <a class="reference internal" href="#persist.ValueHistory.relationship" title="persist.ValueHistory.relationship"><code class="xref py py-func docutils literal"><span class="pre">relationship()</span></code></a> SQL
+conditions to be used.</p>
+</div>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 0.9.2: </span><a href="#id107"><span class="problematic" id="id108">:paramref:`~.relationship.secondary`</span></a> works
+more effectively when referring to a <code class="xref py py-class docutils literal"><span class="pre">Join</span></code> instance.</p>
+</div>
+</li>
+<li><strong>active_history=False</strong> &#8211; When <code class="docutils literal"><span class="pre">True</span></code>, indicates that the &#8220;previous&#8221; value for a
+many-to-one reference should be loaded when replaced, if
+not already loaded. Normally, history tracking logic for
+simple many-to-ones only needs to be aware of the &#8220;new&#8221;
+value in order to perform a flush. This flag is available
+for applications that make use of
+<code class="xref py py-func docutils literal"><span class="pre">attributes.get_history()</span></code> which also need to know
+the &#8220;previous&#8221; value of the attribute.</li>
+<li><strong>backref</strong> &#8211; <p>indicates the string name of a property to be placed on the related
+mapper&#8217;s class that will handle this relationship in the other
+direction. The other property will be created automatically
+when the mappers are configured.  Can also be passed as a
+<code class="xref py py-func docutils literal"><span class="pre">backref()</span></code> object to control the configuration of the
+new relationship.</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p><span class="xref std std-ref">relationships_backref</span> - Introductory documentation and
+examples.</p>
+<p><a href="#id109"><span class="problematic" id="id110">:paramref:`~.relationship.back_populates`</span></a> - alternative form
+of backref specification.</p>
+<p class="last"><code class="xref py py-func docutils literal"><span class="pre">backref()</span></code> - allows control over <a class="reference internal" href="#persist.ValueHistory.relationship" title="persist.ValueHistory.relationship"><code class="xref py py-func docutils literal"><span class="pre">relationship()</span></code></a>
+configuration when using <a href="#id111"><span class="problematic" id="id112">:paramref:`~.relationship.backref`</span></a>.</p>
+</div>
+</li>
+<li><strong>back_populates</strong> &#8211; <p>Takes a string name and has the same meaning as
+<a href="#id113"><span class="problematic" id="id114">:paramref:`~.relationship.backref`</span></a>, except the complementing
+property is <strong>not</strong> created automatically, and instead must be
+configured explicitly on the other mapper.  The complementing
+property should also indicate
+<a href="#id115"><span class="problematic" id="id116">:paramref:`~.relationship.back_populates`</span></a> to this relationship to
+ensure proper functioning.</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p><span class="xref std std-ref">relationships_backref</span> - Introductory documentation and
+examples.</p>
+<p class="last"><a href="#id117"><span class="problematic" id="id118">:paramref:`~.relationship.backref`</span></a> - alternative form
+of backref specification.</p>
+</div>
+</li>
+<li><strong>cascade</strong> &#8211; <p>a comma-separated list of cascade rules which determines how
+Session operations should be &#8220;cascaded&#8221; from parent to child.
+This defaults to <code class="docutils literal"><span class="pre">False</span></code>, which means the default cascade
+should be used - this default cascade is <code class="docutils literal"><span class="pre">&quot;save-update,</span> <span class="pre">merge&quot;</span></code>.</p>
+<p>The available cascades are <code class="docutils literal"><span class="pre">save-update</span></code>, <code class="docutils literal"><span class="pre">merge</span></code>,
+<code class="docutils literal"><span class="pre">expunge</span></code>, <code class="docutils literal"><span class="pre">delete</span></code>, <code class="docutils literal"><span class="pre">delete-orphan</span></code>, and <code class="docutils literal"><span class="pre">refresh-expire</span></code>.
+An additional option, <code class="docutils literal"><span class="pre">all</span></code> indicates shorthand for
+<code class="docutils literal"><span class="pre">&quot;save-update,</span> <span class="pre">merge,</span> <span class="pre">refresh-expire,</span>
+<span class="pre">expunge,</span> <span class="pre">delete&quot;</span></code>, and is often used as in <code class="docutils literal"><span class="pre">&quot;all,</span> <span class="pre">delete-orphan&quot;</span></code>
+to indicate that related objects should follow along with the
+parent object in all cases, and be deleted when de-associated.</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p><span class="xref std std-ref">unitofwork_cascades</span> - Full detail on each of the available
+cascade options.</p>
+<p class="last"><span class="xref std std-ref">tutorial_delete_cascade</span> - Tutorial example describing
+a delete cascade.</p>
+</div>
+</li>
+<li><strong>cascade_backrefs=True</strong> &#8211; <p>a boolean value indicating if the <code class="docutils literal"><span class="pre">save-update</span></code> cascade should
+operate along an assignment event intercepted by a backref.
+When set to <code class="docutils literal"><span class="pre">False</span></code>, the attribute managed by this relationship
+will not cascade an incoming transient object into the session of a
+persistent parent, if the event is received via backref.</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><span class="xref std std-ref">backref_cascade</span> - Full discussion and examples on how
+the <a href="#id119"><span class="problematic" id="id120">:paramref:`~.relationship.cascade_backrefs`</span></a> option is used.</p>
+</div>
+</li>
+<li><strong>collection_class</strong> &#8211; <p>a class or callable that returns a new list-holding object. will
+be used in place of a plain list for storing elements.</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><span class="xref std std-ref">custom_collections</span> - Introductory documentation and
+examples.</p>
+</div>
+</li>
+<li><strong>comparator_factory</strong> &#8211; <p>a class which extends <code class="xref py py-class docutils literal"><span class="pre">RelationshipProperty.Comparator</span></code>
+which provides custom SQL clause generation for comparison
+operations.</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p><code class="xref py py-class docutils literal"><span class="pre">PropComparator</span></code> - some detail on redefining comparators
+at this level.</p>
+<p class="last"><span class="xref std std-ref">custom_comparators</span> - Brief intro to this feature.</p>
+</div>
+</li>
+<li><strong>distinct_target_key=None</strong> &#8211; <p>Indicate if a &#8220;subquery&#8221; eager load should apply the DISTINCT
+keyword to the innermost SELECT statement.  When left as <code class="docutils literal"><span class="pre">None</span></code>,
+the DISTINCT keyword will be applied in those cases when the target
+columns do not comprise the full primary key of the target table.
+When set to <code class="docutils literal"><span class="pre">True</span></code>, the DISTINCT keyword is applied to the
+innermost SELECT unconditionally.</p>
+<p>It may be desirable to set this flag to False when the DISTINCT is
+reducing performance of the innermost subquery beyond that of what
+duplicate innermost rows may be causing.</p>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 0.8.3: </span>-
+<a href="#id121"><span class="problematic" id="id122">:paramref:`~.relationship.distinct_target_key`</span></a> allows the
+subquery eager loader to apply a DISTINCT modifier to the
+innermost SELECT.</p>
+</div>
+<div class="versionchanged">
+<p><span class="versionmodified">Changed in version 0.9.0: </span>-
+<a href="#id123"><span class="problematic" id="id124">:paramref:`~.relationship.distinct_target_key`</span></a> now defaults to
+<code class="docutils literal"><span class="pre">None</span></code>, so that the feature enables itself automatically for
+those cases where the innermost query targets a non-unique
+key.</p>
+</div>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><span class="xref std std-ref">loading_toplevel</span> - includes an introduction to subquery
+eager loading.</p>
+</div>
+</li>
+<li><strong>doc</strong> &#8211; docstring which will be applied to the resulting descriptor.</li>
+<li><strong>extension</strong> &#8211; <p>an <code class="xref py py-class docutils literal"><span class="pre">AttributeExtension</span></code> instance, or list of extensions,
+which will be prepended to the list of attribute listeners for
+the resulting descriptor placed on the class.</p>
+<div class="deprecated">
+<p><span class="versionmodified">Deprecated since version 0.7: </span>Please see <code class="xref py py-class docutils literal"><span class="pre">AttributeEvents</span></code>.</p>
+</div>
+</li>
+<li><strong>foreign_keys</strong> &#8211; <p>a list of columns which are to be used as &#8220;foreign key&#8221;
+columns, or columns which refer to the value in a remote
+column, within the context of this <a class="reference internal" href="#persist.ValueHistory.relationship" title="persist.ValueHistory.relationship"><code class="xref py py-func docutils literal"><span class="pre">relationship()</span></code></a>
+object&#8217;s <a href="#id125"><span class="problematic" id="id126">:paramref:`~.relationship.primaryjoin`</span></a> condition.
+That is, if the <a href="#id127"><span class="problematic" id="id128">:paramref:`~.relationship.primaryjoin`</span></a>
+condition of this <a class="reference internal" href="#persist.ValueHistory.relationship" title="persist.ValueHistory.relationship"><code class="xref py py-func docutils literal"><span class="pre">relationship()</span></code></a> is <code class="docutils literal"><span class="pre">a.id</span> <span class="pre">==</span>
+<span class="pre">b.a_id</span></code>, and the values in <code class="docutils literal"><span class="pre">b.a_id</span></code> are required to be
+present in <code class="docutils literal"><span class="pre">a.id</span></code>, then the &#8220;foreign key&#8221; column of this
+<a class="reference internal" href="#persist.ValueHistory.relationship" title="persist.ValueHistory.relationship"><code class="xref py py-func docutils literal"><span class="pre">relationship()</span></code></a> is <code class="docutils literal"><span class="pre">b.a_id</span></code>.</p>
+<p>In normal cases, the <a href="#id129"><span class="problematic" id="id130">:paramref:`~.relationship.foreign_keys`</span></a>
+parameter is <strong>not required.</strong> <a class="reference internal" href="#persist.ValueHistory.relationship" title="persist.ValueHistory.relationship"><code class="xref py py-func docutils literal"><span class="pre">relationship()</span></code></a> will
+automatically determine which columns in the
+<a href="#id131"><span class="problematic" id="id132">:paramref:`~.relationship.primaryjoin`</span></a> conditition are to be
+considered &#8220;foreign key&#8221; columns based on those
+<code class="xref py py-class docutils literal"><span class="pre">Column</span></code> objects that specify <code class="xref py py-class docutils literal"><span class="pre">ForeignKey</span></code>,
+or are otherwise listed as referencing columns in a
+<code class="xref py py-class docutils literal"><span class="pre">ForeignKeyConstraint</span></code> construct.
+<a href="#id133"><span class="problematic" id="id134">:paramref:`~.relationship.foreign_keys`</span></a> is only needed when:</p>
+<blockquote>
+<div><ol class="arabic">
+<li>There is more than one way to construct a join from the local
+table to the remote table, as there are multiple foreign key
+references present.  Setting <code class="docutils literal"><span class="pre">foreign_keys</span></code> will limit the
+<a class="reference internal" href="#persist.ValueHistory.relationship" title="persist.ValueHistory.relationship"><code class="xref py py-func docutils literal"><span class="pre">relationship()</span></code></a> to consider just those columns specified
+here as &#8220;foreign&#8221;.<div class="versionchanged">
+<p><span class="versionmodified">Changed in version 0.8: </span>A multiple-foreign key join ambiguity can be resolved by
+setting the <a href="#id135"><span class="problematic" id="id136">:paramref:`~.relationship.foreign_keys`</span></a>
+parameter alone, without the need to explicitly set
+<a href="#id137"><span class="problematic" id="id138">:paramref:`~.relationship.primaryjoin`</span></a> as well.</p>
+</div>
+</li>
+<li>The <code class="xref py py-class docutils literal"><span class="pre">Table</span></code> being mapped does not actually have
+<code class="xref py py-class docutils literal"><span class="pre">ForeignKey</span></code> or <code class="xref py py-class docutils literal"><span class="pre">ForeignKeyConstraint</span></code>
+constructs present, often because the table
+was reflected from a database that does not support foreign key
+reflection (MySQL MyISAM).</li>
+<li>The <a href="#id139"><span class="problematic" id="id140">:paramref:`~.relationship.primaryjoin`</span></a> argument is used to
+construct a non-standard join condition, which makes use of
+columns or expressions that do not normally refer to their
+&#8220;parent&#8221; column, such as a join condition expressed by a
+complex comparison using a SQL function.</li>
+</ol>
+</div></blockquote>
+<p>The <a class="reference internal" href="#persist.ValueHistory.relationship" title="persist.ValueHistory.relationship"><code class="xref py py-func docutils literal"><span class="pre">relationship()</span></code></a> construct will raise informative
+error messages that suggest the use of the
+<a href="#id141"><span class="problematic" id="id142">:paramref:`~.relationship.foreign_keys`</span></a> parameter when
+presented with an ambiguous condition.   In typical cases,
+if <a class="reference internal" href="#persist.ValueHistory.relationship" title="persist.ValueHistory.relationship"><code class="xref py py-func docutils literal"><span class="pre">relationship()</span></code></a> doesn&#8217;t raise any exceptions, the
+<a href="#id143"><span class="problematic" id="id144">:paramref:`~.relationship.foreign_keys`</span></a> parameter is usually
+not needed.</p>
+<p><a href="#id145"><span class="problematic" id="id146">:paramref:`~.relationship.foreign_keys`</span></a> may also be passed as a
+callable function which is evaluated at mapper initialization time,
+and may be passed as a Python-evaluable string when using
+Declarative.</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p><span class="xref std std-ref">relationship_foreign_keys</span></p>
+<p><span class="xref std std-ref">relationship_custom_foreign</span></p>
+<p class="last"><code class="xref py py-func docutils literal"><span class="pre">foreign()</span></code> - allows direct annotation of the &#8220;foreign&#8221;
+columns within a <a href="#id147"><span class="problematic" id="id148">:paramref:`~.relationship.primaryjoin`</span></a> condition.</p>
+</div>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 0.8: </span>The <code class="xref py py-func docutils literal"><span class="pre">foreign()</span></code> annotation can also be applied
+directly to the <a href="#id149"><span class="problematic" id="id150">:paramref:`~.relationship.primaryjoin`</span></a>
+expression, which is an alternate, more specific system of
+describing which columns in a particular
+<a href="#id151"><span class="problematic" id="id152">:paramref:`~.relationship.primaryjoin`</span></a> should be considered
+&#8220;foreign&#8221;.</p>
+</div>
+</li>
+<li><strong>info</strong> &#8211; <p>Optional data dictionary which will be populated into the
+<code class="xref py py-attr docutils literal"><span class="pre">MapperProperty.info</span></code> attribute of this object.</p>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 0.8.</span></p>
+</div>
+</li>
+<li><strong>innerjoin=False</strong> &#8211; <p>when <code class="docutils literal"><span class="pre">True</span></code>, joined eager loads will use an inner join to join
+against related tables instead of an outer join.  The purpose
+of this option is generally one of performance, as inner joins
+generally perform better than outer joins.</p>
+<p>This flag can be set to <code class="docutils literal"><span class="pre">True</span></code> when the relationship references an
+object via many-to-one using local foreign keys that are not
+nullable, or when the reference is one-to-one or a collection that
+is guaranteed to have one or at least one entry.</p>
+<p>If the joined-eager load is chained onto an existing LEFT OUTER
+JOIN, <code class="docutils literal"><span class="pre">innerjoin=True</span></code> will be bypassed and the join will continue
+to chain as LEFT OUTER JOIN so that the results don&#8217;t change.  As an
+alternative, specify the value <code class="docutils literal"><span class="pre">&quot;nested&quot;</span></code>.  This will instead nest
+the join on the right side, e.g. using the form &#8220;a LEFT OUTER JOIN
+(b JOIN c)&#8221;.</p>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 0.9.4: </span>Added <code class="docutils literal"><span class="pre">innerjoin=&quot;nested&quot;</span></code> option to
+support nesting of eager &#8220;inner&#8221; joins.</p>
+</div>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p><span class="xref std std-ref">what_kind_of_loading</span> - Discussion of some details of
+various loader options.</p>
+<p class="last"><a href="#id153"><span class="problematic" id="id154">:paramref:`.joinedload.innerjoin`</span></a> - loader option version</p>
+</div>
+</li>
+<li><strong>join_depth</strong> &#8211; <p>when non-<code class="docutils literal"><span class="pre">None</span></code>, an integer value indicating how many levels
+deep &#8220;eager&#8221; loaders should join on a self-referring or cyclical
+relationship.  The number counts how many times the same Mapper
+shall be present in the loading condition along a particular join
+branch.  When left at its default of <code class="docutils literal"><span class="pre">None</span></code>, eager loaders
+will stop chaining when they encounter a the same target mapper
+which is already higher up in the chain.  This option applies
+both to joined- and subquery- eager loaders.</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><span class="xref std std-ref">self_referential_eager_loading</span> - Introductory documentation
+and examples.</p>
+</div>
+</li>
+<li><strong>lazy='select'</strong> &#8211; <p>specifies
+how the related items should be loaded.  Default value is
+<code class="docutils literal"><span class="pre">select</span></code>.  Values include:</p>
+<ul>
+<li><code class="docutils literal"><span class="pre">select</span></code> - items should be loaded lazily when the property is
+first accessed, using a separate SELECT statement, or identity map
+fetch for simple many-to-one references.</li>
+<li><code class="docutils literal"><span class="pre">immediate</span></code> - items should be loaded as the parents are loaded,
+using a separate SELECT statement, or identity map fetch for
+simple many-to-one references.</li>
+<li><code class="docutils literal"><span class="pre">joined</span></code> - items should be loaded &#8220;eagerly&#8221; in the same query as
+that of the parent, using a JOIN or LEFT OUTER JOIN.  Whether
+the join is &#8220;outer&#8221; or not is determined by the
+<a href="#id155"><span class="problematic" id="id156">:paramref:`~.relationship.innerjoin`</span></a> parameter.</li>
+<li><code class="docutils literal"><span class="pre">subquery</span></code> - items should be loaded &#8220;eagerly&#8221; as the parents are
+loaded, using one additional SQL statement, which issues a JOIN to
+a subquery of the original statement, for each collection
+requested.</li>
+<li><code class="docutils literal"><span class="pre">noload</span></code> - no loading should occur at any time.  This is to
+support &#8220;write-only&#8221; attributes, or attributes which are
+populated in some manner specific to the application.</li>
+<li><code class="docutils literal"><span class="pre">dynamic</span></code> - the attribute will return a pre-configured
+<code class="xref py py-class docutils literal"><span class="pre">Query</span></code> object for all read
+operations, onto which further filtering operations can be
+applied before iterating the results.  See
+the section <span class="xref std std-ref">dynamic_relationship</span> for more details.</li>
+<li>True - a synonym for &#8216;select&#8217;</li>
+<li>False - a synonym for &#8216;joined&#8217;</li>
+<li>None - a synonym for &#8216;noload&#8217;</li>
+</ul>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p><code class="xref doc docutils literal"><span class="pre">/orm/loading_relationships</span></code> - Full documentation on relationship loader
+configuration.</p>
+<p class="last"><span class="xref std std-ref">dynamic_relationship</span> - detail on the <code class="docutils literal"><span class="pre">dynamic</span></code> option.</p>
+</div>
+</li>
+<li><strong>load_on_pending=False</strong> &#8211; <p>Indicates loading behavior for transient or pending parent objects.</p>
+<p>When set to <code class="docutils literal"><span class="pre">True</span></code>, causes the lazy-loader to
+issue a query for a parent object that is not persistent, meaning it
+has never been flushed.  This may take effect for a pending object
+when autoflush is disabled, or for a transient object that has been
+&#8220;attached&#8221; to a <code class="xref py py-class docutils literal"><span class="pre">Session</span></code> but is not part of its pending
+collection.</p>
+<p>The <a href="#id157"><span class="problematic" id="id158">:paramref:`~.relationship.load_on_pending`</span></a> flag does not improve
+behavior when the ORM is used normally - object references should be
+constructed at the object level, not at the foreign key level, so
+that they are present in an ordinary way before a flush proceeds.
+This flag is not not intended for general use.</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><code class="xref py py-meth docutils literal"><span class="pre">Session.enable_relationship_loading()</span></code> - this method
+establishes &#8220;load on pending&#8221; behavior for the whole object, and
+also allows loading on objects that remain transient or
+detached.</p>
+</div>
+</li>
+<li><strong>order_by</strong> &#8211; <p>indicates the ordering that should be applied when loading these
+items.  <a href="#id159"><span class="problematic" id="id160">:paramref:`~.relationship.order_by`</span></a> is expected to refer to
+one of the <code class="xref py py-class docutils literal"><span class="pre">Column</span></code> objects to which the target class is
+mapped, or the attribute itself bound to the target class which
+refers to the column.</p>
+<p><a href="#id161"><span class="problematic" id="id162">:paramref:`~.relationship.order_by`</span></a> may also be passed as a callable
+function which is evaluated at mapper initialization time, and may
+be passed as a Python-evaluable string when using Declarative.</p>
+</li>
+<li><strong>passive_deletes=False</strong> &#8211; <p>Indicates loading behavior during delete operations.</p>
+<p>A value of True indicates that unloaded child items should not
+be loaded during a delete operation on the parent.  Normally,
+when a parent item is deleted, all child items are loaded so
+that they can either be marked as deleted, or have their
+foreign key to the parent set to NULL.  Marking this flag as
+True usually implies an ON DELETE &lt;CASCADE|SET NULL&gt; rule is in
+place which will handle updating/deleting child rows on the
+database side.</p>
+<p>Additionally, setting the flag to the string value &#8216;all&#8217; will
+disable the &#8220;nulling out&#8221; of the child foreign keys, when there
+is no delete or delete-orphan cascade enabled.  This is
+typically used when a triggering or error raise scenario is in
+place on the database side.  Note that the foreign key
+attributes on in-session child objects will not be changed
+after a flush occurs so this is a very special use-case
+setting.</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><span class="xref std std-ref">passive_deletes</span> - Introductory documentation
+and examples.</p>
+</div>
+</li>
+<li><strong>passive_updates=True</strong> &#8211; <p>Indicates loading and INSERT/UPDATE/DELETE behavior when the
+source of a foreign key value changes (i.e. an &#8220;on update&#8221;
+cascade), which are typically the primary key columns of the
+source row.</p>
+<p>When True, it is assumed that ON UPDATE CASCADE is configured on
+the foreign key in the database, and that the database will
+handle propagation of an UPDATE from a source column to
+dependent rows.  Note that with databases which enforce
+referential integrity (i.e. PostgreSQL, MySQL with InnoDB tables),
+ON UPDATE CASCADE is required for this operation.  The
+relationship() will update the value of the attribute on related
+items which are locally present in the session during a flush.</p>
+<p>When False, it is assumed that the database does not enforce
+referential integrity and will not be issuing its own CASCADE
+operation for an update.  The relationship() will issue the
+appropriate UPDATE statements to the database in response to the
+change of a referenced key, and items locally present in the
+session during a flush will also be refreshed.</p>
+<p>This flag should probably be set to False if primary key changes
+are expected and the database in use doesn&#8217;t support CASCADE
+(i.e. SQLite, MySQL MyISAM tables).</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p><span class="xref std std-ref">passive_updates</span> - Introductory documentation and
+examples.</p>
+<p class="last"><a href="#id163"><span class="problematic" id="id164">:paramref:`.mapper.passive_updates`</span></a> - a similar flag which
+takes effect for joined-table inheritance mappings.</p>
+</div>
+</li>
+<li><strong>post_update</strong> &#8211; <p>this indicates that the relationship should be handled by a
+second UPDATE statement after an INSERT or before a
+DELETE. Currently, it also will issue an UPDATE after the
+instance was UPDATEd as well, although this technically should
+be improved. This flag is used to handle saving bi-directional
+dependencies between two individual rows (i.e. each row
+references the other), where it would otherwise be impossible to
+INSERT or DELETE both rows fully since one row exists before the
+other. Use this flag when a particular mapping arrangement will
+incur two rows that are dependent on each other, such as a table
+that has a one-to-many relationship to a set of child rows, and
+also has a column that references a single child row within that
+list (i.e. both tables contain a foreign key to each other). If
+a flush operation returns an error that a &#8220;cyclical
+dependency&#8221; was detected, this is a cue that you might want to
+use <a href="#id165"><span class="problematic" id="id166">:paramref:`~.relationship.post_update`</span></a> to &#8220;break&#8221; the cycle.</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><span class="xref std std-ref">post_update</span> - Introductory documentation and examples.</p>
+</div>
+</li>
+<li><strong>primaryjoin</strong> &#8211; <p>a SQL expression that will be used as the primary
+join of this child object against the parent object, or in a
+many-to-many relationship the join of the primary object to the
+association table. By default, this value is computed based on the
+foreign key relationships of the parent and child tables (or
+association table).</p>
+<p><a href="#id167"><span class="problematic" id="id168">:paramref:`~.relationship.primaryjoin`</span></a> may also be passed as a
+callable function which is evaluated at mapper initialization time,
+and may be passed as a Python-evaluable string when using
+Declarative.</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><span class="xref std std-ref">relationship_primaryjoin</span></p>
+</div>
+</li>
+<li><strong>remote_side</strong> &#8211; <p>used for self-referential relationships, indicates the column or
+list of columns that form the &#8220;remote side&#8221; of the relationship.</p>
+<p><a href="#id169"><span class="problematic" id="id170">:paramref:`.relationship.remote_side`</span></a> may also be passed as a
+callable function which is evaluated at mapper initialization time,
+and may be passed as a Python-evaluable string when using
+Declarative.</p>
+<div class="versionchanged">
+<p><span class="versionmodified">Changed in version 0.8: </span>The <code class="xref py py-func docutils literal"><span class="pre">remote()</span></code> annotation can also be applied
+directly to the <code class="docutils literal"><span class="pre">primaryjoin</span></code> expression, which is an
+alternate, more specific system of describing which columns in a
+particular <code class="docutils literal"><span class="pre">primaryjoin</span></code> should be considered &#8220;remote&#8221;.</p>
+</div>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p><span class="xref std std-ref">self_referential</span> - in-depth explanation of how
+<a href="#id171"><span class="problematic" id="id172">:paramref:`~.relationship.remote_side`</span></a>
+is used to configure self-referential relationships.</p>
+<p class="last"><code class="xref py py-func docutils literal"><span class="pre">remote()</span></code> - an annotation function that accomplishes the
+same purpose as <a href="#id173"><span class="problematic" id="id174">:paramref:`~.relationship.remote_side`</span></a>, typically
+when a custom <a href="#id175"><span class="problematic" id="id176">:paramref:`~.relationship.primaryjoin`</span></a> condition
+is used.</p>
+</div>
+</li>
+<li><strong>query_class</strong> &#8211; <p>a <code class="xref py py-class docutils literal"><span class="pre">Query</span></code> subclass that will be used as the base of the
+&#8220;appender query&#8221; returned by a &#8220;dynamic&#8221; relationship, that
+is, a relationship that specifies <code class="docutils literal"><span class="pre">lazy=&quot;dynamic&quot;</span></code> or was
+otherwise constructed using the <code class="xref py py-func docutils literal"><span class="pre">orm.dynamic_loader()</span></code>
+function.</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><span class="xref std std-ref">dynamic_relationship</span> - Introduction to &#8220;dynamic&#8221;
+relationship loaders.</p>
+</div>
+</li>
+<li><strong>secondaryjoin</strong> &#8211; <p>a SQL expression that will be used as the join of
+an association table to the child object. By default, this value is
+computed based on the foreign key relationships of the association
+and child tables.</p>
+<p><a href="#id177"><span class="problematic" id="id178">:paramref:`~.relationship.secondaryjoin`</span></a> may also be passed as a
+callable function which is evaluated at mapper initialization time,
+and may be passed as a Python-evaluable string when using
+Declarative.</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><span class="xref std std-ref">relationship_primaryjoin</span></p>
+</div>
+</li>
+<li><strong>single_parent</strong> &#8211; <p>when True, installs a validator which will prevent objects
+from being associated with more than one parent at a time.
+This is used for many-to-one or many-to-many relationships that
+should be treated either as one-to-one or one-to-many.  Its usage
+is optional, except for <a class="reference internal" href="#persist.ValueHistory.relationship" title="persist.ValueHistory.relationship"><code class="xref py py-func docutils literal"><span class="pre">relationship()</span></code></a> constructs which
+are many-to-one or many-to-many and also
+specify the <code class="docutils literal"><span class="pre">delete-orphan</span></code> cascade option.  The
+<a class="reference internal" href="#persist.ValueHistory.relationship" title="persist.ValueHistory.relationship"><code class="xref py py-func docutils literal"><span class="pre">relationship()</span></code></a> construct itself will raise an error
+instructing when this option is required.</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><span class="xref std std-ref">unitofwork_cascades</span> - includes detail on when the
+<a href="#id179"><span class="problematic" id="id180">:paramref:`~.relationship.single_parent`</span></a> flag may be appropriate.</p>
+</div>
+</li>
+<li><strong>uselist</strong> &#8211; <p>a boolean that indicates if this property should be loaded as a
+list or a scalar. In most cases, this value is determined
+automatically by <a class="reference internal" href="#persist.ValueHistory.relationship" title="persist.ValueHistory.relationship"><code class="xref py py-func docutils literal"><span class="pre">relationship()</span></code></a> at mapper configuration
+time, based on the type and direction
+of the relationship - one to many forms a list, many to one
+forms a scalar, many to many is a list. If a scalar is desired
+where normally a list would be present, such as a bi-directional
+one-to-one relationship, set <a href="#id181"><span class="problematic" id="id182">:paramref:`~.relationship.uselist`</span></a> to
+False.</p>
+<p>The <a href="#id183"><span class="problematic" id="id184">:paramref:`~.relationship.uselist`</span></a> flag is also available on an
+existing <a class="reference internal" href="#persist.ValueHistory.relationship" title="persist.ValueHistory.relationship"><code class="xref py py-func docutils literal"><span class="pre">relationship()</span></code></a> construct as a read-only attribute,
+which can be used to determine if this <a class="reference internal" href="#persist.ValueHistory.relationship" title="persist.ValueHistory.relationship"><code class="xref py py-func docutils literal"><span class="pre">relationship()</span></code></a> deals
+with collections or scalar attributes:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">User</span><span class="o">.</span><span class="n">addresses</span><span class="o">.</span><span class="n">property</span><span class="o">.</span><span class="n">uselist</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><span class="xref std std-ref">relationships_one_to_one</span> - Introduction to the &#8220;one to
+one&#8221; relationship pattern, which is typically when the
+<a href="#id185"><span class="problematic" id="id186">:paramref:`~.relationship.uselist`</span></a> flag is needed.</p>
+</div>
+</li>
+<li><strong>viewonly=False</strong> &#8211; when set to True, the relationship is used only for loading objects,
+and not for any persistence operation.  A <a class="reference internal" href="#persist.ValueHistory.relationship" title="persist.ValueHistory.relationship"><code class="xref py py-func docutils literal"><span class="pre">relationship()</span></code></a>
+which specifies <a href="#id187"><span class="problematic" id="id188">:paramref:`~.relationship.viewonly`</span></a> can work
+with a wider range of SQL operations within the
+<a href="#id189"><span class="problematic" id="id190">:paramref:`~.relationship.primaryjoin`</span></a> condition, including
+operations that feature the use of a variety of comparison operators
+as well as SQL functions such as <code class="xref py py-func docutils literal"><span class="pre">cast()</span></code>.  The
+<a href="#id191"><span class="problematic" id="id192">:paramref:`~.relationship.viewonly`</span></a> flag is also of general use when
+defining any kind of <a class="reference internal" href="#persist.ValueHistory.relationship" title="persist.ValueHistory.relationship"><code class="xref py py-func docutils literal"><span class="pre">relationship()</span></code></a> that doesn&#8217;t represent
+the full set of related objects, to prevent modifications of the
+collection from resulting in persistence operations.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="pppCompiler-doc.html" class="btn btn-neutral float-right" title="pppCompiler" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="mylogging-doc.html" class="btn btn-neutral" title="mylogging" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright .
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../',
+            VERSION:'0.8',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

@@ -149,7 +149,7 @@ Typically a pulse program also has an inner loop to execute an experiment multip
 
       exit( endLabel )
 
-functions
+Functions
 `````````
 
 Functions defined in the pulse program are macros rather than true functions. They cannot take arguments. The code defined in a function is substituted in-line in the location where the function is called.

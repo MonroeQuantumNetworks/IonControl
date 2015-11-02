@@ -84,7 +84,7 @@
             
                 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../hardware.html">Hardware</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FPGAhardware.html">Hardware</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="experimentUi_manual.html">User Manual</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="Introduction.html">Introduction</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Projects.html">Projects</a></li>
@@ -105,10 +105,9 @@
 <li class="toctree-l2"><a class="reference internal" href="GateSequences.html">Gate Sequences</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Scripting.html">Scripting</a></li>
 <li class="toctree-l2"><a class="reference internal" href="MeasurementLog.html">Measurement Log</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Hardware.html">Hardware</a></li>
 <li class="toctree-l2"><a class="reference internal" href="ExternalParameters.html">External Parameters</a></li>
-<li class="toctree-l2"><a class="reference internal" href="KnownHardware.html">Known Hardware</a></li>
 <li class="toctree-l2"><a class="reference internal" href="DedicatedCounters.html">Dedicated Counters</a></li>
-<li class="toctree-l2"><a class="reference internal" href="VoltageControl.html">Voltage Control</a></li>
 <li class="toctree-l2"><a class="reference internal" href="LogicAnalyzer.html">Logic Analyzer</a></li>
 <li class="toctree-l2"><a class="reference internal" href="ExtendingTheCode.html">Extending the Code</a></li>
 </ul>
@@ -347,7 +346,7 @@
 </div></blockquote>
 </div>
 <div class="section" id="functions">
-<h4>functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h4>
+<h4>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h4>
 <p>Functions defined in the pulse program are macros rather than true functions. They cannot take arguments. The code defined in a function is substituted in-line in the location where the function is called.</p>
 </div>
 <div class="section" id="minimal-example">
@@ -587,26 +586,26 @@
 <div><span class="target" id="module-Builtins"></span><p>Functions built into the ppp language.</p>
 <dl class="function">
 <dt id="Builtins.apply_next_scan_point">
-<code class="descname">apply_next_scan_point</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/Builtins.html#apply_next_scan_point"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#Builtins.apply_next_scan_point" title="Permalink to this definition">¶</a></dt>
+<code class="descname">apply_next_scan_point</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Builtins.apply_next_scan_point" title="Permalink to this definition">¶</a></dt>
 <dd><p>To be called to proceed to the next scan point.
 It will update all necessary parameters for the enxt scan point.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="Builtins.clear_counter">
-<code class="descname">clear_counter</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/Builtins.html#clear_counter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#Builtins.clear_counter" title="Permalink to this definition">¶</a></dt>
+<code class="descname">clear_counter</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Builtins.clear_counter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Disable all counters after the next update.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="Builtins.exit">
-<code class="descname">exit</code><span class="sig-paren">(</span><em>exitcode</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/Builtins.html#exit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#Builtins.exit" title="Permalink to this definition">¶</a></dt>
+<code class="descname">exit</code><span class="sig-paren">(</span><em>exitcode</em><span class="sig-paren">)</span><a class="headerlink" href="#Builtins.exit" title="Permalink to this definition">¶</a></dt>
 <dd><p>Stop propgram execution with the given exitcode.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="Builtins.load_count">
-<code class="descname">load_count</code><span class="sig-paren">(</span><em>const_channel</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/Builtins.html#load_count"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#Builtins.load_count" title="Permalink to this definition">¶</a></dt>
+<code class="descname">load_count</code><span class="sig-paren">(</span><em>const_channel</em><span class="sig-paren">)</span><a class="headerlink" href="#Builtins.load_count" title="Permalink to this definition">¶</a></dt>
 <dd><p>load detected counts from counter channel given by the const paarameter.
 The new count value becomes available AFTER the gate is closed and is available
 until the next counter gate is closed for the same channel.</p>
@@ -614,56 +613,56 @@ until the next counter gate is closed for the same channel.</p>
 
 <dl class="function">
 <dt id="Builtins.pipe_empty">
-<code class="descname">pipe_empty</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/Builtins.html#pipe_empty"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#Builtins.pipe_empty" title="Permalink to this definition">¶</a></dt>
+<code class="descname">pipe_empty</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Builtins.pipe_empty" title="Permalink to this definition">¶</a></dt>
 <dd><p>return true if pipe from computer is empty.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="Builtins.pulse">
-<code class="descname">pulse</code><span class="sig-paren">(</span><em> [shutter=shutter] [, counter=counter] [, trigger=trigger] [, duration=time] [, end_shutter=shuttervar] </em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/Builtins.html#pulse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#Builtins.pulse" title="Permalink to this definition">¶</a></dt>
+<code class="descname">pulse</code><span class="sig-paren">(</span><em> [shutter=shutter] [, counter=counter] [, trigger=trigger] [, duration=time] [, end_shutter=shuttervar] </em><span class="sig-paren">)</span><a class="headerlink" href="#Builtins.pulse" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generate a pulse with shutter, trigger, counter and duration time. Equivalent to</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="Builtins.ram_read_valid">
-<code class="descname">ram_read_valid</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/Builtins.html#ram_read_valid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#Builtins.ram_read_valid" title="Permalink to this definition">¶</a></dt>
+<code class="descname">ram_read_valid</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Builtins.ram_read_valid" title="Permalink to this definition">¶</a></dt>
 <dd><p>true if the next word read from RAM is available and valid.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="Builtins.read_pipe">
-<code class="descname">read_pipe</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/Builtins.html#read_pipe"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#Builtins.read_pipe" title="Permalink to this definition">¶</a></dt>
+<code class="descname">read_pipe</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Builtins.read_pipe" title="Permalink to this definition">¶</a></dt>
 <dd><p>Read one word from the incoming pipe and place in parameter.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="Builtins.read_ram">
-<code class="descname">read_ram</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/Builtins.html#read_ram"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#Builtins.read_ram" title="Permalink to this definition">¶</a></dt>
+<code class="descname">read_ram</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Builtins.read_ram" title="Permalink to this definition">¶</a></dt>
 <dd><p>Read one word from the RAM pipe.
 Only valif if ram_valid() return true.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="Builtins.serial_write">
-<code class="descname">serial_write</code><span class="sig-paren">(</span><em>const_channel</em>, <em>value</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/Builtins.html#serial_write"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#Builtins.serial_write" title="Permalink to this definition">¶</a></dt>
+<code class="descname">serial_write</code><span class="sig-paren">(</span><em>const_channel</em>, <em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#Builtins.serial_write" title="Permalink to this definition">¶</a></dt>
 <dd><p>write value to serial interface channel.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="Builtins.set_counter">
-<code class="descname">set_counter</code><span class="sig-paren">(</span><em>counter</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/Builtins.html#set_counter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#Builtins.set_counter" title="Permalink to this definition">¶</a></dt>
+<code class="descname">set_counter</code><span class="sig-paren">(</span><em>counter</em><span class="sig-paren">)</span><a class="headerlink" href="#Builtins.set_counter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the counterchannels to be enabled after the next update.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="Builtins.set_dac">
-<code class="descname">set_dac</code><span class="sig-paren">(</span><em>const_channel</em>, <em>parameter</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/Builtins.html#set_dac"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#Builtins.set_dac" title="Permalink to this definition">¶</a></dt>
+<code class="descname">set_dac</code><span class="sig-paren">(</span><em>const_channel</em>, <em>parameter</em><span class="sig-paren">)</span><a class="headerlink" href="#Builtins.set_dac" title="Permalink to this definition">¶</a></dt>
 <dd><p>set dac channel given by const parameter to value given by second parameter.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="Builtins.set_dds">
-<code class="descname">set_dds</code><span class="sig-paren">(</span><em>const_channel</em><span class="optional">[</span>, <em>freq=freq_parameter</em><span class="optional">]</span><span class="optional">[</span>, <em>phase=phase_parameter</em><span class="optional">]</span><span class="optional">[</span>, <em>amp=amp_parameter</em><span class="optional">]</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/Builtins.html#set_dds"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#Builtins.set_dds" title="Permalink to this definition">¶</a></dt>
+<code class="descname">set_dds</code><span class="sig-paren">(</span><em>const_channel</em><span class="optional">[</span>, <em>freq=freq_parameter</em><span class="optional">]</span><span class="optional">[</span>, <em>phase=phase_parameter</em><span class="optional">]</span><span class="optional">[</span>, <em>amp=amp_parameter</em><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#Builtins.set_dds" title="Permalink to this definition">¶</a></dt>
 <dd><p>set dds parameters of channel given by const parameter.
 Only given parameters are written. Frequency and Phase
 only take effect after the next io_update trigger.
@@ -672,39 +671,39 @@ Amplitude takes effect immediately.</p>
 
 <dl class="function">
 <dt id="Builtins.set_inv_shutter">
-<code class="descname">set_inv_shutter</code><span class="sig-paren">(</span><em>shutter</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/Builtins.html#set_inv_shutter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#Builtins.set_inv_shutter" title="Permalink to this definition">¶</a></dt>
+<code class="descname">set_inv_shutter</code><span class="sig-paren">(</span><em>shutter</em><span class="sig-paren">)</span><a class="headerlink" href="#Builtins.set_inv_shutter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set inverse shutter values to be applied with next update. All bits that are green become disabled, all bit red enabled, all white bits remain unaltered.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="Builtins.set_parameter">
-<code class="descname">set_parameter</code><span class="sig-paren">(</span><em>const_index</em>, <em>parameter value</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/Builtins.html#set_parameter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#Builtins.set_parameter" title="Permalink to this definition">¶</a></dt>
+<code class="descname">set_parameter</code><span class="sig-paren">(</span><em>const_index</em>, <em>parameter value</em><span class="sig-paren">)</span><a class="headerlink" href="#Builtins.set_parameter" title="Permalink to this definition">¶</a></dt>
 <dd><p>set pulser parameter channel index to value.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="Builtins.set_ram_address">
-<code class="descname">set_ram_address</code><span class="sig-paren">(</span><em>parameter</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/Builtins.html#set_ram_address"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#Builtins.set_ram_address" title="Permalink to this definition">¶</a></dt>
+<code class="descname">set_ram_address</code><span class="sig-paren">(</span><em>parameter</em><span class="sig-paren">)</span><a class="headerlink" href="#Builtins.set_ram_address" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the address of the RAM read pointer.
 Invalidates the FIFO and starts reading at the given address.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="Builtins.set_shutter">
-<code class="descname">set_shutter</code><span class="sig-paren">(</span><em>shutter</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/Builtins.html#set_shutter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#Builtins.set_shutter" title="Permalink to this definition">¶</a></dt>
+<code class="descname">set_shutter</code><span class="sig-paren">(</span><em>shutter</em><span class="sig-paren">)</span><a class="headerlink" href="#Builtins.set_shutter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the shutter values to be applied with next update.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="Builtins.set_trigger">
-<code class="descname">set_trigger</code><span class="sig-paren">(</span><em>trigger</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/Builtins.html#set_trigger"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#Builtins.set_trigger" title="Permalink to this definition">¶</a></dt>
+<code class="descname">set_trigger</code><span class="sig-paren">(</span><em>trigger</em><span class="sig-paren">)</span><a class="headerlink" href="#Builtins.set_trigger" title="Permalink to this definition">¶</a></dt>
 <dd><p>set trigger values to be applied after next update.
 trigger channels only put out one clock cycle pulses when enabled.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="Builtins.update">
-<code class="descname">update</code><span class="sig-paren">(</span><em>parameter_time</em><span class="optional">[</span>, <em>wait_dds=True</em><span class="optional">]</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/Builtins.html#update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#Builtins.update" title="Permalink to this definition">¶</a></dt>
+<code class="descname">update</code><span class="sig-paren">(</span><em>parameter_time</em><span class="optional">[</span>, <em>wait_dds=True</em><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#Builtins.update" title="Permalink to this definition">¶</a></dt>
 <dd><p>Update the shutter, trigger and counter gate outputs.
 If time parameter is given, start timer with this time.
 wait_dds=True (default): wait for all DDS and other hardware to be written.
@@ -713,13 +712,13 @@ wait_dds=False : continue without waiting for hardware to be written.</p>
 
 <dl class="function">
 <dt id="Builtins.wait_dds">
-<code class="descname">wait_dds</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/Builtins.html#wait_dds"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#Builtins.wait_dds" title="Permalink to this definition">¶</a></dt>
+<code class="descname">wait_dds</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Builtins.wait_dds" title="Permalink to this definition">¶</a></dt>
 <dd><p>wait until all external hardware has been written.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="Builtins.wait_trigger">
-<code class="descname">wait_trigger</code><span class="sig-paren">(</span><em>parameter</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/Builtins.html#wait_trigger"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#Builtins.wait_trigger" title="Permalink to this definition">¶</a></dt>
+<code class="descname">wait_trigger</code><span class="sig-paren">(</span><em>parameter</em><span class="sig-paren">)</span><a class="headerlink" href="#Builtins.wait_trigger" title="Permalink to this definition">¶</a></dt>
 <dd><p>wait for external trigger. Parameter is a bitmask where:</p>
 <ul class="simple">
 <li>[7:0]: edge trigger, continue if |(parameter[7:0] &amp; trigger_in[7:0])</li>
@@ -730,13 +729,13 @@ wait_dds=False : continue without waiting for hardware to be written.</p>
 
 <dl class="function">
 <dt id="Builtins.write_pipe">
-<code class="descname">write_pipe</code><span class="sig-paren">(</span><em>parameter</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/Builtins.html#write_pipe"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#Builtins.write_pipe" title="Permalink to this definition">¶</a></dt>
+<code class="descname">write_pipe</code><span class="sig-paren">(</span><em>parameter</em><span class="sig-paren">)</span><a class="headerlink" href="#Builtins.write_pipe" title="Permalink to this definition">¶</a></dt>
 <dd><p>Write parameter to pipe to computer.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="Builtins.write_result">
-<code class="descname">write_result</code><span class="sig-paren">(</span><em>const_channel</em>, <em>parameter</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/Builtins.html#write_result"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#Builtins.write_result" title="Permalink to this definition">¶</a></dt>
+<code class="descname">write_result</code><span class="sig-paren">(</span><em>const_channel</em>, <em>parameter</em><span class="sig-paren">)</span><a class="headerlink" href="#Builtins.write_result" title="Permalink to this definition">¶</a></dt>
 <dd><p>Write parameter as a result of the given channel.
 Values can be plotted by selecting &#8220;Result&#8221; and channel
 number in the Evaluation configuration.</p>

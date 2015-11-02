@@ -1,0 +1,266 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>dedicatedCounters.DedicatedCountersSettings &mdash; IonControl 0.8 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="IonControl 0.8 documentation" href="../../index.html"/>
+        <link rel="up" title="Module code" href="../index.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> IonControl
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.8
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FPGAhardware.html">Hardware</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../manual/experimentUi_manual.html">User Manual</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../manual/instrumentLoggerUi_manual.html">Instrument Logger User Manual</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../code/codeDocs.html">Code Documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../index.html">IonControl</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+      
+    <li>dedicatedCounters.DedicatedCountersSettings</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for dedicatedCounters.DedicatedCountersSettings</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Created on Sat Feb 16 16:56:57 2013</span>
+
+<span class="sd">@author: pmaunz</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">functools</span>
+
+<span class="kn">from</span> <span class="nn">PyQt4</span> <span class="kn">import</span> <span class="n">QtCore</span>
+<span class="kn">import</span> <span class="nn">PyQt4.uic</span>
+
+<span class="kn">from</span> <span class="nn">modules</span> <span class="kn">import</span> <span class="n">CountrateConversion</span>
+<span class="kn">import</span> <span class="nn">modules.magnitude</span> <span class="kn">as</span> <span class="nn">magnitude</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="n">uipath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">__file__</span><span class="p">),</span> <span class="s">&#39;..&#39;</span><span class="p">,</span> <span class="s">r&#39;ui</span><span class="se">\\</span><span class="s">DedicatedCountersSettings.ui&#39;</span><span class="p">)</span>
+<span class="n">DedicatedCountersSettingsForm</span><span class="p">,</span> <span class="n">DedicatedCountersSettingsBase</span> <span class="o">=</span> <span class="n">PyQt4</span><span class="o">.</span><span class="n">uic</span><span class="o">.</span><span class="n">loadUiType</span><span class="p">(</span><span class="n">uipath</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Settings"><a class="viewcode-back" href="../../code/dedicatedCounters-doc.html#dedicatedCounters.DedicatedCountersSettings.Settings">[docs]</a><span class="k">class</span> <span class="nc">Settings</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">counterMask</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">adcMask</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">integrationTime</span> <span class="o">=</span> <span class="n">magnitude</span><span class="o">.</span><span class="n">mg</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span><span class="s">&#39;ms&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">displayUnit</span> <span class="o">=</span> <span class="n">CountrateConversion</span><span class="o">.</span><span class="n">DisplayUnit</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">unit</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pointsToKeep</span> <span class="o">=</span> <span class="mi">400</span>
+</div>
+<div class="viewcode-block" id="DedicatedCountersSettings"><a class="viewcode-back" href="../../code/dedicatedCounters-doc.html#dedicatedCounters.DedicatedCountersSettings.DedicatedCountersSettings">[docs]</a><span class="k">class</span> <span class="nc">DedicatedCountersSettings</span><span class="p">(</span><span class="n">DedicatedCountersSettingsForm</span><span class="p">,</span><span class="n">DedicatedCountersSettingsBase</span> <span class="p">):</span>
+    <span class="n">valueChanged</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">pyqtSignal</span><span class="p">(</span><span class="nb">object</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">config</span><span class="p">,</span><span class="n">parent</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="n">DedicatedCountersSettingsForm</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">DedicatedCountersSettingsBase</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">parent</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">settings</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;DedicatedCounterSettings.Settings2&#39;</span><span class="p">,</span><span class="n">Settings</span><span class="p">())</span>
+
+<div class="viewcode-block" id="DedicatedCountersSettings.setupUi"><a class="viewcode-back" href="../../code/dedicatedCounters-doc.html#dedicatedCounters.DedicatedCountersSettings.DedicatedCountersSettings.setupUi">[docs]</a>    <span class="k">def</span> <span class="nf">setupUi</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+        <span class="n">DedicatedCountersSettingsForm</span><span class="o">.</span><span class="n">setupUi</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">parent</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">integrationTimeBox</span><span class="o">.</span><span class="n">setValue</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">integrationTime</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">integrationTimeBox</span><span class="o">.</span><span class="n">valueChanged</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span> <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">onValueChanged</span><span class="p">,</span><span class="s">&#39;integrationTime&#39;</span><span class="p">)</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pointsToKeepBox</span><span class="o">.</span><span class="n">setValue</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">pointsToKeep</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pointsToKeepBox</span><span class="o">.</span><span class="n">valueChanged</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span> <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">onValueChanged</span><span class="p">,</span><span class="s">&#39;pointsToKeep&#39;</span><span class="p">)</span> <span class="p">)</span>
+        <span class="k">for</span> <span class="n">num</span><span class="p">,</span> <span class="n">channel</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">([</span> <span class="bp">self</span><span class="o">.</span><span class="n">ch0Check</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ch1Check</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ch2Check</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ch3Check</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ch4Check</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ch5Check</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ch6Check</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ch7Check</span><span class="p">]):</span>
+            <span class="n">channel</span><span class="o">.</span><span class="n">setChecked</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">counterMask</span> <span class="o">&amp;</span> <span class="p">(</span><span class="mi">1</span><span class="o">&lt;&lt;</span><span class="n">num</span><span class="p">)</span> <span class="p">)</span>
+            <span class="n">channel</span><span class="o">.</span><span class="n">stateChanged</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span> <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">onCounterStateChanged</span><span class="p">,(</span><span class="mi">1</span><span class="o">&lt;&lt;</span><span class="n">num</span><span class="p">)</span> <span class="p">))</span>
+        <span class="k">for</span> <span class="n">num</span><span class="p">,</span> <span class="n">channel</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">([</span> <span class="bp">self</span><span class="o">.</span><span class="n">adc0Check</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">adc1Check</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">adc2Check</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">adc3Check</span><span class="p">]):</span>
+            <span class="n">channel</span><span class="o">.</span><span class="n">setChecked</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">adcMask</span> <span class="o">&amp;</span> <span class="p">(</span><span class="mi">1</span><span class="o">&lt;&lt;</span><span class="n">num</span><span class="p">)</span> <span class="p">)</span>
+            <span class="n">channel</span><span class="o">.</span><span class="n">stateChanged</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span> <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">onAdcStateChanged</span><span class="p">,(</span><span class="mi">1</span><span class="o">&lt;&lt;</span><span class="n">num</span><span class="p">)</span> <span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">displayUnitCombo</span><span class="o">.</span><span class="n">currentIndexChanged</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">onIndexChanged</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">displayUnitCombo</span><span class="o">.</span><span class="n">setCurrentIndex</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">displayUnit</span><span class="o">.</span><span class="n">unit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">unit</span>
+    </div>
+<div class="viewcode-block" id="DedicatedCountersSettings.onIndexChanged"><a class="viewcode-back" href="../../code/dedicatedCounters-doc.html#dedicatedCounters.DedicatedCountersSettings.DedicatedCountersSettings.onIndexChanged">[docs]</a>    <span class="k">def</span> <span class="nf">onIndexChanged</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">displayUnit</span><span class="o">.</span><span class="n">unit</span> <span class="o">=</span> <span class="n">index</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">unit</span> <span class="o">=</span> <span class="n">index</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valueChanged</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span> <span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="DedicatedCountersSettings.onValueChanged"><a class="viewcode-back" href="../../code/dedicatedCounters-doc.html#dedicatedCounters.DedicatedCountersSettings.DedicatedCountersSettings.onValueChanged">[docs]</a>    <span class="k">def</span> <span class="nf">onValueChanged</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">,</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valueChanged</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span> <span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="DedicatedCountersSettings.onCounterStateChanged"><a class="viewcode-back" href="../../code/dedicatedCounters-doc.html#dedicatedCounters.DedicatedCountersSettings.DedicatedCountersSettings.onCounterStateChanged">[docs]</a>    <span class="k">def</span> <span class="nf">onCounterStateChanged</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mask</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">counterMask</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">counterMask</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">mask</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">mask</span> <span class="k">if</span> <span class="n">state</span><span class="o">==</span><span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">Checked</span> <span class="k">else</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valueChanged</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span> <span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="DedicatedCountersSettings.onAdcStateChanged"><a class="viewcode-back" href="../../code/dedicatedCounters-doc.html#dedicatedCounters.DedicatedCountersSettings.DedicatedCountersSettings.onAdcStateChanged">[docs]</a>    <span class="k">def</span> <span class="nf">onAdcStateChanged</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mask</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">adcMask</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">adcMask</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">mask</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">mask</span> <span class="k">if</span> <span class="n">state</span><span class="o">==</span><span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">Checked</span> <span class="k">else</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valueChanged</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span> <span class="p">)</span>
+</div>
+<div class="viewcode-block" id="DedicatedCountersSettings.saveConfig"><a class="viewcode-back" href="../../code/dedicatedCounters-doc.html#dedicatedCounters.DedicatedCountersSettings.DedicatedCountersSettings.saveConfig">[docs]</a>    <span class="k">def</span> <span class="nf">saveConfig</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;DedicatedCounterSettings.Settings2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span>
+               </div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright .
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'0.8',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

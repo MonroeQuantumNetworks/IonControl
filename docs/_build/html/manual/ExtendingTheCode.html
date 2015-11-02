@@ -84,7 +84,7 @@
             
                 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../hardware.html">Hardware</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FPGAhardware.html">Hardware</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="experimentUi_manual.html">User Manual</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="Introduction.html">Introduction</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Projects.html">Projects</a></li>
@@ -95,13 +95,17 @@
 <li class="toctree-l2"><a class="reference internal" href="GateSequences.html">Gate Sequences</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Scripting.html">Scripting</a></li>
 <li class="toctree-l2"><a class="reference internal" href="MeasurementLog.html">Measurement Log</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Hardware.html">Hardware</a></li>
 <li class="toctree-l2"><a class="reference internal" href="ExternalParameters.html">External Parameters</a></li>
-<li class="toctree-l2"><a class="reference internal" href="KnownHardware.html">Known Hardware</a></li>
 <li class="toctree-l2"><a class="reference internal" href="DedicatedCounters.html">Dedicated Counters</a></li>
-<li class="toctree-l2"><a class="reference internal" href="VoltageControl.html">Voltage Control</a></li>
 <li class="toctree-l2"><a class="reference internal" href="LogicAnalyzer.html">Logic Analyzer</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="">Extending the Code</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#adding-hardware">Adding Hardware</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#adding-hardware">Adding Hardware</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#external-parameters">External Parameters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#voltage-controllers">Voltage Controllers</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#awgs">AWGs</a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="#adding-evaluations">Adding Evaluations</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#adding-fits">Adding Fits</a></li>
 </ul>
@@ -160,12 +164,112 @@
 <span id="extendingthecode"></span><h1>Extending the Code<a class="headerlink" href="#extending-the-code" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="adding-hardware">
 <h2>Adding Hardware<a class="headerlink" href="#adding-hardware" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="external-parameters">
+<h3>External Parameters<a class="headerlink" href="#external-parameters" title="Permalink to this headline">¶</a></h3>
+</div>
+<div class="section" id="voltage-controllers">
+<h3>Voltage Controllers<a class="headerlink" href="#voltage-controllers" title="Permalink to this headline">¶</a></h3>
+</div>
+<div class="section" id="awgs">
+<h3>AWGs<a class="headerlink" href="#awgs" title="Permalink to this headline">¶</a></h3>
+</div>
 </div>
 <div class="section" id="adding-evaluations">
 <h2>Adding Evaluations<a class="headerlink" href="#adding-evaluations" title="Permalink to this headline">¶</a></h2>
+<p>The evaluations are defined in IonControlscanCountEvaluation.py, and listed in IonControlscanEvaluationAlgorithms.py. Each evaluation is a class which inherits from EvaluationBase, and is listed in EvaluationAlgorthms.py. An evaluation class must provide:</p>
+<blockquote>
+<div><ul>
+<li><p class="first">A name</p>
+</li>
+<li><p class="first">A tooltip</p>
+</li>
+<li><p class="first">Any settings that define the evaluation, and their type (defined in the method &#8220;children&#8221;)</p>
+</li>
+<li><p class="first">the method &#8220;evaluate&#8221; that takes in the data, and returns a 3-tuple:</p>
+<blockquote>
+<div><p>(evaluated value, (upper error bar size, lower error bar size), raw value)</p>
+<p>Raw value is typically the value not scaled by the number of experiments, i.e. if 100 experiments were performed and in 43 of them the ion is bright, the evaluated value would be 0.43 and the raw value would be 43.</p>
+</div></blockquote>
+</li>
+</ul>
+</div></blockquote>
+<p>Here is a relatively simple example:</p>
+<div class="highlight-Python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">ThresholdEvaluation</span><span class="p">(</span><span class="n">EvaluationBase</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    simple threshold state detection: if more than threshold counts are observed</span>
+<span class="sd">    the ion is considered bright. For threshold photons or less it is considered</span>
+<span class="sd">    dark.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s">&quot;Threshold&quot;</span>
+    <span class="n">tooltip</span> <span class="o">=</span> <span class="s">&quot;Above threshold is bright&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">settings</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="n">EvaluationBase</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">settings</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">setDefault</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s">&#39;threshold&#39;</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s">&#39;invert&#39;</span><span class="p">,</span><span class="bp">False</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">evaluate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">evaluation</span><span class="p">,</span> <span class="n">expected</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">ppDict</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">globalDict</span><span class="o">=</span><span class="bp">None</span> <span class="p">):</span>
+        <span class="n">countarray</span> <span class="o">=</span> <span class="n">evaluation</span><span class="o">.</span><span class="n">getChannelData</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">countarray</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="mi">0</span>
+        <span class="n">N</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">countarray</span><span class="p">))</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s">&#39;invert&#39;</span><span class="p">]:</span>
+            <span class="n">discriminated</span> <span class="o">=</span> <span class="p">[</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">count</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s">&#39;threshold&#39;</span><span class="p">]</span> <span class="k">else</span> <span class="mi">1</span> <span class="k">for</span> <span class="n">count</span> <span class="ow">in</span> <span class="n">countarray</span> <span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">discriminated</span> <span class="o">=</span> <span class="p">[</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">count</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s">&#39;threshold&#39;</span><span class="p">]</span> <span class="k">else</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">count</span> <span class="ow">in</span> <span class="n">countarray</span> <span class="p">]</span>
+        <span class="k">if</span> <span class="n">evaluation</span><span class="o">.</span><span class="n">name</span><span class="p">:</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">evaluated</span><span class="p">[</span><span class="n">evaluation</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">discriminated</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span> <span class="n">discriminated</span> <span class="p">)</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">x</span><span class="o">/</span><span class="n">N</span>
+        <span class="c"># Wilson score interval with continuity correction</span>
+        <span class="c"># see http://en.wikipedia.org/wiki/Binomial_proportion_confidence_interval</span>
+        <span class="n">rootp</span> <span class="o">=</span> <span class="mi">3</span><span class="o">-</span><span class="mi">1</span><span class="o">/</span><span class="n">N</span> <span class="o">-</span><span class="mi">4</span><span class="o">*</span><span class="n">p</span><span class="o">+</span><span class="mi">4</span><span class="o">*</span><span class="n">N</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">p</span><span class="p">)</span><span class="o">*</span><span class="n">p</span>
+        <span class="n">top</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span> <span class="mi">1</span><span class="p">,</span> <span class="p">(</span><span class="mi">2</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span><span class="n">N</span><span class="o">*</span><span class="n">p</span> <span class="o">+</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">rootp</span><span class="p">))</span><span class="o">/</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="p">(</span><span class="n">N</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span> <span class="p">)</span> <span class="k">if</span> <span class="n">rootp</span><span class="o">&gt;=</span><span class="mi">0</span> <span class="k">else</span> <span class="mi">1</span>
+        <span class="n">rootb</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="o">-</span><span class="mi">1</span><span class="o">/</span><span class="n">N</span> <span class="o">+</span><span class="mi">4</span><span class="o">*</span><span class="n">p</span><span class="o">+</span><span class="mi">4</span><span class="o">*</span><span class="n">N</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">p</span><span class="p">)</span><span class="o">*</span><span class="n">p</span>
+        <span class="n">bottom</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span> <span class="mi">0</span><span class="p">,</span> <span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">N</span><span class="o">*</span><span class="n">p</span> <span class="o">-</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">rootb</span><span class="p">))</span><span class="o">/</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="p">(</span><span class="n">N</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span> <span class="p">)</span> <span class="k">if</span> <span class="n">rootb</span><span class="o">&gt;=</span><span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
+        <span class="k">return</span> <span class="n">p</span><span class="p">,</span> <span class="p">(</span><span class="n">p</span><span class="o">-</span><span class="n">bottom</span><span class="p">,</span> <span class="n">top</span><span class="o">-</span><span class="n">p</span><span class="p">),</span> <span class="n">x</span>
+
+    <span class="k">def</span> <span class="nf">children</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[{</span><span class="s">&#39;name&#39;</span><span class="p">:</span><span class="s">&#39;threshold&#39;</span><span class="p">,</span><span class="s">&#39;type&#39;</span><span class="p">:</span><span class="s">&#39;int&#39;</span><span class="p">,</span><span class="s">&#39;value&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s">&#39;threshold&#39;</span><span class="p">]},</span>
+                <span class="p">{</span><span class="s">&#39;name&#39;</span><span class="p">:</span><span class="s">&#39;invert&#39;</span><span class="p">,</span> <span class="s">&#39;type&#39;</span><span class="p">:</span> <span class="s">&#39;bool&#39;</span><span class="p">,</span> <span class="s">&#39;value&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s">&#39;invert&#39;</span><span class="p">]</span> <span class="p">}]</span>
+</pre></div>
+</div>
 </div>
 <div class="section" id="adding-fits">
 <h2>Adding Fits<a class="headerlink" href="#adding-fits" title="Permalink to this headline">¶</a></h2>
+<p>The fits are defined in IonControlfitFitFunctions.py. Each fit is a class which inherits from FitFunctionBase. At a bare minimum, the fit must provide:</p>
+<blockquote>
+<div><ul class="simple">
+<li>a name</li>
+<li>a function string to display</li>
+<li>a list of parameters</li>
+<li>default values</li>
+<li>the method &#8220;functionEval&#8221; which defines how to evaluate the function.</li>
+</ul>
+</div></blockquote>
+<p>Here is a minimal example:</p>
+<div class="highlight-Python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">SinSqGaussFit</span><span class="p">(</span><span class="n">FitFunctionBase</span><span class="p">):</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s">&quot;Sin2 Gaussian Decay&quot;</span>
+    <span class="n">functionString</span> <span class="o">=</span>  <span class="s">&#39;A * exp(-x^2/tau^2) * sin^2(pi/(2*T)*x+theta) + O&#39;</span>
+    <span class="n">parameterNames</span> <span class="o">=</span> <span class="p">[</span> <span class="s">&#39;A&#39;</span><span class="p">,</span> <span class="s">&#39;T&#39;</span><span class="p">,</span> <span class="s">&#39;theta&#39;</span><span class="p">,</span> <span class="s">&#39;O&#39;</span><span class="p">,</span> <span class="s">&#39;tau&#39;</span> <span class="p">]</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">FitFunctionBase</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">100</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1000</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">startParameters</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">100</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1000</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">functionEval</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">A</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">O</span><span class="p">,</span> <span class="n">tau</span> <span class="p">):</span>
+        <span class="k">return</span> <span class="n">A</span><span class="o">*</span><span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">numpy</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">x</span><span class="o">/</span><span class="n">tau</span><span class="p">))</span><span class="o">*</span><span class="n">numpy</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mi">2</span><span class="o">/</span><span class="n">T</span><span class="o">*</span><span class="n">x</span><span class="o">+</span><span class="n">theta</span><span class="p">))</span><span class="o">+</span><span class="n">O</span>
+</pre></div>
+</div>
+<p>Fits can also provide:</p>
+<blockquote>
+<div><ul class="simple">
+<li>an &#8216;update&#8217; method for updating other variables which are not fit variables</li>
+<li>a &#8216;smartStartValues&#8217; method for guessing good start values based on the data</li>
+</ul>
+</div></blockquote>
+<p>see the existing fit functions for more examples.</p>
 </div>
 </div>
 

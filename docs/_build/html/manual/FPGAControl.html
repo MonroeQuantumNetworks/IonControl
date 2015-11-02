@@ -84,7 +84,7 @@
             
                 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../hardware.html">Hardware</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FPGAhardware.html">Hardware</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="experimentUi_manual.html">User Manual</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="Introduction.html">Introduction</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Projects.html">Projects</a></li>
@@ -101,10 +101,9 @@
 <li class="toctree-l2"><a class="reference internal" href="GateSequences.html">Gate Sequences</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Scripting.html">Scripting</a></li>
 <li class="toctree-l2"><a class="reference internal" href="MeasurementLog.html">Measurement Log</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Hardware.html">Hardware</a></li>
 <li class="toctree-l2"><a class="reference internal" href="ExternalParameters.html">External Parameters</a></li>
-<li class="toctree-l2"><a class="reference internal" href="KnownHardware.html">Known Hardware</a></li>
 <li class="toctree-l2"><a class="reference internal" href="DedicatedCounters.html">Dedicated Counters</a></li>
-<li class="toctree-l2"><a class="reference internal" href="VoltageControl.html">Voltage Control</a></li>
 <li class="toctree-l2"><a class="reference internal" href="LogicAnalyzer.html">Logic Analyzer</a></li>
 <li class="toctree-l2"><a class="reference internal" href="ExtendingTheCode.html">Extending the Code</a></li>
 </ul>
@@ -204,9 +203,9 @@
 <dt>DAC Scan Parameters</dt>
 <dd><p class="first">Each of the 8 DACs on the breakout board can be configured to put out a triangle waveform by turning on the respective DAC Scan (shutters 41-48 on <em>IonControl-firmware-LX150-UMD.bit</em>). This can be useful if the DAC is being used for a lock. The parameters set here control the behavior of that scan:</p>
 <ul class="last simple">
-<li><strong>Max</strong>: The maximum of the triangle waveform</li>
-<li><strong>Min</strong>: The minimum of the triangle waveform</li>
-<li><strong>Increment</strong>: The amount it changes each clock cycle (which indirectly determines the frequency)</li>
+<li><strong>Max</strong>: The maximum of the triangle waveform (units: Volts)</li>
+<li><strong>Min</strong>: The minimum of the triangle waveform (units: Volts)</li>
+<li><strong>Increment</strong>: The amount it changes each clock cycle (which indirectly determines the frequency) (units: Volts)</li>
 </ul>
 </dd>
 </dl>
