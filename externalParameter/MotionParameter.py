@@ -19,9 +19,9 @@ class ConexLinear(ExternalParameterBase):
     _channelParams = {None: ({'name': 'belowMargin','type': 'magnitude', 'value': magnitude.mg(0,'mm'), 'tip': 'if not zero: if coming from above always go that far below and then up'},
                              {'name': 'limit', 'type': 'magnitude', 'value': magnitude.mg(25,'mm')})}
 
-    def __init__(self,name,config,instrument="COM3"):
+    def __init__(self, name, config, globalDict, instrument="COM3"):
         logger = logging.getLogger(__name__)
-        ExternalParameterBase.__init__(self,name,config)
+        ExternalParameterBase.__init__(self, name, config, globalDict)
         logger.info( "trying to open '{0}'".format(instrument) )
         self.instrument = ConexInstrument() #open visa session
         self.instrument.open(instrument)
@@ -51,7 +51,7 @@ class ConexLinear(ExternalParameterBase):
             if self.lastValue is None or value < self.lastValue:
                 self._setValue( channel, value-self.outputChannels[channel].settings.belowMargin )
                 self.lastValue = value-self.outputChannels[channel].settings.belowMargin
-                return False
+                return reported, False
             else:
                 self._setValue( channel, value )
                 self.lastValue = value
@@ -66,9 +66,9 @@ class ConexRotation(ExternalParameterBase):
     className = "Conex Rotation"
     _outputChannels = {None: ''}
 
-    def __init__(self, name, config, instrument="COM3"):
+    def __init__(self, name, config, globalDict, instrument="COM3"):
         logger = logging.getLogger(__name__)
-        ExternalParameterBase.__init__(self,name,config)
+        ExternalParameterBase.__init__(self, name, config, globalDict)
         logger.info( "trying to open '{0}'".format(instrument) )
         self.instrument = ConexInstrument() #open visa session
         self.instrument.open(instrument)
@@ -121,9 +121,9 @@ class PowerWaveplate(ExternalParameterBase):
     className = "Power Waveplate"
     _outputChannels = {None: 'W'}
 
-    def __init__(self, name, config, instrument="COM3"):
+    def __init__(self, name, config, globalDict, instrument="COM3"):
         logger = logging.getLogger(__name__)
-        ExternalParameterBase.__init__(self,name,config)
+        ExternalParameterBase.__init__(self, name, config, globalDict)
         logger.info( "trying to open '{0}'".format(instrument) )
         self.instrument = ConexInstrument() #open visa session
         self.instrument.open(instrument)

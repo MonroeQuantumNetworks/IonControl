@@ -38,9 +38,9 @@ if visaEnabled:
         _outputLookup = { "Curr1": ("Curr",1,"A"), "Curr2": ("Curr",2,"A"), "Curr3": ("Curr",3,"A"), "Curr4": ("Curr",4,"A"),
                           "Volt1": ("Volt",1,"V"), "Volt2": ("Volt",2,"V"), "Volt3": ("Volt",3,"V"), "Volt4": ("Volt",4,"V")}
         _inputChannels = dict({"Curr1":"A", "Curr2":"A", "Curr3":"A", "Curr4":"A", "Volt1":"V", "Volt2":"V", "Volt3":"V", "Volt4":"V"})
-        def __init__(self,name,config,instrument="QGABField"):
+        def __init__(self, name, config, globalDict, instrument="QGABField"):
             logger = logging.getLogger(__name__)
-            ExternalParameterBase.__init__(self,name,config)
+            ExternalParameterBase.__init__(self, name, config, globalDict)
             logger.info( "trying to open '{0}'".format(instrument) )
             self.rm = visa.ResourceManager()
             self.instrument = self.rm.open_resource( instrument)
@@ -79,8 +79,8 @@ if visaEnabled:
         """
         className = "HP8672A"
         _outputChannels = {'Freq': 'MHz', 'Power_dBm': ''}
-        def __init__(self,name,config, instrument="GPIB0::23::INSTR"):
-            ExternalParameterBase.__init__(self,name,config)
+        def __init__(self, name, config, globalDict, instrument="GPIB0::23::INSTR"):
+            ExternalParameterBase.__init__(self, name, config, globalDict)
             self.setDefaults()
             initialAmplitudeString = self.createAmplitudeString()
             self.rm = visa.ResourceManager()
@@ -126,8 +126,8 @@ if visaEnabled:
         """
         className = "Microwave Synthesizer"
         _outputChannels = {'Freq': 'MHz', 'Power_dBm': ''}
-        def __init__(self,name,config, instrument="GPIB0::23::INSTR"):
-            ExternalParameterBase.__init__(self,name,config)
+        def __init__(self, name, config, globalDict, instrument="GPIB0::23::INSTR"):
+            ExternalParameterBase.__init__(self, name, config, globalDict)
             self.rm = visa.ResourceManager()
             self.synthesizer = self.rm.open_resource( instrument)
             self.setDefaults()
@@ -159,8 +159,8 @@ if visaEnabled:
         """
         className = "E4422 Synthesizer"
         _outputChannels = {'Freq': 'MHz', 'Power_dBm': ''}
-        def __init__(self,name,config, instrument="GPIB0::23::INSTR"):
-            ExternalParameterBase.__init__(self,name,config)
+        def __init__(self, name, config, globalDict, instrument="GPIB0::23::INSTR"):
+            ExternalParameterBase.__init__(self, name, config, globalDict)
             self.rm = visa.ResourceManager()
             self.synthesizer = self.rm.open_resource( instrument)
             self.setDefaults()
@@ -194,8 +194,8 @@ if visaEnabled:
         """
         className = "Agilent Powersupply"
         _outputChannels = {None: 'V'}
-        def __init__(self,name,config,instrument="power_supply_next_to_397_box"):
-            ExternalParameterBase.__init__(self,name,config)
+        def __init__(self, name, config, globalDict, instrument="power_supply_next_to_397_box"):
+            ExternalParameterBase.__init__(self, name, config, globalDict)
             self.rm = visa.ResourceManager()
             self.powersupply = self.rm.open_resource( instrument)
             self.setDefaults()
@@ -226,9 +226,9 @@ if visaEnabled:
         """
         className = "HP6632B Power Supply"
         _outputChannels = {"Curr": "A", "Volt": "V", "OnOff": ""}
-        def __init__(self,name,config,instrument="GPIB0::8::INSTR"):
+        def __init__(self, name, config, globalDict, instrument="GPIB0::8::INSTR"):
             logger = logging.getLogger(__name__)
-            ExternalParameterBase.__init__(self,name,config)
+            ExternalParameterBase.__init__(self, name, config, globalDict)
             logger.info( "trying to open '{0}'".format(instrument) )
             self.rm = visa.ResourceManager()
             self.instrument = self.rm.open_resource(instrument)
@@ -266,9 +266,9 @@ if visaEnabled:
         """
         className = "PTS3500 Frequency "
         _outputChannels = {"Freq": "Hz"}
-        def __init__(self,name,config,instrument="GPIB0::8::INSTR"):
+        def __init__(self, name, config, globalDict, instrument="GPIB0::8::INSTR"):
             logger = logging.getLogger(__name__)
-            ExternalParameterBase.__init__(self,name,config)
+            ExternalParameterBase.__init__(self, name, config, globalDict)
             logger.info( "trying to open '{0}'".format(instrument) )
             self.rm = visa.ResourceManager()
             self.instrument = self.rm.open_resource(instrument)
@@ -294,9 +294,9 @@ if visaEnabled:
         _outputChannels = {"Freq": "Hz", "Ampl": "dB"}
         _outputLookup = { "Freq": ("FREQ","Hz"),
                           "Ampl": ("AMPL","dB")}
-        def __init__(self,name,config,instrument="GPIB0::8::INSTR"):
+        def __init__(self, name, config, globalDict, instrument="GPIB0::8::INSTR"):
             logger = logging.getLogger(__name__)
-            ExternalParameterBase.__init__(self,name,config)
+            ExternalParameterBase.__init__(self, name, config, globalDict)
             logger.info( "trying to open '{0}'".format(instrument) )
             self.rm = visa.ResourceManager()
             self.instrument = self.rm.open_resource(instrument)
@@ -328,8 +328,8 @@ if visaEnabled and wavemeterEnabled:
 
         className = "Laser VCO Wavemeter"
         _dimension = magnitude.mg(1,'V')
-        def __init__(self,name,config,instrument="power_supply_next_to_397_box"):
-            AgilentPowerSupply.__init__(self,name,config,instrument)
+        def __init__(self, name, config, globalDict, instrument="power_supply_next_to_397_box"):
+            AgilentPowerSupply.__init__(self, name, config, globalDict, instrument)
             self.setDefaults()
             self.wavemeter = None
 
@@ -376,9 +376,9 @@ if wavemeterEnabled:
         """
         className = "Laser Wavemeter Lock"
         _outputChannels = { None: "GHz"}
-        def __init__(self,name,config,instrument=None):
+        def __init__(self, name, config, globalDict, instrument=None):
             logger = logging.getLogger(__name__)
-            ExternalParameterBase.__init__(self,name,config)
+            ExternalParameterBase.__init__(self, name, config, globalDict)
             self.wavemeter = Wavemeter(instrument)
             logger.info( "LaserWavemeterScan savedValue {0}".format(self.savedValue) )
             self.setDefaults()

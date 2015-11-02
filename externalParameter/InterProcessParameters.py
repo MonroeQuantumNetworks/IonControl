@@ -8,9 +8,9 @@ class LockOutputFrequency(ExternalParameterBase):
     className = "Digital Lock Output Frequency"
     _outputChannels = {"OutputFrequency": "MHz"}
 
-    def __init__(self,name,config,instrument="localhost:16888"):
+    def __init__(self, name, config, globalDict, instrument="localhost:16888"):
         logger = logging.getLogger(__name__)
-        ExternalParameterBase.__init__(self, name, config)
+        ExternalParameterBase.__init__(self, name, config, globalDict)
         logger.info( "trying to open '{0}'".format(instrument) )
         host, port = instrument.split(':')
         self.instrument = Client((host,int(port)), authkey="yb171")

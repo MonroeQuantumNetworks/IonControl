@@ -92,11 +92,12 @@ class OutputChannel(QtCore.QObject):
             value, unit = value, None
         self.persistence.persist(self.persistSpace, source, time, value, minval, maxval, unit)
            
-    def saveValue(self):
+    def saveValue(self, overwrite=True):
         """
         save current value
         """
-        self.savedValue = self.settings.value
+        if self.savedValue is None or overwrite:
+            self.savedValue = self.settings.value
         return self.savedValue
 
     def restoreValue(self):
@@ -188,8 +189,8 @@ class SlowAdjustOutputChannel(OutputChannel):
         if not isinstance(arg, tuple):
             return arg, second
         elif len(arg) == 1:
-            return arg[1], second
-        return arg[1], arg[2] and second
+            return arg[0], second
+        return arg[0], arg[1] and second
 
     def setValue(self, targetValue):
         """
