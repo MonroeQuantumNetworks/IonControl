@@ -13,9 +13,9 @@ Contents:
 
    installation
    hardware
-   experimentUi_manual
-   instrumentLoggerUi_manual
-   docs
+   /manual/experimentUi_manual
+   /manual/instrumentLoggerUi_manual
+   /code/codeDocs
 
 Indices and tables
 ==================
