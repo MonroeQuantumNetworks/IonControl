@@ -97,7 +97,7 @@ class VoltageGlobalAdjust(VoltageGlobalAdjustForm, VoltageGlobalAdjustBase ):
         
     def setValue(self, channel, value):
         self.globalAdjustDict[channel].value = value 
-        return True
+        return value, True
     
     def currentValue(self, channel):
         return self.globalAdjustDict[channel].value
