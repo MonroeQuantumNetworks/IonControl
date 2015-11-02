@@ -302,7 +302,7 @@
          <item>
           <widget class="QLabel" name="label_7">
            <property name="text">
-            <string>Settings</string>
+            <string>Parameters</string>
            </property>
           </widget>
          </item>
@@ -316,7 +316,7 @@
          <item>
           <widget class="QLabel" name="label_8">
            <property name="text">
-            <string>Fit results</string>
+            <string>Results</string>
            </property>
           </widget>
          </item>
