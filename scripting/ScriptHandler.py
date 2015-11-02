@@ -284,13 +284,18 @@ class ScriptHandler:
     def onFit(self, fitName, traceName):
         fitName = str(fitName)
         traceName = str(traceName)
-        fitAnalysisIndex = self.fitWidget.analysisNameComboBox.findText('fitAnalysisName')
+        fitAnalysisIndex = self.fitWidget.analysisNameComboBox.findText(fitName)
         if fitAnalysisIndex < 0:
             message = "Fit '{0}' does not exist.".format(fitName)
             error = True
+        elif traceName not in self.scriptTraces:
+            message = "Trace '{0}' does not exist".format(traceName)
+            error = True
         else:
-            self.fitWidget.analysisNameComboBox.setIndex(fitAnalysisIndex)
-            message = "Fit set to '{0}'".format(fitName)
+            plottedTrace = self.scriptTraces[traceName]
+            self.fitWidget.analysisNameComboBox.setCurrentIndex(fitAnalysisIndex)
+            message = "Fitting trace '{0}' using fit '{1}'".format(traceName, fitName)
+            self.fitWidget.fit(plottedTrace)
             error = False
         return (error, message)
 

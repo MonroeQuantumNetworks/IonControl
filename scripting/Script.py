@@ -369,11 +369,11 @@ class Script(QtCore.QThread):
         """
         self.closeTraceSignal.emit(traceName)
 
-    # @scriptFunction()
-    # def fit(self, fitName, traceName):
-    #     """fit(fitName, traceName)
-    #     fit the data in 'traceName' using 'fitName'"""
-    #     self.fitSignal.emit(fitName, traceName)
+    @scriptFunction()
+    def fit(self, fitName, traceName):
+        """fit(fitName, traceName)
+        fit the data in 'traceName' using 'fitName'"""
+        self.fitSignal.emit(fitName, traceName)
         
     @scriptFunction(waitForGui=False)
     def waitForScan(self):
