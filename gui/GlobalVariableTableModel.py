@@ -124,7 +124,7 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
         if name not in self.variables.map and isIdentifier(name):
             self.beginInsertRows(QtCore.QModelIndex(), len(self.variables), len(self.variables))
             self.variables.map[name] = magnitude.mg(0, '')
-            self.variables.valueChanged(name).connect(partial(self.onValueChanged, name))
+            self.variables.map.valueChanged(name).connect(partial(self.onValueChanged, name))
             self.endInsertRows()
         return len(self.variables) - 1
         
