@@ -3,12 +3,12 @@ from PyQt4 import QtCore, QtGui
 from scan.EvaluationAlgorithms import EvaluationAlgorithms
 from modules import MagnitudeUtilit
 from scan.AbszisseType import AbszisseType
-
+from modules import magnitude
 
 class EvaluationTableModel( QtCore.QAbstractTableModel):
     dataChanged = QtCore.pyqtSignal( object, object )
     headerDataLookup = ['Type','Id','Channel','Evaluation','Name','Hist', 'Plot', 'Abszisse' ]
-    def __init__(self, updateSaveStatus, plotnames=None, evalList=None, parent=None, analysisNames=None):
+    def __init__(self, updateSaveStatus, plotnames=None, evalList=None, parent=None, analysisNames=None, counterNames=None):
         super(EvaluationTableModel, self).__init__(parent)
         if evalList:
             self.evalList = evalList
@@ -18,6 +18,9 @@ class EvaluationTableModel( QtCore.QAbstractTableModel):
         self.updateSaveStatus = updateSaveStatus
         self.evalAlgorithmList = list()
         self.analysisNames = analysisNames if analysisNames is not None else list()
+        self.counterNamesList = [values for key, values in sorted(counterNames.iteritems())] if counterNames else None
+        self.counterNames = counterNames
+        self.counterIndex = dict((name, index) for index, name in counterNames.iteritems()) if counterNames else dict()
         self.setDataLookup =  {  (QtCore.Qt.EditRole,0): self.setType,
                                  (QtCore.Qt.EditRole,1): self.setCounterId,
                                  (QtCore.Qt.EditRole,2): self.setCounter,
@@ -29,14 +32,14 @@ class EvaluationTableModel( QtCore.QAbstractTableModel):
                                 }
         self.dataLookup = {  (QtCore.Qt.DisplayRole,0): lambda e: e.type if self.hasChannel(e) else "",
                              (QtCore.Qt.DisplayRole,1): lambda e: e.counterId if e.type=='Counter' and self.hasChannel(e) else "",
-                             (QtCore.Qt.DisplayRole,2): lambda e: e.counter if self.hasChannel(e) else "",
+                             (QtCore.Qt.DisplayRole,2): self.counterName,
                              (QtCore.Qt.DisplayRole,3): lambda e: e.evaluation,
                              (QtCore.Qt.DisplayRole,4): lambda e: e.name,
                              (QtCore.Qt.DisplayRole,6): lambda e: e.plotname,
                              (QtCore.Qt.DisplayRole,7): lambda e: e.abszisse.name,
                              (QtCore.Qt.EditRole,0): lambda e: e.type,
                              (QtCore.Qt.EditRole,1): lambda e: str(e.counterId),
-                             (QtCore.Qt.EditRole,2):    lambda e: e.counter,
+                             (QtCore.Qt.EditRole,2):    self.counterName,
                              (QtCore.Qt.EditRole,3):    lambda e: e.evaluation,
                              (QtCore.Qt.EditRole,4):    lambda e: e.name,
                              (QtCore.Qt.EditRole,6):    lambda e: e.plotname,
@@ -47,16 +50,24 @@ class EvaluationTableModel( QtCore.QAbstractTableModel):
                              (QtCore.Qt.BackgroundColorRole,0): lambda e: QtCore.Qt.white if self.hasChannel(e) else QtGui.QColor(200,200,200)
                              }
         self.abszisseNames = [e.name for e in AbszisseType]
-        self.choiceLookup = { 0: lambda: ['Counter','Result'],
-                              3: EvaluationAlgorithms.keys,
-                              6: self.getPlotnames,
-                              7: lambda: self.abszisseNames }
-        
+        self.choiceLookup = { 0: lambda e: ['Counter','Result'],
+                              2: lambda e: self.counterNamesList if e.type == 'Counter' else None,
+                              3: lambda e: sorted(EvaluationAlgorithms.keys()),
+                              6: lambda e: sorted(self.getPlotnames()),
+                              7: lambda e: self.abszisseNames }
+
     @staticmethod
     def hasChannel(evaluation):
         algo = EvaluationAlgorithms.get(evaluation.evaluation)
         return algo and algo.hasChannel
-        
+
+    def counterName(self, e):
+        if not self.hasChannel(e):
+            return ""
+        if e.type == 'Counter' and self.counterNames:
+            return self.counterNames.get(e.counter, e.counter)
+        return e.counter
+
     def setAnalysisNames(self, names):
         self.analysisNames = names
         
@@ -80,7 +91,7 @@ class EvaluationTableModel( QtCore.QAbstractTableModel):
         return [""]+self.analysisNames
     
     def choice(self, index):
-        return sorted(self.choiceLookup[index.column()]()) 
+        return self.choiceLookup[index.column()](self.evalList[index.row()])
             
     def setEvalList(self, evalList, evalAlgorithmList):
         self.beginResetModel()
@@ -118,9 +129,9 @@ class EvaluationTableModel( QtCore.QAbstractTableModel):
                 return self.headerDataLookup[section]
         return None 
 
-    def setCounter(self,index,value):
-        self.evalList[index.row()].counter = int(MagnitudeUtilit.value(value))
-        self.dataChanged.emit( index, index )
+    def setCounter(self, index, value):
+        self.evalList[index.row()].counter = int(MagnitudeUtilit.value(value)) if magnitude.is_magnitude(value) else self.counterIndex.get(str(value), 0)
+        self.dataChanged.emit(index, index)
         return True      
 
     def setShowHistogram(self,index,value):

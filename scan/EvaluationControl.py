@@ -20,6 +20,7 @@ from modules.magnitude import mg, MagnitudeError
 from uiModules.ComboBoxDelegate import ComboBoxDelegate
 from modules.enum import enum
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
+from uiModules.CamelionDelegate import CamelionDelegate
 from cPickle import UnpicklingError
 from scan.AbszisseType import AbszisseType
 import xml.etree.ElementTree as ElementTree
@@ -164,7 +165,7 @@ class EvaluationControl(ControlForm, ControlBase ):
     currentEvaluationChanged = QtCore.pyqtSignal( object )
     integrationMode = enum('IntegrateAll','IntegrateRun','NoIntegration')
     logger = logging.getLogger(__name__)
-    def __init__(self, config, globalVariablesUi, parentname, plotnames=None, parent=None, analysisNames=None):
+    def __init__(self, config, globalVariablesUi, parentname, plotnames=None, parent=None, analysisNames=None, counterNames=None):
         logger = logging.getLogger(__name__)
         ControlForm.__init__(self)
         ControlBase.__init__(self,parent)
@@ -172,6 +173,7 @@ class EvaluationControl(ControlForm, ControlBase ):
         self.configname = 'EvaluationControl.'+parentname
         self.globalDict = globalVariablesUi.variables
         self.ppDict = None
+        self.counterNames = counterNames
         # History and Dictionary
         try:
             self.settingsDict = self.config.get(self.configname+'.dict',dict())
@@ -200,15 +202,16 @@ class EvaluationControl(ControlForm, ControlBase ):
         self.saveButton.clicked.connect( self.onSave )
         self.removeButton.clicked.connect( self.onRemove )
         self.reloadButton.clicked.connect( self.onReload )
-        self.evalTableModel = EvaluationTableModel( self.checkSettingsSavable, plotnames=self.plotnames, analysisNames=self.analysisNames )
+        self.evalTableModel = EvaluationTableModel( self.checkSettingsSavable, plotnames=self.plotnames, analysisNames=self.analysisNames, counterNames=self.counterNames )
         self.evalTableModel.dataChanged.connect( self.checkSettingsSavable )
         self.evalTableModel.dataChanged.connect( self.onActiveEvalChanged )
         self.evalTableView.setModel( self.evalTableModel )
         self.delegate = ComboBoxDelegate()
         self.magnitudeDelegate = MagnitudeSpinBoxDelegate()
+        self.camelionDelegate = CamelionDelegate()
         self.evalTableView.setItemDelegateForColumn(0, self.delegate)
         self.evalTableView.setItemDelegateForColumn(1, self.magnitudeDelegate)
-        self.evalTableView.setItemDelegateForColumn(2, self.magnitudeDelegate)
+        self.evalTableView.setItemDelegateForColumn(2, self.camelionDelegate)
         self.evalTableView.setItemDelegateForColumn(3, self.delegate )
         self.evalTableView.setItemDelegateForColumn(6, self.delegate )
         self.evalTableView.setItemDelegateForColumn(7, self.delegate )

@@ -79,7 +79,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     analysisConfigurationChanged = None
     evaluatedDataSignal = QtCore.pyqtSignal( dict ) #key is the eval name, val is (x, y)
     allDataSignal = QtCore.pyqtSignal( dict ) #key is the eval name, val is (xlist, ylist)
-    def __init__(self,settings,pulserHardware,globalVariablesUi, experimentName,toolBar=None,parent=None, measurementLog=None, callWhenDoneAdjusting=None):
+    def __init__(self, settings, pulserHardware, globalVariablesUi, experimentName, toolBar=None, parent=None, measurementLog=None, callWhenDoneAdjusting=None):
         MainWindowWidget.MainWindowWidget.__init__(self,toolBar=toolBar,parent=parent)
         ScanExperimentForm.__init__(self)
         self.deviceSettings = settings
@@ -183,7 +183,9 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.scanControlDock = self.setupAsDockWidget(self.scanControlWidget, "Scan Control", QtCore.Qt.RightDockWidgetArea)
         self.scanConfigurationListChanged = self.scanControlWidget.scanConfigurationListChanged
         # EvaluationControl
-        self.evaluationControlWidget = EvaluationControl(config, self.globalVariablesUi, self.experimentName, self.plotDict.keys(), analysisNames=self.fitWidget.analysisNames() )
+        self.evaluationControlWidget = EvaluationControl(config, self.globalVariablesUi, self.experimentName, self.plotDict.keys(),
+                                                         analysisNames=self.fitWidget.analysisNames(),
+                                                         counterNames=self.pulserHardware.pulserConfiguration().counterBits if self.pulserHardware.pulserConfiguration() else None )
         self.evaluationControlWidget.currentEvaluationChanged.connect( self.progressUi.setEvaluationLabel )
         self.evaluationControlWidget.setupUi(self.evaluationControlWidget)
         self.fitWidget.analysisNamesChanged.connect( self.evaluationControlWidget.setAnalysisNames )
