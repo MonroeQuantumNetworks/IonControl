@@ -200,7 +200,7 @@ class GlobalVariableUi(Form, Base ):
         self.config[self.configName] = list(self._variables_)
         self.config[self.configName+".guiState"] = saveGuiState( self )
         try:
-            self.config[self.configName+'.treeState'] = self.treeState()
+            self.config[self.configName+'.treeState'] = self.view.treeState()
         except Exception as e:
             logging.getLogger(__name__).error("unable to save tree state in {0}: {1}".format(self.configName, e))
 
