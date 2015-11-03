@@ -9,13 +9,3 @@ from CountEvaluation import NumberEvaluation, FidelityEvaluation, ParityEvaluati
 from CountEvaluation import FeedbackEvaluation
 from scan.FitHistogramsEvaluation import FitHistogramEvaluation
 
-EvaluationAlgorithms = { MeanEvaluation.name: MeanEvaluation, 
-                         ThresholdEvaluation.name: ThresholdEvaluation,
-                         RangeEvaluation.name: RangeEvaluation,
-                         DoubleRangeEvaluation.name: DoubleRangeEvaluation,
-                         NumberEvaluation.name: NumberEvaluation,
-                         FidelityEvaluation.name: FidelityEvaluation,
-                         ParityEvaluation.name: ParityEvaluation,
-                         TwoIonEvaluation.name: TwoIonEvaluation,
-                         FitHistogramEvaluation.name: FitHistogramEvaluation,
-                         FeedbackEvaluation.name: FeedbackEvaluation }

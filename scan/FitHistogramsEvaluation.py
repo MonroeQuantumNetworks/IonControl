@@ -4,7 +4,7 @@ Created on Sep 23, 2014
 @author: pmaunz
 '''
 
-from CountEvaluation import EvaluationBase
+from EvaluationBase import EvaluationBase
 import numpy
 import logging
 from scipy.optimize import leastsq
