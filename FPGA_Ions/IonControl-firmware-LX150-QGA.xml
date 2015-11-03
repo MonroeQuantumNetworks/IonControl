@@ -263,14 +263,14 @@
         <CounterBit bitNo="13" name="Count 13"/>
         <CounterBit bitNo="14" name="Count 14"/>
         <CounterBit bitNo="15" name="Count 15"/>
-        <CounterBit bitNo="16" name="Count 0"/>
-        <CounterBit bitNo="17" name="Count 1"/>
-        <CounterBit bitNo="18" name="Count 2"/>
-        <CounterBit bitNo="19" name="Count 3"/>
-        <CounterBit bitNo="20" name="Count 4"/>
-        <CounterBit bitNo="21" name="Count 5"/>
-        <CounterBit bitNo="22" name="Count 6"/>
-        <CounterBit bitNo="23" name="Count 7"/>
+        <CounterBit bitNo="16" name="Count c0"/>
+        <CounterBit bitNo="17" name="Count c1"/>
+        <CounterBit bitNo="18" name="Count c2"/>
+        <CounterBit bitNo="19" name="Count c3"/>
+        <CounterBit bitNo="20" name="Count c4"/>
+        <CounterBit bitNo="21" name="Count c5"/>
+        <CounterBit bitNo="22" name="Count c6"/>
+        <CounterBit bitNo="23" name="Count c7"/>
         <CounterBit bitNo="24" name="Ts 0"/>
         <CounterBit bitNo="25" name="Ts 1"/>
         <CounterBit bitNo="26" name="Ts 2"/>
