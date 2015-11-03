@@ -43,7 +43,7 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         
         #setup console
         self.consoleMaximumLines = self.config.get(self.configname+'.consoleMaximumLinesNew',100)
-        self.consoleEnable = self.config.get(self.configname+'.consoleEnable',False)
+        self.consoleEnable = self.config.get(self.configname+'.consoleEnable',True)
         self.consoleClearButton.clicked.connect( self.onClearConsole )
         self.linesSpinBox.valueChanged.connect( self.onConsoleMaximumLinesChanged )
         self.linesSpinBox.setValue( self.consoleMaximumLines )

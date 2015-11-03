@@ -1,0 +1,512 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>AWG.AWGUi &mdash; IonControl 0.8 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="IonControl 0.8 documentation" href="../../index.html"/>
+        <link rel="up" title="Module code" href="../index.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> IonControl
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.8
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FPGAhardware.html">Hardware</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../manual/experimentUi_manual.html">User Manual</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../manual/instrumentLoggerUi_manual.html">Instrument Logger User Manual</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../code/codeDocs.html">Code Documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../index.html">IonControl</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+      
+    <li>AWG.AWGUi</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for AWG.AWGUi</h1><div class="highlight"><pre>
+<span class="kn">from</span> <span class="nn">cgitb</span> <span class="kn">import</span> <span class="n">text</span>
+<span class="kn">import</span> <span class="nn">copy</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">import</span> <span class="nn">time</span>
+
+<span class="kn">from</span> <span class="nn">PyQt4</span> <span class="kn">import</span> <span class="n">QtGui</span><span class="p">,</span> <span class="n">QtCore</span>
+<span class="kn">from</span> <span class="nn">PyQt4.Qt</span> <span class="kn">import</span> <span class="n">QString</span>
+<span class="kn">import</span> <span class="nn">PyQt4.uic</span>
+<span class="kn">from</span> <span class="nn">sympy.parsing.sympy_parser</span> <span class="kn">import</span> <span class="n">parse_expr</span>
+
+<span class="kn">from</span> <span class="nn">AWG.AWGDevices</span> <span class="kn">import</span> <span class="n">ChaseDA12000</span><span class="p">,</span> <span class="n">AWGDeviceList</span>
+<span class="kn">from</span> <span class="nn">AWG.AWGTableModel</span> <span class="kn">import</span> <span class="n">AWGTableModel</span>
+<span class="kn">from</span> <span class="nn">externalParameter.ExternalParameterSelection</span> <span class="kn">import</span> <span class="n">Settings</span>
+<span class="kn">from</span> <span class="nn">externalParameter.persistence</span> <span class="kn">import</span> <span class="n">DBPersist</span>
+<span class="kn">from</span> <span class="nn">modules.Expression</span> <span class="kn">import</span> <span class="n">Expression</span>
+<span class="kn">from</span> <span class="nn">modules.firstNotNone</span> <span class="kn">import</span> <span class="n">firstNotNone</span>
+<span class="kn">from</span> <span class="nn">modules.magnitude</span> <span class="kn">import</span> <span class="n">mg</span><span class="p">,</span> <span class="n">MagnitudeError</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">sympy</span> <span class="kn">as</span> <span class="nn">sp</span>
+<span class="kn">from</span> <span class="nn">uiModules.CoordinatePlotWidget</span> <span class="kn">import</span> <span class="n">CoordinatePlotWidget</span>
+<span class="kn">from</span> <span class="nn">uiModules.MagnitudeSpinBoxDelegate</span> <span class="kn">import</span> <span class="n">MagnitudeSpinBoxDelegate</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="n">uipath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">__file__</span><span class="p">),</span> <span class="s">&#39;..&#39;</span><span class="p">,</span> <span class="s">r&#39;ui</span><span class="se">\\</span><span class="s">AWGUi.ui&#39;</span><span class="p">)</span>
+<span class="n">AWGForm</span><span class="p">,</span> <span class="n">AWGBase</span> <span class="o">=</span> <span class="n">PyQt4</span><span class="o">.</span><span class="n">uic</span><span class="o">.</span><span class="n">loadUiType</span><span class="p">(</span><span class="n">uipath</span><span class="p">)</span>
+
+<div class="viewcode-block" id="AWGWaveform"><a class="viewcode-back" href="../../code/AWG-doc.html#AWG.AWGUi.AWGWaveform">[docs]</a><span class="k">class</span> <span class="nc">AWGWaveform</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="n">expression</span> <span class="o">=</span> <span class="n">Expression</span><span class="p">()</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__equation</span> <span class="o">=</span> <span class="s">&quot;t&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__points</span> <span class="o">=</span> <span class="mi">64</span><span class="p">;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stack</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vars</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+       
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">points</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__points</span>
+    
+    <span class="nd">@points.setter</span>
+    <span class="k">def</span> <span class="nf">points</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">points</span><span class="p">):</span>
+        <span class="c">#self.__points = 64*int(math.ceil(points/64.0))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__points</span> <span class="o">=</span> <span class="n">points</span>
+       
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">equation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__equation</span>
+        
+    <span class="nd">@equation.setter</span>
+    <span class="k">def</span> <span class="nf">equation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">equation</span><span class="p">):</span>
+        <span class="n">oldvars</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vars</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__equation</span> <span class="o">=</span> <span class="n">equation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stack</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">expression</span><span class="o">.</span><span class="n">_parse_expression</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__equation</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vars</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">((</span><span class="n">i</span><span class="p">,</span>  <span class="p">{</span><span class="s">&#39;value&#39;</span><span class="p">:</span> <span class="n">oldvars</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s">&#39;value&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="n">oldvars</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">else</span> <span class="n">mg</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span>
+                               <span class="s">&#39;text&#39;</span><span class="p">:</span> <span class="n">oldvars</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s">&#39;text&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="n">oldvars</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">else</span> <span class="bp">None</span><span class="p">})</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">expression</span><span class="o">.</span><span class="n">findDependencies</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">stack</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vars</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s">&#39;t&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vars</span><span class="p">[</span><span class="s">&#39;Duration&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;value&#39;</span><span class="p">:</span> <span class="n">oldvars</span><span class="p">[</span><span class="s">&#39;Duration&#39;</span><span class="p">][</span><span class="s">&#39;value&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="n">oldvars</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s">&#39;Duration&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="n">mg</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s">&#39;us&#39;</span><span class="p">),</span> <span class="s">&#39;text&#39;</span><span class="p">:</span> <span class="bp">None</span><span class="p">}</span>
+    
+<div class="viewcode-block" id="AWGWaveform.evaluate"><a class="viewcode-back" href="../../code/AWG-doc.html#AWG.AWGUi.AWGWaveform.evaluate">[docs]</a>    <span class="k">def</span> <span class="nf">evaluate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">vars</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s">&#39;Duration&#39;</span><span class="p">):</span> <span class="bp">self</span><span class="o">.</span><span class="n">vars</span><span class="p">[</span><span class="s">&#39;Duration&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;value&#39;</span><span class="p">:</span> <span class="n">mg</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s">&#39;us&#39;</span><span class="p">),</span> <span class="s">&#39;text&#39;</span><span class="p">:</span> <span class="bp">None</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">points</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vars</span><span class="p">[</span><span class="s">&#39;Duration&#39;</span><span class="p">][</span><span class="s">&#39;value&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">ounit</span><span class="p">(</span><span class="s">&#39;ns&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">toval</span><span class="p">())</span>
+        
+        <span class="c"># first test expression with dummy variable to see if units match up, so user is warned otherwise</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">expression</span><span class="o">.</span><span class="n">variabledict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">((</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">[</span><span class="s">&#39;value&#39;</span><span class="p">])</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">vars</span><span class="o">.</span><span class="n">iteritems</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">expression</span><span class="o">.</span><span class="n">variabledict</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s">&#39;t&#39;</span><span class="p">:</span><span class="n">mg</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s">&#39;us&#39;</span><span class="p">)})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">expression</span><span class="o">.</span><span class="n">evaluateWithStack</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stack</span><span class="p">[:])</span>
+        
+        <span class="n">vard</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">((</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">[</span><span class="s">&#39;value&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to_base_units</span><span class="p">()</span><span class="o">.</span><span class="n">val</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">vars</span><span class="o">.</span><span class="n">iteritems</span><span class="p">())</span>
+        <span class="n">vard</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s">&#39;Duration&#39;</span><span class="p">)</span>
+        <span class="n">vard</span><span class="p">[</span><span class="s">&#39;t&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">Symbol</span><span class="p">(</span><span class="s">&quot;t&quot;</span><span class="p">)</span>
+        
+        <span class="n">spExpr</span> <span class="o">=</span> <span class="n">parse_expr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">equation</span><span class="p">,</span> <span class="n">vard</span><span class="p">)</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">lambdify</span><span class="p">(</span><span class="n">vard</span><span class="p">[</span><span class="s">&#39;t&#39;</span><span class="p">],</span> <span class="n">spExpr</span><span class="p">,</span> <span class="s">&quot;numpy&quot;</span><span class="p">)</span>
+        
+        <span class="n">step</span> <span class="o">=</span> <span class="n">mg</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s">&quot;ns&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">val</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">points</span> <span class="o">&gt;</span> <span class="mi">4000000</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">points</span> <span class="o">=</span> <span class="mi">4000000</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">)</span><span class="o">*</span><span class="n">step</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">long</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">complex</span><span class="p">)):</span>
+            <span class="n">resArray</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">)</span>
+            <span class="n">resArray</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="n">resArray</span>
+        <span class="n">wf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">4095</span><span class="p">)</span>
+        <span class="n">wf</span> <span class="o">=</span> <span class="n">wf</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span> <span class="o">+</span> <span class="p">[</span><span class="mi">2047</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="mi">64</span><span class="o">+</span><span class="mi">64</span><span class="o">*</span><span class="nb">int</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="o">/</span><span class="mf">64.0</span><span class="p">))</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">wf</span>
+</div></div>
+<div class="viewcode-block" id="Parameters"><a class="viewcode-back" href="../../code/AWG-doc.html#AWG.AWGUi.Parameters">[docs]</a><span class="k">class</span> <span class="nc">Parameters</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">autoSave</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setScanParam</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scanParam</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+        </div>
+<div class="viewcode-block" id="AWGUi"><a class="viewcode-back" href="../../code/AWG-doc.html#AWG.AWGUi.AWGUi">[docs]</a><span class="k">class</span> <span class="nc">AWGUi</span><span class="p">(</span><span class="n">AWGForm</span><span class="p">,</span> <span class="n">AWGBase</span><span class="p">):</span>
+    <span class="n">outputChannelsChanged</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">pyqtSignal</span><span class="p">(</span><span class="nb">object</span><span class="p">)</span>
+    <span class="n">analysisNamesChanged</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">pyqtSignal</span><span class="p">(</span><span class="nb">object</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pulser</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">globalDict</span><span class="p">,</span> <span class="n">parent</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
+        <span class="n">AWGBase</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">)</span>
+        <span class="n">AWGForm</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">configname</span> <span class="o">=</span> <span class="s">&#39;AWGUi.&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">persistence</span> <span class="o">=</span> <span class="n">DBPersist</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">globalDict</span> <span class="o">=</span> <span class="n">globalDict</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">configname</span><span class="o">+</span><span class="s">&quot;parameters&quot;</span><span class="p">,</span> <span class="n">Parameters</span><span class="p">())</span>
+            
+<div class="viewcode-block" id="AWGUi.setupUi"><a class="viewcode-back" href="../../code/AWG-doc.html#AWG.AWGUi.AWGUi.setupUi">[docs]</a>    <span class="k">def</span> <span class="nf">setupUi</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">parent</span><span class="p">):</span>
+        <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+        <span class="n">AWGForm</span><span class="o">.</span><span class="n">setupUi</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">parent</span><span class="p">)</span>
+        
+        <span class="c"># History and Dictionary</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">saveButton</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">onSave</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">removeButton</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">onRemove</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reloadButton</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">onReload</span> <span class="p">)</span>
+        
+        <span class="c"># Persistence</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">waveform</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">configname</span><span class="o">+</span><span class="s">&#39;waveform&#39;</span><span class="p">,</span> <span class="n">AWGWaveform</span><span class="p">())</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">AttributeError</span><span class="p">):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span> <span class="s">&quot;Unable to read scan control settings. Setting to new scan.&quot;</span> <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">waveform</span> <span class="o">=</span> <span class="n">AWGWaveform</span><span class="p">()</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">settingsDict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">configname</span><span class="o">+</span><span class="s">&#39;dict&#39;</span><span class="p">,</span><span class="nb">dict</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">settingsName</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">configname</span><span class="o">+</span><span class="s">&#39;settingsName&#39;</span><span class="p">,</span><span class="bp">None</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">comboBox</span><span class="o">.</span><span class="n">addItems</span><span class="p">(</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">settingsDict</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">settingsName</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">comboBox</span><span class="o">.</span><span class="n">findText</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">settingsName</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">comboBox</span><span class="o">.</span><span class="n">setCurrentIndex</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">comboBox</span><span class="o">.</span><span class="n">findText</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">settingsName</span><span class="p">)</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">comboBox</span><span class="o">.</span><span class="n">currentIndexChanged</span><span class="p">[</span><span class="n">QtCore</span><span class="o">.</span><span class="n">QString</span><span class="p">]</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">onLoad</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">comboBox</span><span class="o">.</span><span class="n">lineEdit</span><span class="p">()</span><span class="o">.</span><span class="n">editingFinished</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">checkSettingsSavable</span> <span class="p">)</span>
+        
+        <span class="c"># Devices</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">deviceComboBox</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">deviceComboBox</span><span class="o">.</span><span class="n">addItems</span><span class="p">([</span><span class="n">device</span><span class="o">.</span><span class="n">className</span> <span class="k">for</span> <span class="n">device</span> <span class="ow">in</span> <span class="n">AWGDeviceList</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">deviceComboBox</span><span class="o">.</span><span class="n">currentIndexChanged</span><span class="p">[</span><span class="s">&#39;QString&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">setDevice</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span> <span class="s">&#39;device&#39;</span><span class="p">):</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="s">&#39;Dummy AWG&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setDevice</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">deviceComboBox</span><span class="o">.</span><span class="n">setCurrentIndex</span><span class="p">([</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">dev</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">AWGDeviceList</span><span class="p">)</span> \
+                                             <span class="k">if</span> <span class="n">dev</span><span class="o">.</span><span class="n">className</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">device</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+        
+        <span class="c"># Table</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tableModel</span> <span class="o">=</span> <span class="n">AWGTableModel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">waveform</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">globalDict</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tableView</span><span class="o">.</span><span class="n">setModel</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">tableModel</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tableModel</span><span class="o">.</span><span class="n">valueChanged</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">onValue</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">delegate</span> <span class="o">=</span> <span class="n">MagnitudeSpinBoxDelegate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">globalDict</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tableView</span><span class="o">.</span><span class="n">setItemDelegateForColumn</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">delegate</span><span class="p">)</span>
+        
+        <span class="c"># Graph</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">plot</span> <span class="o">=</span> <span class="n">CoordinatePlotWidget</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&quot;Plot&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">setTimeAxis</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">infoLayout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">plot</span><span class="p">)</span>
+        
+        <span class="c"># Buttons</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">evalButton</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">onEvalEqn</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">programButton</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">onProgram</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span> <span class="s">&#39;enabled&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">enabled</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">enabledButton</span><span class="o">.</span><span class="n">toggled</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">onEnable</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">enabledButton</span><span class="o">.</span><span class="n">setChecked</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">enabled</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">onEnable</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">enabled</span><span class="p">)</span>
+        
+        <span class="c"># Context Menu</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setContextMenuPolicy</span><span class="p">(</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">ActionsContextMenu</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">autoSaveAction</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QAction</span><span class="p">(</span> <span class="s">&quot;auto save&quot;</span> <span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">autoSaveAction</span><span class="o">.</span><span class="n">setCheckable</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">autoSaveAction</span><span class="o">.</span><span class="n">setChecked</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">autoSave</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">autoSaveAction</span><span class="o">.</span><span class="n">triggered</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">onAutoSave</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">addAction</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">autoSaveAction</span> <span class="p">)</span>
+        
+        <span class="c"># continuous check box</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span> <span class="s">&#39;continuous&#39;</span><span class="p">):</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">continuous</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">continuousCheckBox</span><span class="o">.</span><span class="n">setChecked</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">continuous</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">continuousCheckBox</span><span class="o">.</span><span class="n">stateChanged</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">onContinuousCheckBox</span> <span class="p">)</span>
+        
+        <span class="c"># Set scan param</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setScanParam</span><span class="o">.</span><span class="n">setChecked</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">setScanParam</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setScanParam</span><span class="o">.</span><span class="n">stateChanged</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">onSetScanParamCheck</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scanParam</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">setScanParam</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scanParam</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">scanParam</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scanParam</span><span class="o">.</span><span class="n">textChanged</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">onScanParam</span><span class="p">)</span>
+        
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">setWaveform</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">waveform</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">AttributeError</span><span class="p">):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span> <span class="s">&quot;Improper waveform!&quot;</span> <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">waveform</span> <span class="o">=</span> <span class="n">AWGWaveform</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">eqnbox</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">waveform</span><span class="o">.</span><span class="n">equation</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">setWaveform</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">waveform</span><span class="p">)</span>
+            </div>
+<div class="viewcode-block" id="AWGUi.setDevice"><a class="viewcode-back" href="../../code/AWG-doc.html#AWG.AWGUi.AWGUi.setDevice">[docs]</a>    <span class="k">def</span> <span class="nf">setDevice</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">devicestr</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">devicestr</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">devicestr</span><span class="p">)</span> <span class="c"># in case devicestr is a QString, e.g. from the event listener</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="p">(</span><span class="n">device</span><span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="n">Settings</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">waveform</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span> \
+                           <span class="k">for</span> <span class="n">device</span> <span class="ow">in</span> <span class="n">AWGDeviceList</span> <span class="k">if</span> <span class="n">device</span><span class="o">.</span><span class="n">className</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">device</span><span class="p">)</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">StopIteration</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s">&quot;Could not find awg with string </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s">, reverting to dummy AWG!&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="s">&#39;Dummy AWG&#39;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">AWGDeviceList</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">device</span><span class="p">](</span><span class="bp">None</span><span class="p">,</span> <span class="n">Settings</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">waveform</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="AWGUi.checkSettingsSavable"><a class="viewcode-back" href="../../code/AWG-doc.html#AWG.AWGUi.AWGUi.checkSettingsSavable">[docs]</a>    <span class="k">def</span> <span class="nf">checkSettingsSavable</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">savable</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">savable</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+            <span class="n">currentText</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">comboBox</span><span class="o">.</span><span class="n">currentText</span><span class="p">())</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">currentText</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">or</span> <span class="n">currentText</span><span class="o">==</span><span class="s">&quot;&quot;</span><span class="p">:</span>
+                    <span class="n">savable</span> <span class="o">=</span> <span class="bp">False</span>
+                <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">settingsName</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">settingsName</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">settingsDict</span><span class="p">:</span>
+                    <span class="n">savable</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">settingsDict</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">settingsName</span><span class="p">]</span><span class="o">!=</span><span class="bp">self</span><span class="o">.</span><span class="n">waveform</span> <span class="ow">or</span> <span class="n">currentText</span><span class="o">!=</span><span class="bp">self</span><span class="o">.</span><span class="n">settingsName</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">savable</span> <span class="o">=</span> <span class="bp">True</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">autoSave</span> <span class="ow">and</span> <span class="n">savable</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">onSave</span><span class="p">()</span>
+                    <span class="n">savable</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="k">except</span> <span class="n">MagnitudeError</span><span class="p">:</span>
+                <span class="k">pass</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">saveButton</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span> <span class="n">savable</span> <span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="AWGUi.outputChannels"><a class="viewcode-back" href="../../code/AWG-doc.html#AWG.AWGUi.AWGUi.outputChannels">[docs]</a>    <span class="k">def</span> <span class="nf">outputChannels</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>  
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="o">.</span><span class="n">outputChannels</span><span class="p">())</span>
+    </div>
+<div class="viewcode-block" id="AWGUi.setWaveform"><a class="viewcode-back" href="../../code/AWG-doc.html#AWG.AWGUi.AWGUi.setWaveform">[docs]</a>    <span class="k">def</span> <span class="nf">setWaveform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">waveform</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">waveform</span> <span class="o">=</span> <span class="n">waveform</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">eqnbox</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">waveform</span><span class="o">.</span><span class="n">equation</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tableModel</span><span class="o">.</span><span class="n">setWaveform</span><span class="p">(</span><span class="n">waveform</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">replot</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="AWGUi.saveConfig"><a class="viewcode-back" href="../../code/AWG-doc.html#AWG.AWGUi.AWGUi.saveConfig">[docs]</a>    <span class="k">def</span> <span class="nf">saveConfig</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">configname</span><span class="o">+</span><span class="s">&#39;waveform&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">waveform</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">configname</span><span class="o">+</span><span class="s">&#39;dict&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">settingsDict</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">configname</span><span class="o">+</span><span class="s">&#39;settingsName&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">settingsName</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">configname</span><span class="o">+</span><span class="s">&#39;parameters&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span>
+</div>
+<div class="viewcode-block" id="AWGUi.onSave"><a class="viewcode-back" href="../../code/AWG-doc.html#AWG.AWGUi.AWGUi.onSave">[docs]</a>    <span class="k">def</span> <span class="nf">onSave</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">settingsName</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">comboBox</span><span class="o">.</span><span class="n">currentText</span><span class="p">())</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">settingsName</span> <span class="o">!=</span> <span class="s">&#39;&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">settingsName</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">settingsDict</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">comboBox</span><span class="o">.</span><span class="n">findText</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">settingsName</span><span class="p">)</span><span class="o">==-</span><span class="mi">1</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">comboBox</span><span class="o">.</span><span class="n">addItem</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">settingsName</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">settingsDict</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">settingsName</span><span class="p">]</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">waveform</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">checkSettingsSavable</span><span class="p">(</span><span class="n">savable</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="AWGUi.onRemove"><a class="viewcode-back" href="../../code/AWG-doc.html#AWG.AWGUi.AWGUi.onRemove">[docs]</a>    <span class="k">def</span> <span class="nf">onRemove</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">comboBox</span><span class="o">.</span><span class="n">currentText</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="o">!=</span> <span class="s">&#39;&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">settingsDict</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">settingsDict</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+            <span class="n">idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comboBox</span><span class="o">.</span><span class="n">findText</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">idx</span><span class="o">&gt;=</span><span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">comboBox</span><span class="o">.</span><span class="n">removeItem</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
+                </div>
+<div class="viewcode-block" id="AWGUi.onReload"><a class="viewcode-back" href="../../code/AWG-doc.html#AWG.AWGUi.AWGUi.onReload">[docs]</a>    <span class="k">def</span> <span class="nf">onReload</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">onLoad</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">comboBox</span><span class="o">.</span><span class="n">currentText</span><span class="p">()</span> <span class="p">)</span>
+       </div>
+<div class="viewcode-block" id="AWGUi.onLoad"><a class="viewcode-back" href="../../code/AWG-doc.html#AWG.AWGUi.AWGUi.onLoad">[docs]</a>    <span class="k">def</span> <span class="nf">onLoad</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">name</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">settingsName</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">settingsName</span> <span class="o">!=</span><span class="s">&#39;&#39;</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">settingsName</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">settingsDict</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">setWaveform</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">settingsDict</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">settingsName</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">refreshWF</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">checkSettingsSavable</span><span class="p">()</span>
+    </div>
+<div class="viewcode-block" id="AWGUi.onAutoSave"><a class="viewcode-back" href="../../code/AWG-doc.html#AWG.AWGUi.AWGUi.onAutoSave">[docs]</a>    <span class="k">def</span> <span class="nf">onAutoSave</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">checked</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">autoSave</span> <span class="o">=</span> <span class="n">checked</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">autoSave</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">onSave</span><span class="p">()</span>
+        </div>
+<div class="viewcode-block" id="AWGUi.onEvalEqn"><a class="viewcode-back" href="../../code/AWG-doc.html#AWG.AWGUi.AWGUi.onEvalEqn">[docs]</a>    <span class="k">def</span> <span class="nf">onEvalEqn</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">waveform</span><span class="o">.</span><span class="n">equation</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">eqnbox</span><span class="o">.</span><span class="n">text</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">refreshWF</span><span class="p">()</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">outputChannelsChanged</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">outputChannels</span><span class="p">()</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">checkSettingsSavable</span><span class="p">()</span>
+        </div>
+<div class="viewcode-block" id="AWGUi.onValue"><a class="viewcode-back" href="../../code/AWG-doc.html#AWG.AWGUi.AWGUi.onValue">[docs]</a>    <span class="k">def</span> <span class="nf">onValue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">var</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">refreshWF</span><span class="p">()</span>
+        </div>
+<div class="viewcode-block" id="AWGUi.onSetScanParamCheck"><a class="viewcode-back" href="../../code/AWG-doc.html#AWG.AWGUi.AWGUi.onSetScanParamCheck">[docs]</a>    <span class="k">def</span> <span class="nf">onSetScanParamCheck</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">state</span> <span class="o">==</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">Checked</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">scanParam</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">setScanParam</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">scanParam</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">setScanParam</span> <span class="o">=</span> <span class="bp">False</span>
+        </div>
+<div class="viewcode-block" id="AWGUi.onScanParam"><a class="viewcode-back" href="../../code/AWG-doc.html#AWG.AWGUi.AWGUi.onScanParam">[docs]</a>    <span class="k">def</span> <span class="nf">onScanParam</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">scanParam</span> <span class="o">=</span> <span class="n">text</span>
+        </div>
+<div class="viewcode-block" id="AWGUi.onEnable"><a class="viewcode-back" href="../../code/AWG-doc.html#AWG.AWGUi.AWGUi.onEnable">[docs]</a>    <span class="k">def</span> <span class="nf">onEnable</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">checked</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">checked</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">enabled</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">enabledButton</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="s">&quot;Auto AWG program enabled&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">enabledButton</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s">&#39;QToolButton {color: green}&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">enabled</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">enabledButton</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="s">&quot;Auto AWG program disabled&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">enabledButton</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s">&#39;QToolButton {color: red}&#39;</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="AWGUi.onContinuousCheckBox"><a class="viewcode-back" href="../../code/AWG-doc.html#AWG.AWGUi.AWGUi.onContinuousCheckBox">[docs]</a>    <span class="k">def</span> <span class="nf">onContinuousCheckBox</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">checked</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">continuous</span> <span class="o">=</span> <span class="n">checked</span>
+        </div>
+<div class="viewcode-block" id="AWGUi.onProgram"><a class="viewcode-back" href="../../code/AWG-doc.html#AWG.AWGUi.AWGUi.onProgram">[docs]</a>    <span class="k">def</span> <span class="nf">onProgram</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="o">.</span><span class="n">program</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">continuousCheckBox</span><span class="o">.</span><span class="n">isChecked</span><span class="p">())</span>
+        </div>
+<div class="viewcode-block" id="AWGUi.refreshWF"><a class="viewcode-back" href="../../code/AWG-doc.html#AWG.AWGUi.AWGUi.refreshWF">[docs]</a>    <span class="k">def</span> <span class="nf">refreshWF</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="o">.</span><span class="n">setWaveform</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">waveform</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">replot</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">checkSettingsSavable</span><span class="p">()</span>
+        </div>
+<div class="viewcode-block" id="AWGUi.replot"><a class="viewcode-back" href="../../code/AWG-doc.html#AWG.AWGUi.AWGUi.replot">[docs]</a>    <span class="k">def</span> <span class="nf">replot</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">getItem</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">getItem</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">waveform</span><span class="o">.</span><span class="n">evaluate</span><span class="p">())</span>
+        <span class="k">except</span> <span class="p">(</span><span class="n">MagnitudeError</span><span class="p">,</span> <span class="ne">NameError</span><span class="p">,</span> <span class="ne">IndexError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+           
+           </div>
+<div class="viewcode-block" id="AWGUi.evaluate"><a class="viewcode-back" href="../../code/AWG-doc.html#AWG.AWGUi.AWGUi.evaluate">[docs]</a>    <span class="k">def</span> <span class="nf">evaluate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tableModel</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="n">name</span><span class="p">)</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright .
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'0.8',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

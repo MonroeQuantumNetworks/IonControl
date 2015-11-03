@@ -17,7 +17,7 @@
    <iconset resource="Experiment.qrc">
     <normaloff>:/petersIcons/icons/Owwnotebook_icon.png</normaloff>:/petersIcons/icons/Owwnotebook_icon.png</iconset>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout_2">
+  <layout class="QVBoxLayout" name="verticalLayout_12">
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
@@ -279,13 +279,52 @@
        <enum>Qt::Vertical</enum>
       </property>
       <widget class="QTableView" name="measurementTableView"/>
-      <widget class="PlainTextEdit" name="plainTextEdit"/>
+      <widget class="QWidget" name="verticalLayoutWidget">
+       <layout class="QVBoxLayout" name="verticalLayout_2">
+        <item>
+         <widget class="QLabel" name="label_6">
+          <property name="text">
+           <string>Long comment</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="PlainTextEdit" name="plainTextEdit"/>
+        </item>
+       </layout>
+      </widget>
       <widget class="QSplitter" name="splitterHorizontalParam">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
        </property>
-       <widget class="QTableView" name="parameterTableView"/>
-       <widget class="QTableView" name="resultTableView"/>
+       <widget class="QWidget" name="verticalLayoutWidget_2">
+        <layout class="QVBoxLayout" name="verticalLayout_10">
+         <item>
+          <widget class="QLabel" name="label_7">
+           <property name="text">
+            <string>Parameters</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QTableView" name="parameterTableView"/>
+         </item>
+        </layout>
+       </widget>
+       <widget class="QWidget" name="verticalLayoutWidget_3">
+        <layout class="QVBoxLayout" name="verticalLayout_11">
+         <item>
+          <widget class="QLabel" name="label_8">
+           <property name="text">
+            <string>Results</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QTableView" name="resultTableView"/>
+         </item>
+        </layout>
+       </widget>
       </widget>
      </widget>
     </widget>

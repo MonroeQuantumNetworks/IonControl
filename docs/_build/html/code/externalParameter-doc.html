@@ -1,0 +1,2304 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>externalParameter &mdash; IonControl 0.8 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="IonControl 0.8 documentation" href="../index.html"/>
+        <link rel="up" title="Code Documentation" href="codeDocs.html"/>
+        <link rel="next" title="fit" href="fit-doc.html"/>
+        <link rel="prev" title="digitalLock" href="digitalLock-doc.html"/> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> IonControl
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.8
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FPGAhardware.html">Hardware</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../manual/experimentUi_manual.html">User Manual</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../manual/instrumentLoggerUi_manual.html">Instrument Logger User Manual</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="codeDocs.html">Code Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="AWG-doc.html">AWG</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ProjectConfig-doc.html">ProjectConfig</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dedicatedCounters-doc.html">dedicatedCounters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="digitalLock-doc.html">digitalLock</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="">externalParameter</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#aptinstruments">APTInstruments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-externalParameter.calibration">calibration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-externalParameter.decimation">decimation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-externalParameter.DummyReader">DummyReader</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id1">ExternalParameter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#externalparameterbase">ExternalParameterBase</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-externalParameter.ExternalParameterSelection">ExternalParameterSelection</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-externalParameter.ExternalParameterTableModel">ExternalParameterTableModel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-externalParameter.ExternalParameterUi">ExternalParameterUi</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ilx5900reader">ILX5900Reader</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-externalParameter.InputChannel">InputChannel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-externalParameter.InputData">InputData</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-externalParameter.InstrumentLoggerQueryUi">InstrumentLoggerQueryUi</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-externalParameter.InstrumentLogging">InstrumentLogging</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-externalParameter.InstrumentLoggingDisplay">InstrumentLoggingDisplay</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-externalParameter.InstrumentLoggingHandler">InstrumentLoggingHandler</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-externalParameter.InstrumentLoggingReader">InstrumentLoggingReader</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-externalParameter.InstrumentLoggingSelection">InstrumentLoggingSelection</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-externalParameter.InstrumentLoggingWindow">InstrumentLoggingWindow</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-externalParameter.InstrumentLoggingWindowServer">InstrumentLoggingWindowServer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-externalParameter.InstrumentReader">InstrumentReader</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-externalParameter.InstrumentReaderBase">InstrumentReaderBase</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-externalParameter.InterProcessParameters">InterProcessParameters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#keithley2010reader">Keithley2010Reader</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-externalParameter.MKSReader">MKSReader</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#motionparameter">MotionParameter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#multimeterreader">MultiMeterReader</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#omegacn7500reader">OmegaCN7500Reader</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-externalParameter.OutputChannel">OutputChannel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-externalParameter.persistence">persistence</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-externalParameter.PhotodiodeReader">PhotodiodeReader</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-externalParameter.PicoampMeter">PicoampMeter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-externalParameter.PicoampMeterControl">PicoampMeterControl</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#spectrumanalyzern9342peak">SpectrumAnalyzerN9342Peak</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#standardexternalparameter">StandardExternalParameter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-externalParameter.TerranovaReader">TerranovaReader</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-externalParameter.VoltageOutputChannel">VoltageOutputChannel</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="fit-doc.html">fit</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gateSequence-doc.html">gateSequence</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gui-doc.html">gui</a></li>
+<li class="toctree-l2"><a class="reference internal" href="logicAnalyzer-doc.html">logicAnalyzer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules-doc.html">modules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mylogging-doc.html">mylogging</a></li>
+<li class="toctree-l2"><a class="reference internal" href="persist-doc.html">persist</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pppCompiler-doc.html">pppCompiler</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pulseProgram-doc.html">pulseProgram</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pulser-doc.html">pulser</a></li>
+<li class="toctree-l2"><a class="reference internal" href="scan-doc.html">scan</a></li>
+<li class="toctree-l2"><a class="reference internal" href="scripting-doc.html">scripting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="trace-doc.html">trace</a></li>
+<li class="toctree-l2"><a class="reference internal" href="uiModules-doc.html">uiModules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="voltageControl-doc.html">voltageControl</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DigitalLockUi-doc.html">DigitalLockUi</a></li>
+<li class="toctree-l2"><a class="reference internal" href="InstrumentLoggingUi-doc.html">InstrumentLoggingUi</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ExperimentUi-doc.html">ExperimentUi</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../index.html">IonControl</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="codeDocs.html">Code Documentation</a> &raquo;</li>
+      
+    <li>externalParameter</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/code/externalParameter-doc.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="externalparameter">
+<h1>externalParameter<a class="headerlink" href="#externalparameter" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="aptinstruments">
+<h2>APTInstruments<a class="headerlink" href="#aptinstruments" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-externalParameter.calibration">
+<span id="calibration"></span><h2>calibration<a class="headerlink" href="#module-externalParameter.calibration" title="Permalink to this headline">¶</a></h2>
+<p>Created on Aug 30, 2014</p>
+<p>&#64;author: pmaunz</p>
+<dl class="class">
+<dt id="externalParameter.calibration.PowerDetectorCalibration">
+<em class="property">class </em><code class="descname">PowerDetectorCalibration</code><span class="sig-paren">(</span><em>name='default'</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.calibration.PowerDetectorCalibration" title="Permalink to this definition">¶</a></dt>
+<dd><p>data is being fitted to p*x**2 + m*x + c
+is valid between minimum and maximum input voltage</p>
+<dl class="method">
+<dt id="externalParameter.calibration.PowerDetectorCalibration.convert">
+<code class="descname">convert</code><span class="sig-paren">(</span><em>volt</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.calibration.PowerDetectorCalibration.convert" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.calibration.PowerDetectorCalibration.convertMagnitude">
+<code class="descname">convertMagnitude</code><span class="sig-paren">(</span><em>volt</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.calibration.PowerDetectorCalibration.convertMagnitude" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="externalParameter.calibration.PowerDetectorCalibration.name">
+<code class="descname">name</code><em class="property"> = 'Rf Power Detector Cal'</em><a class="headerlink" href="#externalParameter.calibration.PowerDetectorCalibration.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.calibration.PowerDetectorCalibration.paramDef">
+<code class="descname">paramDef</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.calibration.PowerDetectorCalibration.paramDef" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="externalParameter.calibration.SteinhartHartCalibration">
+<em class="property">class </em><code class="descname">SteinhartHartCalibration</code><span class="sig-paren">(</span><em>name='default'</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.calibration.SteinhartHartCalibration" title="Permalink to this definition">¶</a></dt>
+<dd><p>data is being fitted to p*x**2 + m*x + c
+is valid between minimum and maximum input voltage</p>
+<dl class="method">
+<dt id="externalParameter.calibration.SteinhartHartCalibration.convert">
+<code class="descname">convert</code><span class="sig-paren">(</span><em>resistance</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.calibration.SteinhartHartCalibration.convert" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.calibration.SteinhartHartCalibration.convertMagnitude">
+<code class="descname">convertMagnitude</code><span class="sig-paren">(</span><em>resistance</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.calibration.SteinhartHartCalibration.convertMagnitude" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="externalParameter.calibration.SteinhartHartCalibration.name">
+<code class="descname">name</code><em class="property"> = 'Steinhart Hart'</em><a class="headerlink" href="#externalParameter.calibration.SteinhartHartCalibration.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.calibration.SteinhartHartCalibration.paramDef">
+<code class="descname">paramDef</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.calibration.SteinhartHartCalibration.paramDef" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-externalParameter.decimation">
+<span id="decimation"></span><h2>decimation<a class="headerlink" href="#module-externalParameter.decimation" title="Permalink to this headline">¶</a></h2>
+<p>Created on Aug 30, 2014</p>
+<p>&#64;author: pmaunz</p>
+<dl class="class">
+<dt id="externalParameter.decimation.Average">
+<em class="property">class </em><code class="descname">Average</code><a class="headerlink" href="#externalParameter.decimation.Average" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="externalParameter.decimation.Average.decimate">
+<code class="descname">decimate</code><span class="sig-paren">(</span><em>takentime</em>, <em>value</em>, <em>callback</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.decimation.Average.decimate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.decimation.Average.doCallback">
+<code class="descname">doCallback</code><span class="sig-paren">(</span><em>callback</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.decimation.Average.doCallback" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="externalParameter.decimation.Average.name">
+<code class="descname">name</code><em class="property"> = 'Average'</em><a class="headerlink" href="#externalParameter.decimation.Average.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.decimation.Average.paramDef">
+<code class="descname">paramDef</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.decimation.Average.paramDef" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="externalParameter.decimation.DynamicDecimation">
+<em class="property">class </em><code class="descname">DynamicDecimation</code><a class="headerlink" href="#externalParameter.decimation.DynamicDecimation" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="externalParameter.decimation.DynamicDecimation.decimate">
+<code class="descname">decimate</code><span class="sig-paren">(</span><em>takentime</em>, <em>value</em>, <em>callback</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.decimation.DynamicDecimation.decimate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="externalParameter.decimation.DynamicDecimation.name">
+<code class="descname">name</code><em class="property"> = 'Dynamic'</em><a class="headerlink" href="#externalParameter.decimation.DynamicDecimation.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.decimation.DynamicDecimation.paramDef">
+<code class="descname">paramDef</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.decimation.DynamicDecimation.paramDef" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="externalParameter.decimation.StaticDecimation">
+<em class="property">class </em><code class="descname">StaticDecimation</code><span class="sig-paren">(</span><em>staticTime=None</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.decimation.StaticDecimation" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="externalParameter.decimation.StaticDecimation.bottomHalf">
+<code class="descname">bottomHalf</code><span class="sig-paren">(</span><em>value</em>, <em>callback</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.decimation.StaticDecimation.bottomHalf" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.decimation.StaticDecimation.decimate">
+<code class="descname">decimate</code><span class="sig-paren">(</span><em>takentime</em>, <em>value</em>, <em>callback</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.decimation.StaticDecimation.decimate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="externalParameter.decimation.StaticDecimation.name">
+<code class="descname">name</code><em class="property"> = 'Static'</em><a class="headerlink" href="#externalParameter.decimation.StaticDecimation.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="externalParameter.decimation.TimeAverage">
+<em class="property">class </em><code class="descname">TimeAverage</code><a class="headerlink" href="#externalParameter.decimation.TimeAverage" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="externalParameter.decimation.TimeAverage.decimate">
+<code class="descname">decimate</code><span class="sig-paren">(</span><em>takentime</em>, <em>value</em>, <em>callback</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.decimation.TimeAverage.decimate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="externalParameter.decimation.TimeAverage.name">
+<code class="descname">name</code><em class="property"> = 'Time Average'</em><a class="headerlink" href="#externalParameter.decimation.TimeAverage.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.decimation.TimeAverage.paramDef">
+<code class="descname">paramDef</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.decimation.TimeAverage.paramDef" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-externalParameter.DummyReader">
+<span id="dummyreader"></span><h2>DummyReader<a class="headerlink" href="#module-externalParameter.DummyReader" title="Permalink to this headline">¶</a></h2>
+<p>Created on May 16, 2014</p>
+<p>&#64;author: wolverine</p>
+<dl class="class">
+<dt id="externalParameter.DummyReader.DummyReader">
+<em class="property">class </em><code class="descname">DummyReader</code><span class="sig-paren">(</span><em>instrument=None</em>, <em>settings=None</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.DummyReader.DummyReader" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="externalParameter.DummyReader.DummyReader.close">
+<code class="descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.DummyReader.DummyReader.close" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.DummyReader.DummyReader.open">
+<code class="descname">open</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.DummyReader.DummyReader.open" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.DummyReader.DummyReader.value">
+<code class="descname">value</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.DummyReader.DummyReader.value" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="id1">
+<h2>ExternalParameter<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="externalparameterbase">
+<h2>ExternalParameterBase<a class="headerlink" href="#externalparameterbase" title="Permalink to this headline">¶</a></h2>
+<span class="target" id="module-externalParameter.ExternalParameterBase"></span><p>Created on Jun 21, 2014</p>
+<p>&#64;author: pmaunz</p>
+<dl class="class">
+<dt id="externalParameter.ExternalParameterBase.ExternalParameterBase">
+<em class="property">class </em><code class="descname">ExternalParameterBase</code><span class="sig-paren">(</span><em>name</em>, <em>settings</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterBase.ExternalParameterBase" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="externalParameter.ExternalParameterBase.ExternalParameterBase.close">
+<code class="descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterBase.ExternalParameterBase.close" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.ExternalParameterBase.ExternalParameterBase.currentExternalValue">
+<code class="descname">currentExternalValue</code><span class="sig-paren">(</span><em>channel=None</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterBase.ExternalParameterBase.currentExternalValue" title="Permalink to this definition">¶</a></dt>
+<dd><p>if the value is determined externally, return the external value, otherwise return value</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.ExternalParameterBase.ExternalParameterBase.currentValue">
+<code class="descname">currentValue</code><span class="sig-paren">(</span><em>channel=None</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterBase.ExternalParameterBase.currentValue" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns current value</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.ExternalParameterBase.ExternalParameterBase.dimension">
+<code class="descname">dimension</code><span class="sig-paren">(</span><em>channel</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterBase.ExternalParameterBase.dimension" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.ExternalParameterBase.ExternalParameterBase.fullName">
+<code class="descname">fullName</code><span class="sig-paren">(</span><em>channel</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterBase.ExternalParameterBase.fullName" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.ExternalParameterBase.ExternalParameterBase.getInputData">
+<code class="descname">getInputData</code><span class="sig-paren">(</span><em>channel</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterBase.ExternalParameterBase.getInputData" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.ExternalParameterBase.ExternalParameterBase.getValue">
+<code class="descname">getValue</code><span class="sig-paren">(</span><em>channel</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterBase.ExternalParameterBase.getValue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.ExternalParameterBase.ExternalParameterBase.inputChannels">
+<code class="descname">inputChannels</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterBase.ExternalParameterBase.inputChannels" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.ExternalParameterBase.ExternalParameterBase.outputChannels">
+<code class="descname">outputChannels</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterBase.ExternalParameterBase.outputChannels" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.ExternalParameterBase.ExternalParameterBase.paramDef">
+<code class="descname">paramDef</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterBase.ExternalParameterBase.paramDef" title="Permalink to this definition">¶</a></dt>
+<dd><p>return the parameter definition used by pyqtgraph parametertree to show the gui</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="externalParameter.ExternalParameterBase.ExternalParameterBase.parameter">
+<code class="descname">parameter</code><a class="headerlink" href="#externalParameter.ExternalParameterBase.ExternalParameterBase.parameter" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.ExternalParameterBase.ExternalParameterBase.persist">
+<code class="descname">persist</code><span class="sig-paren">(</span><em>channel</em>, <em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterBase.ExternalParameterBase.persist" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.ExternalParameterBase.ExternalParameterBase.persistCallback">
+<code class="descname">persistCallback</code><span class="sig-paren">(</span><em>source</em>, <em>data</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterBase.ExternalParameterBase.persistCallback" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="externalParameter.ExternalParameterBase.ExternalParameterBase.persistSpace">
+<code class="descname">persistSpace</code><em class="property"> = 'externalOutput'</em><a class="headerlink" href="#externalParameter.ExternalParameterBase.ExternalParameterBase.persistSpace" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.ExternalParameterBase.ExternalParameterBase.restoreValue">
+<code class="descname">restoreValue</code><span class="sig-paren">(</span><em>channel=None</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterBase.ExternalParameterBase.restoreValue" title="Permalink to this definition">¶</a></dt>
+<dd><p>restore the value saved previously, this routine only goes stepsize towards this value
+if the stored value is reached returns True, otherwise False. Needs to be called repeatedly
+until it returns True in order to restore the saved value.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.ExternalParameterBase.ExternalParameterBase.saveValue">
+<code class="descname">saveValue</code><span class="sig-paren">(</span><em>channel=None</em>, <em>overwrite=True</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterBase.ExternalParameterBase.saveValue" title="Permalink to this definition">¶</a></dt>
+<dd><p>save current value</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.ExternalParameterBase.ExternalParameterBase.setDefaults">
+<code class="descname">setDefaults</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterBase.ExternalParameterBase.setDefaults" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.ExternalParameterBase.ExternalParameterBase.setValue">
+<code class="descname">setValue</code><span class="sig-paren">(</span><em>channel</em>, <em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterBase.ExternalParameterBase.setValue" title="Permalink to this definition">¶</a></dt>
+<dd><p>go stepsize towards the value. This function returns True if the value is reached. Otherwise
+it should return False. The user should call repeatedly until the intended value is reached
+and True is returned.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.ExternalParameterBase.ExternalParameterBase.update">
+<code class="descname">update</code><span class="sig-paren">(</span><em>param</em>, <em>changes</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterBase.ExternalParameterBase.update" title="Permalink to this definition">¶</a></dt>
+<dd><p>update the parameter, called by the signal of pyqtgraph parametertree</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.ExternalParameterBase.ExternalParameterBase.useExternalValue">
+<code class="descname">useExternalValue</code><span class="sig-paren">(</span><em>channel=None</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterBase.ExternalParameterBase.useExternalValue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="exception">
+<dt id="externalParameter.ExternalParameterBase.InstrumentException">
+<em class="property">exception </em><code class="descname">InstrumentException</code><a class="headerlink" href="#externalParameter.ExternalParameterBase.InstrumentException" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="externalParameter.ExternalParameterBase.InstrumentMeta">
+<em class="property">class </em><code class="descname">InstrumentMeta</code><a class="headerlink" href="#externalParameter.ExternalParameterBase.InstrumentMeta" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="externalParameter.ExternalParameterBase.nextValue">
+<code class="descname">nextValue</code><span class="sig-paren">(</span><em>current</em>, <em>target</em>, <em>stepsize</em>, <em>jump</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterBase.nextValue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-externalParameter.ExternalParameterSelection">
+<span id="externalparameterselection"></span><h2>ExternalParameterSelection<a class="headerlink" href="#module-externalParameter.ExternalParameterSelection" title="Permalink to this headline">¶</a></h2>
+<p>Created on Fri Apr 12 20:15:47 2013</p>
+<p>&#64;author: pmaunz</p>
+<dl class="class">
+<dt id="externalParameter.ExternalParameterSelection.Parameter">
+<em class="property">class </em><code class="descname">Parameter</code><a class="headerlink" href="#externalParameter.ExternalParameterSelection.Parameter" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="externalParameter.ExternalParameterSelection.SelectionUi">
+<em class="property">class </em><code class="descname">SelectionUi</code><span class="sig-paren">(</span><em>config</em>, <em>classdict</em>, <em>instancename='ExternalParameterSelection.ParametersSequence'</em>, <em>parent=None</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterSelection.SelectionUi" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="externalParameter.ExternalParameterSelection.SelectionUi.disableInstrument">
+<code class="descname">disableInstrument</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterSelection.SelectionUi.disableInstrument" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.ExternalParameterSelection.SelectionUi.emitSelectionChanged">
+<code class="descname">emitSelectionChanged</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterSelection.SelectionUi.emitSelectionChanged" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.ExternalParameterSelection.SelectionUi.enableInstrument">
+<code class="descname">enableInstrument</code><span class="sig-paren">(</span><em>parameter</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterSelection.SelectionUi.enableInstrument" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.ExternalParameterSelection.SelectionUi.getInstrumentSuggestions">
+<code class="descname">getInstrumentSuggestions</code><span class="sig-paren">(</span><em>className</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterSelection.SelectionUi.getInstrumentSuggestions" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.ExternalParameterSelection.SelectionUi.inputChannels">
+<code class="descname">inputChannels</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterSelection.SelectionUi.inputChannels" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="externalParameter.ExternalParameterSelection.SelectionUi.inputChannelsChanged">
+<code class="descname">inputChannelsChanged</code><a class="headerlink" href="#externalParameter.ExternalParameterSelection.SelectionUi.inputChannelsChanged" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.ExternalParameterSelection.SelectionUi.onActiveInstrumentChanged">
+<code class="descname">onActiveInstrumentChanged</code><span class="sig-paren">(</span><em>modelIndex</em>, <em>modelIndex2</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterSelection.SelectionUi.onActiveInstrumentChanged" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.ExternalParameterSelection.SelectionUi.onAddParameter">
+<code class="descname">onAddParameter</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterSelection.SelectionUi.onAddParameter" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.ExternalParameterSelection.SelectionUi.onClose">
+<code class="descname">onClose</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterSelection.SelectionUi.onClose" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.ExternalParameterSelection.SelectionUi.onEnableChanged">
+<code class="descname">onEnableChanged</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterSelection.SelectionUi.onEnableChanged" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.ExternalParameterSelection.SelectionUi.onRemoveParameter">
+<code class="descname">onRemoveParameter</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterSelection.SelectionUi.onRemoveParameter" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.ExternalParameterSelection.SelectionUi.onReorder">
+<code class="descname">onReorder</code><span class="sig-paren">(</span><em>key</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterSelection.SelectionUi.onReorder" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.ExternalParameterSelection.SelectionUi.outputChannels">
+<code class="descname">outputChannels</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterSelection.SelectionUi.outputChannels" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="externalParameter.ExternalParameterSelection.SelectionUi.outputChannelsChanged">
+<code class="descname">outputChannelsChanged</code><a class="headerlink" href="#externalParameter.ExternalParameterSelection.SelectionUi.outputChannelsChanged" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.ExternalParameterSelection.SelectionUi.saveConfig">
+<code class="descname">saveConfig</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterSelection.SelectionUi.saveConfig" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.ExternalParameterSelection.SelectionUi.setupUi">
+<code class="descname">setupUi</code><span class="sig-paren">(</span><em>MainWindow</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterSelection.SelectionUi.setupUi" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="externalParameter.ExternalParameterSelection.Settings">
+<em class="property">class </em><code class="descname">Settings</code><a class="headerlink" href="#externalParameter.ExternalParameterSelection.Settings" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-externalParameter.ExternalParameterTableModel">
+<span id="externalparametertablemodel"></span><h2>ExternalParameterTableModel<a class="headerlink" href="#module-externalParameter.ExternalParameterTableModel" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="externalParameter.ExternalParameterTableModel.ExternalParameterTableModel">
+<em class="property">class </em><code class="descname">ExternalParameterTableModel</code><span class="sig-paren">(</span><em>parameterDict=None</em>, <em>classdict=None</em>, <em>parent=None</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterTableModel.ExternalParameterTableModel" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="externalParameter.ExternalParameterTableModel.ExternalParameterTableModel.choice">
+<code class="descname">choice</code><span class="sig-paren">(</span><em>index</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterTableModel.ExternalParameterTableModel.choice" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.ExternalParameterTableModel.ExternalParameterTableModel.columnCount">
+<code class="descname">columnCount</code><span class="sig-paren">(</span><em>parent=&lt;PyQt4.QtCore.QModelIndex object at 0x000000000BBB0E48&gt;</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterTableModel.ExternalParameterTableModel.columnCount" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.ExternalParameterTableModel.ExternalParameterTableModel.comboBoxEditable">
+<code class="descname">comboBoxEditable</code><span class="sig-paren">(</span><em>index</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterTableModel.ExternalParameterTableModel.comboBoxEditable" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.ExternalParameterTableModel.ExternalParameterTableModel.data">
+<code class="descname">data</code><span class="sig-paren">(</span><em>index</em>, <em>role</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterTableModel.ExternalParameterTableModel.data" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="externalParameter.ExternalParameterTableModel.ExternalParameterTableModel.enableChanged">
+<code class="descname">enableChanged</code><a class="headerlink" href="#externalParameter.ExternalParameterTableModel.ExternalParameterTableModel.enableChanged" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.ExternalParameterTableModel.ExternalParameterTableModel.flags">
+<code class="descname">flags</code><span class="sig-paren">(</span><em>index</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterTableModel.ExternalParameterTableModel.flags" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.ExternalParameterTableModel.ExternalParameterTableModel.headerData">
+<code class="descname">headerData</code><span class="sig-paren">(</span><em>section</em>, <em>orientation</em>, <em>role</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterTableModel.ExternalParameterTableModel.headerData" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="externalParameter.ExternalParameterTableModel.ExternalParameterTableModel.headerDataLookup">
+<code class="descname">headerDataLookup</code><em class="property"> = ['E', 'Name', 'Class', 'Instrument']</em><a class="headerlink" href="#externalParameter.ExternalParameterTableModel.ExternalParameterTableModel.headerDataLookup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.ExternalParameterTableModel.ExternalParameterTableModel.moveRow">
+<code class="descname">moveRow</code><span class="sig-paren">(</span><em>rows</em>, <em>up=True</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterTableModel.ExternalParameterTableModel.moveRow" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.ExternalParameterTableModel.ExternalParameterTableModel.rowCount">
+<code class="descname">rowCount</code><span class="sig-paren">(</span><em>parent=&lt;PyQt4.QtCore.QModelIndex object at 0x000000000BBB0D68&gt;</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterTableModel.ExternalParameterTableModel.rowCount" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.ExternalParameterTableModel.ExternalParameterTableModel.setClassName">
+<code class="descname">setClassName</code><span class="sig-paren">(</span><em>index</em>, <em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterTableModel.ExternalParameterTableModel.setClassName" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.ExternalParameterTableModel.ExternalParameterTableModel.setData">
+<code class="descname">setData</code><span class="sig-paren">(</span><em>index</em>, <em>value</em>, <em>role</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterTableModel.ExternalParameterTableModel.setData" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.ExternalParameterTableModel.ExternalParameterTableModel.setEnabled">
+<code class="descname">setEnabled</code><span class="sig-paren">(</span><em>index</em>, <em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterTableModel.ExternalParameterTableModel.setEnabled" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.ExternalParameterTableModel.ExternalParameterTableModel.setInstrument">
+<code class="descname">setInstrument</code><span class="sig-paren">(</span><em>index</em>, <em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterTableModel.ExternalParameterTableModel.setInstrument" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.ExternalParameterTableModel.ExternalParameterTableModel.setName">
+<code class="descname">setName</code><span class="sig-paren">(</span><em>index</em>, <em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterTableModel.ExternalParameterTableModel.setName" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.ExternalParameterTableModel.ExternalParameterTableModel.setParameterDict">
+<code class="descname">setParameterDict</code><span class="sig-paren">(</span><em>parameterDict</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterTableModel.ExternalParameterTableModel.setParameterDict" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.ExternalParameterTableModel.ExternalParameterTableModel.setValue">
+<code class="descname">setValue</code><span class="sig-paren">(</span><em>index</em>, <em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterTableModel.ExternalParameterTableModel.setValue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-externalParameter.ExternalParameterUi">
+<span id="externalparameterui"></span><h2>ExternalParameterUi<a class="headerlink" href="#module-externalParameter.ExternalParameterUi" title="Permalink to this headline">¶</a></h2>
+<p>Created on Fri Apr 12 23:45:54 2013</p>
+<p>&#64;author: pmaunz</p>
+<dl class="class">
+<dt id="externalParameter.ExternalParameterUi.ControlUi">
+<em class="property">class </em><code class="descname">ControlUi</code><span class="sig-paren">(</span><em>config</em>, <em>globalDict=None</em>, <em>parent=None</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterUi.ControlUi" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="externalParameter.ExternalParameterUi.ControlUi.callWhenDoneAdjusting">
+<code class="descname">callWhenDoneAdjusting</code><span class="sig-paren">(</span><em>callback</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterUi.ControlUi.callWhenDoneAdjusting" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.ExternalParameterUi.ControlUi.evaluate">
+<code class="descname">evaluate</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterUi.ControlUi.evaluate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.ExternalParameterUi.ControlUi.isAdjusting">
+<code class="descname">isAdjusting</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterUi.ControlUi.isAdjusting" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.ExternalParameterUi.ControlUi.keys">
+<code class="descname">keys</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterUi.ControlUi.keys" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.ExternalParameterUi.ControlUi.saveConfig">
+<code class="descname">saveConfig</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterUi.ControlUi.saveConfig" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.ExternalParameterUi.ControlUi.setupParameters">
+<code class="descname">setupParameters</code><span class="sig-paren">(</span><em>outputChannels</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterUi.ControlUi.setupParameters" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.ExternalParameterUi.ControlUi.setupUi">
+<code class="descname">setupUi</code><span class="sig-paren">(</span><em>outputChannels</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterUi.ControlUi.setupUi" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.ExternalParameterUi.ControlUi.update">
+<code class="descname">update</code><span class="sig-paren">(</span><em>iterable</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterUi.ControlUi.update" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="externalParameter.ExternalParameterUi.ExternalParameterControlModel">
+<em class="property">class </em><code class="descname">ExternalParameterControlModel</code><span class="sig-paren">(</span><em>controlUi</em>, <em>parameterList=[]</em>, <em>parent=None</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterUi.ExternalParameterControlModel" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="externalParameter.ExternalParameterUi.ExternalParameterControlModel.evaluate">
+<code class="descname">evaluate</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterUi.ExternalParameterControlModel.evaluate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="externalParameter.ExternalParameterUi.ExternalParameterControlModel.expression">
+<code class="descname">expression</code><em class="property"> = &lt;modules.Expression.Expression instance at 0x000000000CE09F08&gt;</em><a class="headerlink" href="#externalParameter.ExternalParameterUi.ExternalParameterControlModel.expression" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.ExternalParameterUi.ExternalParameterControlModel.setParameterList">
+<code class="descname">setParameterList</code><span class="sig-paren">(</span><em>outputChannelDict</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterUi.ExternalParameterControlModel.setParameterList" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.ExternalParameterUi.ExternalParameterControlModel.setStrValue">
+<code class="descname">setStrValue</code><span class="sig-paren">(</span><em>index</em>, <em>strValue</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterUi.ExternalParameterControlModel.setStrValue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.ExternalParameterUi.ExternalParameterControlModel.setValue">
+<code class="descname">setValue</code><span class="sig-paren">(</span><em>index</em>, <em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterUi.ExternalParameterControlModel.setValue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.ExternalParameterUi.ExternalParameterControlModel.setValueFollowup">
+<code class="descname">setValueFollowup</code><span class="sig-paren">(</span><em>inst</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterUi.ExternalParameterControlModel.setValueFollowup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.ExternalParameterUi.ExternalParameterControlModel.showValue">
+<code class="descname">showValue</code><span class="sig-paren">(</span><em>listIndex</em>, <em>value</em>, <em>tooltip=None</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterUi.ExternalParameterControlModel.showValue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.ExternalParameterUi.ExternalParameterControlModel.update">
+<code class="descname">update</code><span class="sig-paren">(</span><em>iterable</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.ExternalParameterUi.ExternalParameterControlModel.update" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="externalParameter.ExternalParameterUi.ExternalParameterControlModel.valueChanged">
+<code class="descname">valueChanged</code><a class="headerlink" href="#externalParameter.ExternalParameterUi.ExternalParameterControlModel.valueChanged" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="ilx5900reader">
+<h2>ILX5900Reader<a class="headerlink" href="#ilx5900reader" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-externalParameter.InputChannel">
+<span id="inputchannel"></span><h2>InputChannel<a class="headerlink" href="#module-externalParameter.InputChannel" title="Permalink to this headline">¶</a></h2>
+<p>Created on Dec 18, 2014</p>
+<p>&#64;author: pmaunz</p>
+<dl class="class">
+<dt id="externalParameter.InputChannel.InputChannel">
+<em class="property">class </em><code class="descname">InputChannel</code><span class="sig-paren">(</span><em>device</em>, <em>deviceName</em>, <em>channelName</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InputChannel.InputChannel" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="attribute">
+<dt id="externalParameter.InputChannel.InputChannel.inputData">
+<code class="descname">inputData</code><a class="headerlink" href="#externalParameter.InputChannel.InputChannel.inputData" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="externalParameter.InputChannel.InputChannel.observable">
+<code class="descname">observable</code><a class="headerlink" href="#externalParameter.InputChannel.InputChannel.observable" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="externalParameter.InputChannel.InputChannel.value">
+<code class="descname">value</code><a class="headerlink" href="#externalParameter.InputChannel.InputChannel.value" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-externalParameter.InputData">
+<span id="inputdata"></span><h2>InputData<a class="headerlink" href="#module-externalParameter.InputData" title="Permalink to this headline">¶</a></h2>
+<p>Created on Dec 28, 2014</p>
+<p>&#64;author: pmaunz</p>
+<dl class="class">
+<dt id="externalParameter.InputData.InputData">
+<em class="property">class </em><code class="descname">InputData</code><span class="sig-paren">(</span><em>raw=None</em>, <em>calibrated=None</em>, <em>decimated=None</em>, <em>persisted=None</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InputData.InputData" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="externalParameter.InputData.InputData.update">
+<code class="descname">update</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InputData.InputData.update" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-externalParameter.InstrumentLoggerQueryUi">
+<span id="instrumentloggerqueryui"></span><h2>InstrumentLoggerQueryUi<a class="headerlink" href="#module-externalParameter.InstrumentLoggerQueryUi" title="Permalink to this headline">¶</a></h2>
+<p>Created on Aug 31, 2014</p>
+<p>&#64;author: pmaunz</p>
+<dl class="class">
+<dt id="externalParameter.InstrumentLoggerQueryUi.InstrumentLoggerQueryUi">
+<em class="property">class </em><code class="descname">InstrumentLoggerQueryUi</code><span class="sig-paren">(</span><em>config</em>, <em>traceui</em>, <em>plotDict</em>, <em>parent=None</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggerQueryUi.InstrumentLoggerQueryUi" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="externalParameter.InstrumentLoggerQueryUi.InstrumentLoggerQueryUi.cacheGarbageCollect">
+<code class="descname">cacheGarbageCollect</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggerQueryUi.InstrumentLoggerQueryUi.cacheGarbageCollect" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentLoggerQueryUi.InstrumentLoggerQueryUi.doCreatePlot">
+<code class="descname">doCreatePlot</code><span class="sig-paren">(</span><em>space</em>, <em>parameter</em>, <em>fromTime</em>, <em>toTime</em>, <em>plotName</em>, <em>steps</em>, <em>forceUpdate=False</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggerQueryUi.InstrumentLoggerQueryUi.doCreatePlot" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentLoggerQueryUi.InstrumentLoggerQueryUi.handleNewDBData">
+<code class="descname">handleNewDBData</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggerQueryUi.InstrumentLoggerQueryUi.handleNewDBData" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentLoggerQueryUi.InstrumentLoggerQueryUi.onCreatePlot">
+<code class="descname">onCreatePlot</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggerQueryUi.InstrumentLoggerQueryUi.onCreatePlot" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentLoggerQueryUi.InstrumentLoggerQueryUi.onNamedTimespan">
+<code class="descname">onNamedTimespan</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggerQueryUi.InstrumentLoggerQueryUi.onNamedTimespan" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentLoggerQueryUi.InstrumentLoggerQueryUi.onRefresh">
+<code class="descname">onRefresh</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggerQueryUi.InstrumentLoggerQueryUi.onRefresh" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentLoggerQueryUi.InstrumentLoggerQueryUi.onSpaceChanged">
+<code class="descname">onSpaceChanged</code><span class="sig-paren">(</span><em>newSpace</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggerQueryUi.InstrumentLoggerQueryUi.onSpaceChanged" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentLoggerQueryUi.InstrumentLoggerQueryUi.onStateChanged">
+<code class="descname">onStateChanged</code><span class="sig-paren">(</span><em>attr</em>, <em>state</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggerQueryUi.InstrumentLoggerQueryUi.onStateChanged" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentLoggerQueryUi.InstrumentLoggerQueryUi.onUpdateAll">
+<code class="descname">onUpdateAll</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggerQueryUi.InstrumentLoggerQueryUi.onUpdateAll" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentLoggerQueryUi.InstrumentLoggerQueryUi.onUseToTime">
+<code class="descname">onUseToTime</code><span class="sig-paren">(</span><em>state</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggerQueryUi.InstrumentLoggerQueryUi.onUseToTime" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentLoggerQueryUi.InstrumentLoggerQueryUi.onValueChangedDateTime">
+<code class="descname">onValueChangedDateTime</code><span class="sig-paren">(</span><em>param</em>, <em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggerQueryUi.InstrumentLoggerQueryUi.onValueChangedDateTime" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentLoggerQueryUi.InstrumentLoggerQueryUi.onValueChangedString">
+<code class="descname">onValueChangedString</code><span class="sig-paren">(</span><em>param</em>, <em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggerQueryUi.InstrumentLoggerQueryUi.onValueChangedString" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentLoggerQueryUi.InstrumentLoggerQueryUi.saveConfig">
+<code class="descname">saveConfig</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggerQueryUi.InstrumentLoggerQueryUi.saveConfig" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentLoggerQueryUi.InstrumentLoggerQueryUi.setupUi">
+<code class="descname">setupUi</code><span class="sig-paren">(</span><em>MainWindow</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggerQueryUi.InstrumentLoggerQueryUi.setupUi" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="externalParameter.InstrumentLoggerQueryUi.Parameters">
+<em class="property">class </em><code class="descname">Parameters</code><a class="headerlink" href="#externalParameter.InstrumentLoggerQueryUi.Parameters" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-externalParameter.InstrumentLogging">
+<span id="instrumentlogging"></span><h2>InstrumentLogging<a class="headerlink" href="#module-externalParameter.InstrumentLogging" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-externalParameter.InstrumentLoggingDisplay">
+<span id="instrumentloggingdisplay"></span><h2>InstrumentLoggingDisplay<a class="headerlink" href="#module-externalParameter.InstrumentLoggingDisplay" title="Permalink to this headline">¶</a></h2>
+<p>Created on Fri Apr 12 23:45:54 2013</p>
+<p>&#64;author: pmaunz</p>
+<dl class="class">
+<dt id="externalParameter.InstrumentLoggingDisplay.InstrumentLoggingDisplay">
+<em class="property">class </em><code class="descname">InstrumentLoggingDisplay</code><span class="sig-paren">(</span><em>config</em>, <em>parent=None</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingDisplay.InstrumentLoggingDisplay" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="externalParameter.InstrumentLoggingDisplay.InstrumentLoggingDisplay.onResize">
+<code class="descname">onResize</code><span class="sig-paren">(</span><em>key</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingDisplay.InstrumentLoggingDisplay.onResize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentLoggingDisplay.InstrumentLoggingDisplay.saveConfig">
+<code class="descname">saveConfig</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingDisplay.InstrumentLoggingDisplay.saveConfig" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentLoggingDisplay.InstrumentLoggingDisplay.setupParameters">
+<code class="descname">setupParameters</code><span class="sig-paren">(</span><em>inputChannels</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingDisplay.InstrumentLoggingDisplay.setupParameters" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentLoggingDisplay.InstrumentLoggingDisplay.setupUi">
+<code class="descname">setupUi</code><span class="sig-paren">(</span><em>EnabledParameters</em>, <em>MainWindow</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingDisplay.InstrumentLoggingDisplay.setupUi" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentLoggingDisplay.InstrumentLoggingDisplay.update">
+<code class="descname">update</code><span class="sig-paren">(</span><em>key</em>, <em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingDisplay.InstrumentLoggingDisplay.update" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="externalParameter.InstrumentLoggingDisplay.InstrumentLoggingDisplayTableModel">
+<em class="property">class </em><code class="descname">InstrumentLoggingDisplayTableModel</code><span class="sig-paren">(</span><em>controlUi</em>, <em>config</em>, <em>parameterList=None</em>, <em>parent=None</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingDisplay.InstrumentLoggingDisplayTableModel" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="externalParameter.InstrumentLoggingDisplay.InstrumentLoggingDisplayTableModel.columnCount">
+<code class="descname">columnCount</code><span class="sig-paren">(</span><em>parent=&lt;PyQt4.QtCore.QModelIndex object at 0x000000000CE22208&gt;</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingDisplay.InstrumentLoggingDisplayTableModel.columnCount" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentLoggingDisplay.InstrumentLoggingDisplayTableModel.data">
+<code class="descname">data</code><span class="sig-paren">(</span><em>index</em>, <em>role</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingDisplay.InstrumentLoggingDisplayTableModel.data" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentLoggingDisplay.InstrumentLoggingDisplayTableModel.flags">
+<code class="descname">flags</code><span class="sig-paren">(</span><em>index</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingDisplay.InstrumentLoggingDisplayTableModel.flags" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentLoggingDisplay.InstrumentLoggingDisplayTableModel.headerData">
+<code class="descname">headerData</code><span class="sig-paren">(</span><em>section</em>, <em>orientation</em>, <em>role</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingDisplay.InstrumentLoggingDisplayTableModel.headerData" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentLoggingDisplay.InstrumentLoggingDisplayTableModel.resize">
+<code class="descname">resize</code><span class="sig-paren">(</span><em>index</em>, <em>keyboardkey</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingDisplay.InstrumentLoggingDisplayTableModel.resize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentLoggingDisplay.InstrumentLoggingDisplayTableModel.rowCount">
+<code class="descname">rowCount</code><span class="sig-paren">(</span><em>parent=&lt;PyQt4.QtCore.QModelIndex object at 0x000000000CE22128&gt;</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingDisplay.InstrumentLoggingDisplayTableModel.rowCount" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentLoggingDisplay.InstrumentLoggingDisplayTableModel.saveConfig">
+<code class="descname">saveConfig</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingDisplay.InstrumentLoggingDisplayTableModel.saveConfig" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentLoggingDisplay.InstrumentLoggingDisplayTableModel.setInputChannels">
+<code class="descname">setInputChannels</code><span class="sig-paren">(</span><em>inputChannels</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingDisplay.InstrumentLoggingDisplayTableModel.setInputChannels" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentLoggingDisplay.InstrumentLoggingDisplayTableModel.update">
+<code class="descname">update</code><span class="sig-paren">(</span><em>key</em>, <em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingDisplay.InstrumentLoggingDisplayTableModel.update" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentLoggingDisplay.InstrumentLoggingDisplayTableModel.updateHandler">
+<code class="descname">updateHandler</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingDisplay.InstrumentLoggingDisplayTableModel.updateHandler" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="externalParameter.InstrumentLoggingDisplay.InstrumentLoggingDisplayTableModel.valueChanged">
+<code class="descname">valueChanged</code><a class="headerlink" href="#externalParameter.InstrumentLoggingDisplay.InstrumentLoggingDisplayTableModel.valueChanged" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="externalParameter.InstrumentLoggingDisplay.defaultFontsize">
+<code class="descname">defaultFontsize</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingDisplay.defaultFontsize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-externalParameter.InstrumentLoggingHandler">
+<span id="instrumentlogginghandler"></span><h2>InstrumentLoggingHandler<a class="headerlink" href="#module-externalParameter.InstrumentLoggingHandler" title="Permalink to this headline">¶</a></h2>
+<p>Created on Jun 21, 2014</p>
+<p>&#64;author: pmaunz</p>
+<dl class="class">
+<dt id="externalParameter.InstrumentLoggingHandler.DataHandling">
+<em class="property">class </em><code class="descname">DataHandling</code><a class="headerlink" href="#externalParameter.InstrumentLoggingHandler.DataHandling" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="externalParameter.InstrumentLoggingHandler.DataHandling.addPoint">
+<code class="descname">addPoint</code><span class="sig-paren">(</span><em>traceui</em>, <em>plot</em>, <em>data</em>, <em>source</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingHandler.DataHandling.addPoint" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="externalParameter.InstrumentLoggingHandler.DataHandling.calibrationClass">
+<code class="descname">calibrationClass</code><a class="headerlink" href="#externalParameter.InstrumentLoggingHandler.DataHandling.calibrationClass" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentLoggingHandler.DataHandling.convert">
+<code class="descname">convert</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingHandler.DataHandling.convert" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentLoggingHandler.DataHandling.decimate">
+<code class="descname">decimate</code><span class="sig-paren">(</span><em>takentime</em>, <em>value</em>, <em>callback</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingHandler.DataHandling.decimate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="externalParameter.InstrumentLoggingHandler.DataHandling.decimationClass">
+<code class="descname">decimationClass</code><a class="headerlink" href="#externalParameter.InstrumentLoggingHandler.DataHandling.decimationClass" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentLoggingHandler.DataHandling.finishTrace">
+<code class="descname">finishTrace</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingHandler.DataHandling.finishTrace" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentLoggingHandler.DataHandling.persist">
+<code class="descname">persist</code><span class="sig-paren">(</span><em>space</em>, <em>source</em>, <em>time</em>, <em>value</em>, <em>minvalue</em>, <em>maxvalue</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingHandler.DataHandling.persist" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="externalParameter.InstrumentLoggingHandler.DataHandling.persistenceClass">
+<code class="descname">persistenceClass</code><a class="headerlink" href="#externalParameter.InstrumentLoggingHandler.DataHandling.persistenceClass" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentLoggingHandler.DataHandling.persistenceDecimate">
+<code class="descname">persistenceDecimate</code><span class="sig-paren">(</span><em>takentime</em>, <em>value</em>, <em>callback</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingHandler.DataHandling.persistenceDecimate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="externalParameter.InstrumentLoggingHandler.DataHandling.persistenceDecimationClass">
+<code class="descname">persistenceDecimationClass</code><a class="headerlink" href="#externalParameter.InstrumentLoggingHandler.DataHandling.persistenceDecimationClass" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="externalParameter.InstrumentLoggingHandler.InstrumentLoggingHandler">
+<em class="property">class </em><code class="descname">InstrumentLoggingHandler</code><span class="sig-paren">(</span><em>traceui</em>, <em>plotDict</em>, <em>config</em>, <em>persistSpace</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingHandler.InstrumentLoggingHandler" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="externalParameter.InstrumentLoggingHandler.InstrumentLoggingHandler.addData">
+<code class="descname">addData</code><span class="sig-paren">(</span><em>source</em>, <em>data</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingHandler.InstrumentLoggingHandler.addData" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentLoggingHandler.InstrumentLoggingHandler.addDataHandler">
+<code class="descname">addDataHandler</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingHandler.InstrumentLoggingHandler.addDataHandler" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentLoggingHandler.InstrumentLoggingHandler.dataCallback">
+<code class="descname">dataCallback</code><span class="sig-paren">(</span><em>source</em>, <em>data</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingHandler.InstrumentLoggingHandler.dataCallback" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="externalParameter.InstrumentLoggingHandler.InstrumentLoggingHandler.newData">
+<code class="descname">newData</code><a class="headerlink" href="#externalParameter.InstrumentLoggingHandler.InstrumentLoggingHandler.newData" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentLoggingHandler.InstrumentLoggingHandler.paramDef">
+<code class="descname">paramDef</code><span class="sig-paren">(</span><em>source</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingHandler.InstrumentLoggingHandler.paramDef" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="externalParameter.InstrumentLoggingHandler.InstrumentLoggingHandler.paramTreeChanged">
+<code class="descname">paramTreeChanged</code><a class="headerlink" href="#externalParameter.InstrumentLoggingHandler.InstrumentLoggingHandler.paramTreeChanged" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentLoggingHandler.InstrumentLoggingHandler.parameter">
+<code class="descname">parameter</code><span class="sig-paren">(</span><em>source</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingHandler.InstrumentLoggingHandler.parameter" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentLoggingHandler.InstrumentLoggingHandler.persistenceCallback">
+<code class="descname">persistenceCallback</code><span class="sig-paren">(</span><em>source</em>, <em>data</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingHandler.InstrumentLoggingHandler.persistenceCallback" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentLoggingHandler.InstrumentLoggingHandler.saveConfig">
+<code class="descname">saveConfig</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingHandler.InstrumentLoggingHandler.saveConfig" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentLoggingHandler.InstrumentLoggingHandler.setInputChannels">
+<code class="descname">setInputChannels</code><span class="sig-paren">(</span><em>inputChannels</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingHandler.InstrumentLoggingHandler.setInputChannels" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentLoggingHandler.InstrumentLoggingHandler.update">
+<code class="descname">update</code><span class="sig-paren">(</span><em>param</em>, <em>changes</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingHandler.InstrumentLoggingHandler.update" title="Permalink to this definition">¶</a></dt>
+<dd><p>update the parameter, called by the signal of pyqtgraph parametertree</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-externalParameter.InstrumentLoggingReader">
+<span id="instrumentloggingreader"></span><h2>InstrumentLoggingReader<a class="headerlink" href="#module-externalParameter.InstrumentLoggingReader" title="Permalink to this headline">¶</a></h2>
+<p>Created on Jun 21, 2014</p>
+<p>&#64;author: pmaunz</p>
+<dl class="class">
+<dt id="externalParameter.InstrumentLoggingReader.InstrumentLoggingReader">
+<em class="property">class </em><code class="descname">InstrumentLoggingReader</code><span class="sig-paren">(</span><em>name</em>, <em>reader</em>, <em>commandQueue</em>, <em>responseQueue</em>, <em>parent=None</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingReader.InstrumentLoggingReader" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="externalParameter.InstrumentLoggingReader.InstrumentLoggingReader.directUpdate">
+<code class="descname">directUpdate</code><span class="sig-paren">(</span><em>field</em>, <em>data</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingReader.InstrumentLoggingReader.directUpdate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="externalParameter.InstrumentLoggingReader.InstrumentLoggingReader.newData">
+<code class="descname">newData</code><a class="headerlink" href="#externalParameter.InstrumentLoggingReader.InstrumentLoggingReader.newData" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="externalParameter.InstrumentLoggingReader.InstrumentLoggingReader.newException">
+<code class="descname">newException</code><a class="headerlink" href="#externalParameter.InstrumentLoggingReader.InstrumentLoggingReader.newException" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentLoggingReader.InstrumentLoggingReader.paramDef">
+<code class="descname">paramDef</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingReader.InstrumentLoggingReader.paramDef" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentLoggingReader.InstrumentLoggingReader.run">
+<code class="descname">run</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingReader.InstrumentLoggingReader.run" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentLoggingReader.InstrumentLoggingReader.stop">
+<code class="descname">stop</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingReader.InstrumentLoggingReader.stop" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="externalParameter.InstrumentLoggingReader.processReturn">
+<code class="descname">processReturn</code><span class="sig-paren">(</span><em>returnvalue</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingReader.processReturn" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-externalParameter.InstrumentLoggingSelection">
+<span id="instrumentloggingselection"></span><h2>InstrumentLoggingSelection<a class="headerlink" href="#module-externalParameter.InstrumentLoggingSelection" title="Permalink to this headline">¶</a></h2>
+<p>Created on Aug 30, 2014</p>
+<p>&#64;author: pmaunz</p>
+<dl class="class">
+<dt id="externalParameter.InstrumentLoggingSelection.InstrumentLoggingSelection">
+<em class="property">class </em><code class="descname">InstrumentLoggingSelection</code><span class="sig-paren">(</span><em>config</em>, <em>classdict</em>, <em>instancename='ExternalParameterSelection.ParametersSequence'</em>, <em>plotNames=None</em>, <em>parent=None</em>, <em>instrumentLoggingHandler=None</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingSelection.InstrumentLoggingSelection" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="externalParameter.InstrumentLoggingSelection.InstrumentLoggingSelection.onActiveInstrumentChanged">
+<code class="descname">onActiveInstrumentChanged</code><span class="sig-paren">(</span><em>modelIndex</em>, <em>modelIndex2</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingSelection.InstrumentLoggingSelection.onActiveInstrumentChanged" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentLoggingSelection.InstrumentLoggingSelection.refreshParamTree">
+<code class="descname">refreshParamTree</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingSelection.InstrumentLoggingSelection.refreshParamTree" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentLoggingSelection.InstrumentLoggingSelection.setupUi">
+<code class="descname">setupUi</code><span class="sig-paren">(</span><em>MainWindow</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingSelection.InstrumentLoggingSelection.setupUi" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-externalParameter.InstrumentLoggingWindow">
+<span id="instrumentloggingwindow"></span><h2>InstrumentLoggingWindow<a class="headerlink" href="#module-externalParameter.InstrumentLoggingWindow" title="Permalink to this headline">¶</a></h2>
+<p>Created on Aug 28, 2014</p>
+<p>&#64;author: pmaunz</p>
+<dl class="class">
+<dt id="externalParameter.InstrumentLoggingWindow.InstrumentLoggingWindow">
+<em class="property">class </em><code class="descname">InstrumentLoggingWindow</code><span class="sig-paren">(</span><em>project</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingWindow.InstrumentLoggingWindow" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="attribute">
+<dt id="externalParameter.InstrumentLoggingWindow.InstrumentLoggingWindow.dataAvailable">
+<code class="descname">dataAvailable</code><a class="headerlink" href="#externalParameter.InstrumentLoggingWindow.InstrumentLoggingWindow.dataAvailable" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="externalParameter.InstrumentLoggingWindow.InstrumentLoggingWindow.dedicatedDataAvailable">
+<code class="descname">dedicatedDataAvailable</code><a class="headerlink" href="#externalParameter.InstrumentLoggingWindow.InstrumentLoggingWindow.dedicatedDataAvailable" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentLoggingWindow.InstrumentLoggingWindow.is_alive">
+<code class="descname">is_alive</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingWindow.InstrumentLoggingWindow.is_alive" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="externalParameter.InstrumentLoggingWindow.InstrumentLoggingWindow.logicAnalyzerDataAvailable">
+<code class="descname">logicAnalyzerDataAvailable</code><a class="headerlink" href="#externalParameter.InstrumentLoggingWindow.InstrumentLoggingWindow.logicAnalyzerDataAvailable" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="externalParameter.InstrumentLoggingWindow.InstrumentLoggingWindow.ppActiveChanged">
+<code class="descname">ppActiveChanged</code><a class="headerlink" href="#externalParameter.InstrumentLoggingWindow.InstrumentLoggingWindow.ppActiveChanged" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="externalParameter.InstrumentLoggingWindow.InstrumentLoggingWindow.serverClass">
+<code class="descname">serverClass</code><a class="headerlink" href="#externalParameter.InstrumentLoggingWindow.InstrumentLoggingWindow.serverClass" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <code class="xref py py-class docutils literal"><span class="pre">InstrumentLoggingProcess</span></code></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="externalParameter.InstrumentLoggingWindow.InstrumentLoggingWindow.sharedMemorySize">
+<code class="descname">sharedMemorySize</code><em class="property"> = 262144</em><a class="headerlink" href="#externalParameter.InstrumentLoggingWindow.InstrumentLoggingWindow.sharedMemorySize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentLoggingWindow.InstrumentLoggingWindow.shutdown">
+<code class="descname">shutdown</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingWindow.InstrumentLoggingWindow.shutdown" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="externalParameter.InstrumentLoggingWindow.InstrumentLoggingWindow.shutterChanged">
+<code class="descname">shutterChanged</code><a class="headerlink" href="#externalParameter.InstrumentLoggingWindow.InstrumentLoggingWindow.shutterChanged" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="externalParameter.InstrumentLoggingWindow.InstrumentLoggingWindow.sleepQueue">
+<code class="descname">sleepQueue</code><em class="property"> = &lt;Queue.Queue instance at 0x00000000180C9588&gt;</em><a class="headerlink" href="#externalParameter.InstrumentLoggingWindow.InstrumentLoggingWindow.sleepQueue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="externalParameter.InstrumentLoggingWindow.InstrumentLoggingWindow.timestep">
+<code class="descname">timestep</code><em class="property"> = 5.0 ns</em><a class="headerlink" href="#externalParameter.InstrumentLoggingWindow.InstrumentLoggingWindow.timestep" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="externalParameter.InstrumentLoggingWindow.LoggingReader">
+<em class="property">class </em><code class="descname">LoggingReader</code><span class="sig-paren">(</span><em>loggingQueue</em>, <em>parent=None</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingWindow.LoggingReader" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="externalParameter.InstrumentLoggingWindow.LoggingReader.run">
+<code class="descname">run</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingWindow.LoggingReader.run" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="externalParameter.InstrumentLoggingWindow.QueueReader">
+<em class="property">class </em><code class="descname">QueueReader</code><span class="sig-paren">(</span><em>pulserHardware</em>, <em>dataQueue</em>, <em>parent=None</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingWindow.QueueReader" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="externalParameter.InstrumentLoggingWindow.QueueReader.onLogicAnalyzerData">
+<code class="descname">onLogicAnalyzerData</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingWindow.QueueReader.onLogicAnalyzerData" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentLoggingWindow.QueueReader.raise_">
+<code class="descname">raise_</code><span class="sig-paren">(</span><em>ex</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingWindow.QueueReader.raise_" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentLoggingWindow.QueueReader.run">
+<code class="descname">run</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingWindow.QueueReader.run" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-externalParameter.InstrumentLoggingWindowServer">
+<span id="instrumentloggingwindowserver"></span><h2>InstrumentLoggingWindowServer<a class="headerlink" href="#module-externalParameter.InstrumentLoggingWindowServer" title="Permalink to this headline">¶</a></h2>
+<p>Created on Aug 28, 2014</p>
+<p>&#64;author: pmaunz</p>
+<dl class="class">
+<dt id="externalParameter.InstrumentLoggingWindowServer.CommandReader">
+<em class="property">class </em><code class="descname">CommandReader</code><span class="sig-paren">(</span><em>commandPipe</em>, <em>parent=None</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingWindowServer.CommandReader" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="externalParameter.InstrumentLoggingWindowServer.CommandReader.finish">
+<code class="descname">finish</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingWindowServer.CommandReader.finish" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="externalParameter.InstrumentLoggingWindowServer.CommandReader.quitProcess">
+<code class="descname">quitProcess</code><a class="headerlink" href="#externalParameter.InstrumentLoggingWindowServer.CommandReader.quitProcess" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentLoggingWindowServer.CommandReader.run">
+<code class="descname">run</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingWindowServer.CommandReader.run" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="externalParameter.InstrumentLoggingWindowServer.CommandReader.saveConfig">
+<code class="descname">saveConfig</code><a class="headerlink" href="#externalParameter.InstrumentLoggingWindowServer.CommandReader.saveConfig" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="exception">
+<dt id="externalParameter.InstrumentLoggingWindowServer.FinishException">
+<em class="property">exception </em><code class="descname">FinishException</code><a class="headerlink" href="#externalParameter.InstrumentLoggingWindowServer.FinishException" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="externalParameter.InstrumentLoggingWindowServer.InstrumentLoggingProcess">
+<em class="property">class </em><code class="descname">InstrumentLoggingProcess</code><span class="sig-paren">(</span><em>project=None</em>, <em>dataQueue=None</em>, <em>commandPipe=None</em>, <em>loggingQueue=None</em>, <em>sharedMemoryArray=None</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingWindowServer.InstrumentLoggingProcess" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="externalParameter.InstrumentLoggingWindowServer.InstrumentLoggingProcess.run">
+<code class="descname">run</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingWindowServer.InstrumentLoggingProcess.run" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="externalParameter.InstrumentLoggingWindowServer.InstrumentLoggingUi">
+<em class="property">class </em><code class="descname">InstrumentLoggingUi</code><span class="sig-paren">(</span><em>project</em>, <em>config</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingWindowServer.InstrumentLoggingUi" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="externalParameter.InstrumentLoggingWindowServer.InstrumentLoggingUi.closeEvent">
+<code class="descname">closeEvent</code><span class="sig-paren">(</span><em>e</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingWindowServer.InstrumentLoggingUi.closeEvent" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentLoggingWindowServer.InstrumentLoggingUi.onAddPlot">
+<code class="descname">onAddPlot</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingWindowServer.InstrumentLoggingUi.onAddPlot" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentLoggingWindowServer.InstrumentLoggingUi.onClose">
+<code class="descname">onClose</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingWindowServer.InstrumentLoggingUi.onClose" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentLoggingWindowServer.InstrumentLoggingUi.onCommitConfig">
+<code class="descname">onCommitConfig</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingWindowServer.InstrumentLoggingUi.onCommitConfig" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentLoggingWindowServer.InstrumentLoggingUi.onRemovePlot">
+<code class="descname">onRemovePlot</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingWindowServer.InstrumentLoggingUi.onRemovePlot" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentLoggingWindowServer.InstrumentLoggingUi.onRenamePlot">
+<code class="descname">onRenamePlot</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingWindowServer.InstrumentLoggingUi.onRenamePlot" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentLoggingWindowServer.InstrumentLoggingUi.onSave">
+<code class="descname">onSave</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingWindowServer.InstrumentLoggingUi.onSave" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="externalParameter.InstrumentLoggingWindowServer.InstrumentLoggingUi.plotConfigurationChanged">
+<code class="descname">plotConfigurationChanged</code><a class="headerlink" href="#externalParameter.InstrumentLoggingWindowServer.InstrumentLoggingUi.plotConfigurationChanged" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentLoggingWindowServer.InstrumentLoggingUi.saveConfig">
+<code class="descname">saveConfig</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingWindowServer.InstrumentLoggingUi.saveConfig" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentLoggingWindowServer.InstrumentLoggingUi.setupAsDockWidget">
+<code class="descname">setupAsDockWidget</code><span class="sig-paren">(</span><em>widget</em>, <em>name</em>, <em>area=2</em>, <em>stackAbove=None</em>, <em>stackBelow=None</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingWindowServer.InstrumentLoggingUi.setupAsDockWidget" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentLoggingWindowServer.InstrumentLoggingUi.setupPlots">
+<code class="descname">setupPlots</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingWindowServer.InstrumentLoggingUi.setupPlots" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentLoggingWindowServer.InstrumentLoggingUi.setupUi">
+<code class="descname">setupUi</code><span class="sig-paren">(</span><em>parent</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentLoggingWindowServer.InstrumentLoggingUi.setupUi" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-externalParameter.InstrumentReader">
+<span id="instrumentreader"></span><h2>InstrumentReader<a class="headerlink" href="#module-externalParameter.InstrumentReader" title="Permalink to this headline">¶</a></h2>
+<p>Created on Jun 21, 2014</p>
+<p>&#64;author: pmaunz</p>
+<dl class="class">
+<dt id="externalParameter.InstrumentReader.InstrumentReader">
+<em class="property">class </em><code class="descname">InstrumentReader</code><span class="sig-paren">(</span><em>name</em>, <em>settings</em>, <em>instrument</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentReader.InstrumentReader" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="externalParameter.InstrumentReader.InstrumentReader.close">
+<code class="descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentReader.InstrumentReader.close" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="externalParameter.InstrumentReader.InstrumentReader.connectedInstruments">
+<em class="property">classmethod </em><code class="descname">connectedInstruments</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentReader.InstrumentReader.connectedInstruments" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentReader.InstrumentReader.newDataSlot">
+<code class="descname">newDataSlot</code><span class="sig-paren">(</span><em>name</em>, <em>data</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentReader.InstrumentReader.newDataSlot" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="externalParameter.InstrumentReader.wrapInstrument">
+<code class="descname">wrapInstrument</code><span class="sig-paren">(</span><em>classname</em>, <em>serialclass</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentReader.wrapInstrument" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-externalParameter.InstrumentReaderBase">
+<span id="instrumentreaderbase"></span><h2>InstrumentReaderBase<a class="headerlink" href="#module-externalParameter.InstrumentReaderBase" title="Permalink to this headline">¶</a></h2>
+<p>Created on Jun 21, 2014</p>
+<p>&#64;author: pmaunz</p>
+<dl class="class">
+<dt id="externalParameter.InstrumentReaderBase.InstrumentReaderBase">
+<em class="property">class </em><code class="descname">InstrumentReaderBase</code><span class="sig-paren">(</span><em>name</em>, <em>settings</em>, <em>childobject</em>, <em>newDataSlot=None</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentReaderBase.InstrumentReaderBase" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="externalParameter.InstrumentReaderBase.InstrumentReaderBase.paramDef">
+<code class="descname">paramDef</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentReaderBase.InstrumentReaderBase.paramDef" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentReaderBase.InstrumentReaderBase.setDefaults">
+<code class="descname">setDefaults</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentReaderBase.InstrumentReaderBase.setDefaults" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InstrumentReaderBase.InstrumentReaderBase.update">
+<code class="descname">update</code><span class="sig-paren">(</span><em>param</em>, <em>changes</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InstrumentReaderBase.InstrumentReaderBase.update" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="externalParameter.InstrumentReaderBase.ReaderMeta">
+<em class="property">class </em><code class="descname">ReaderMeta</code><a class="headerlink" href="#externalParameter.InstrumentReaderBase.ReaderMeta" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-externalParameter.InterProcessParameters">
+<span id="interprocessparameters"></span><h2>InterProcessParameters<a class="headerlink" href="#module-externalParameter.InterProcessParameters" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="externalParameter.InterProcessParameters.LockOutputFrequency">
+<em class="property">class </em><code class="descname">LockOutputFrequency</code><span class="sig-paren">(</span><em>name</em>, <em>config</em>, <em>instrument='localhost:16888'</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InterProcessParameters.LockOutputFrequency" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="attribute">
+<dt id="externalParameter.InterProcessParameters.LockOutputFrequency.className">
+<code class="descname">className</code><em class="property"> = 'Digital Lock Output Frequency'</em><a class="headerlink" href="#externalParameter.InterProcessParameters.LockOutputFrequency.className" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InterProcessParameters.LockOutputFrequency.close">
+<code class="descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InterProcessParameters.LockOutputFrequency.close" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InterProcessParameters.LockOutputFrequency.currentExternalValue">
+<code class="descname">currentExternalValue</code><span class="sig-paren">(</span><em>channel</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InterProcessParameters.LockOutputFrequency.currentExternalValue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InterProcessParameters.LockOutputFrequency.currentValue">
+<code class="descname">currentValue</code><span class="sig-paren">(</span><em>channel</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InterProcessParameters.LockOutputFrequency.currentValue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InterProcessParameters.LockOutputFrequency.getAllValues">
+<code class="descname">getAllValues</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InterProcessParameters.LockOutputFrequency.getAllValues" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InterProcessParameters.LockOutputFrequency.paramDef">
+<code class="descname">paramDef</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InterProcessParameters.LockOutputFrequency.paramDef" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.InterProcessParameters.LockOutputFrequency.setDefaults">
+<code class="descname">setDefaults</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.InterProcessParameters.LockOutputFrequency.setDefaults" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="keithley2010reader">
+<h2>Keithley2010Reader<a class="headerlink" href="#keithley2010reader" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-externalParameter.MKSReader">
+<span id="mksreader"></span><h2>MKSReader<a class="headerlink" href="#module-externalParameter.MKSReader" title="Permalink to this headline">¶</a></h2>
+<p>Created on May 16, 2014</p>
+<p>&#64;author: wolverine</p>
+<dl class="class">
+<dt id="externalParameter.MKSReader.MKSReader">
+<em class="property">class </em><code class="descname">MKSReader</code><span class="sig-paren">(</span><em>instrument='COM1'</em>, <em>baud=9600</em>, <em>deviceaddr=253</em>, <em>timeout=1</em>, <em>settings=None</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.MKSReader.MKSReader" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="externalParameter.MKSReader.MKSReader.close">
+<code class="descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.MKSReader.MKSReader.close" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="staticmethod">
+<dt id="externalParameter.MKSReader.MKSReader.connectedInstruments">
+<em class="property">static </em><code class="descname">connectedInstruments</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.MKSReader.MKSReader.connectedInstruments" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.MKSReader.MKSReader.getLog">
+<code class="descname">getLog</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.MKSReader.MKSReader.getLog" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.MKSReader.MKSReader.open">
+<code class="descname">open</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.MKSReader.MKSReader.open" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.MKSReader.MKSReader.pr3">
+<code class="descname">pr3</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.MKSReader.MKSReader.pr3" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.MKSReader.MKSReader.query">
+<code class="descname">query</code><span class="sig-paren">(</span><em>question</em>, <em>length=100</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.MKSReader.MKSReader.query" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.MKSReader.MKSReader.setupDatalogger">
+<code class="descname">setupDatalogger</code><span class="sig-paren">(</span><em>time</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.MKSReader.MKSReader.setupDatalogger" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.MKSReader.MKSReader.startLogger">
+<code class="descname">startLogger</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.MKSReader.MKSReader.startLogger" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.MKSReader.MKSReader.stopLogger">
+<code class="descname">stopLogger</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.MKSReader.MKSReader.stopLogger" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.MKSReader.MKSReader.test">
+<code class="descname">test</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.MKSReader.MKSReader.test" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.MKSReader.MKSReader.value">
+<code class="descname">value</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.MKSReader.MKSReader.value" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="motionparameter">
+<h2>MotionParameter<a class="headerlink" href="#motionparameter" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="multimeterreader">
+<h2>MultiMeterReader<a class="headerlink" href="#multimeterreader" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="omegacn7500reader">
+<h2>OmegaCN7500Reader<a class="headerlink" href="#omegacn7500reader" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-externalParameter.OutputChannel">
+<span id="outputchannel"></span><h2>OutputChannel<a class="headerlink" href="#module-externalParameter.OutputChannel" title="Permalink to this headline">¶</a></h2>
+<p>Created on Dec 18, 2014</p>
+<p>&#64;author: pmaunz</p>
+<dl class="class">
+<dt id="externalParameter.OutputChannel.OutputChannel">
+<em class="property">class </em><code class="descname">OutputChannel</code><span class="sig-paren">(</span><em>device</em>, <em>deviceName</em>, <em>channelName</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.OutputChannel.OutputChannel" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="attribute">
+<dt id="externalParameter.OutputChannel.OutputChannel.delay">
+<code class="descname">delay</code><a class="headerlink" href="#externalParameter.OutputChannel.OutputChannel.delay" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="externalParameter.OutputChannel.OutputChannel.dimension">
+<code class="descname">dimension</code><a class="headerlink" href="#externalParameter.OutputChannel.OutputChannel.dimension" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="externalParameter.OutputChannel.OutputChannel.externalValue">
+<code class="descname">externalValue</code><a class="headerlink" href="#externalParameter.OutputChannel.OutputChannel.externalValue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="externalParameter.OutputChannel.OutputChannel.hasDependency">
+<code class="descname">hasDependency</code><a class="headerlink" href="#externalParameter.OutputChannel.OutputChannel.hasDependency" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="externalParameter.OutputChannel.OutputChannel.name">
+<code class="descname">name</code><a class="headerlink" href="#externalParameter.OutputChannel.OutputChannel.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="externalParameter.OutputChannel.OutputChannel.observable">
+<code class="descname">observable</code><a class="headerlink" href="#externalParameter.OutputChannel.OutputChannel.observable" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.OutputChannel.OutputChannel.restoreValue">
+<code class="descname">restoreValue</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.OutputChannel.OutputChannel.restoreValue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.OutputChannel.OutputChannel.saveValue">
+<code class="descname">saveValue</code><span class="sig-paren">(</span><em>overwrite=True</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.OutputChannel.OutputChannel.saveValue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="externalParameter.OutputChannel.OutputChannel.savedValue">
+<code class="descname">savedValue</code><a class="headerlink" href="#externalParameter.OutputChannel.OutputChannel.savedValue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.OutputChannel.OutputChannel.setValue">
+<code class="descname">setValue</code><span class="sig-paren">(</span><em>newval</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.OutputChannel.OutputChannel.setValue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="externalParameter.OutputChannel.OutputChannel.strValue">
+<code class="descname">strValue</code><a class="headerlink" href="#externalParameter.OutputChannel.OutputChannel.strValue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="externalParameter.OutputChannel.OutputChannel.string">
+<code class="descname">string</code><a class="headerlink" href="#externalParameter.OutputChannel.OutputChannel.string" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="externalParameter.OutputChannel.OutputChannel.useExternalValue">
+<code class="descname">useExternalValue</code><a class="headerlink" href="#externalParameter.OutputChannel.OutputChannel.useExternalValue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="externalParameter.OutputChannel.OutputChannel.value">
+<code class="descname">value</code><a class="headerlink" href="#externalParameter.OutputChannel.OutputChannel.value" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-externalParameter.persistence">
+<span id="persistence"></span><h2>persistence<a class="headerlink" href="#module-externalParameter.persistence" title="Permalink to this headline">¶</a></h2>
+<p>Created on Aug 30, 2014</p>
+<p>&#64;author: pmaunz</p>
+<dl class="class">
+<dt id="externalParameter.persistence.DBPersist">
+<em class="property">class </em><code class="descname">DBPersist</code><a class="headerlink" href="#externalParameter.persistence.DBPersist" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="externalParameter.persistence.DBPersist.initDB">
+<code class="descname">initDB</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.persistence.DBPersist.initDB" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="externalParameter.persistence.DBPersist.name">
+<code class="descname">name</code><em class="property"> = 'DB Persist'</em><a class="headerlink" href="#externalParameter.persistence.DBPersist.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="externalParameter.persistence.DBPersist.newPersistData">
+<code class="descname">newPersistData</code><em class="property"> = &lt;modules.Observable.Observable object at 0x0000000009E04EB8&gt;</em><a class="headerlink" href="#externalParameter.persistence.DBPersist.newPersistData" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.persistence.DBPersist.paramDef">
+<code class="descname">paramDef</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.persistence.DBPersist.paramDef" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.persistence.DBPersist.persist">
+<code class="descname">persist</code><span class="sig-paren">(</span><em>space</em>, <em>source</em>, <em>time</em>, <em>value</em>, <em>minval=None</em>, <em>maxval=None</em>, <em>unit=None</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.persistence.DBPersist.persist" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.persistence.DBPersist.sourceDict">
+<code class="descname">sourceDict</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.persistence.DBPersist.sourceDict" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="externalParameter.persistence.DBPersist.store">
+<code class="descname">store</code><em class="property"> = None</em><a class="headerlink" href="#externalParameter.persistence.DBPersist.store" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-externalParameter.PhotodiodeReader">
+<span id="photodiodereader"></span><h2>PhotodiodeReader<a class="headerlink" href="#module-externalParameter.PhotodiodeReader" title="Permalink to this headline">¶</a></h2>
+<p>Created on May 16, 2014</p>
+<p>&#64;author: wolverine</p>
+<dl class="class">
+<dt id="externalParameter.PhotodiodeReader.PhotoDiodeReader">
+<em class="property">class </em><code class="descname">PhotoDiodeReader</code><span class="sig-paren">(</span><em>instrument='COM1'</em>, <em>baud=115200</em>, <em>deviceaddr=253</em>, <em>timeout=1</em>, <em>settings=None</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PhotodiodeReader.PhotoDiodeReader" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="externalParameter.PhotodiodeReader.PhotoDiodeReader.close">
+<code class="descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PhotodiodeReader.PhotoDiodeReader.close" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="staticmethod">
+<dt id="externalParameter.PhotodiodeReader.PhotoDiodeReader.connectedInstruments">
+<em class="property">static </em><code class="descname">connectedInstruments</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PhotodiodeReader.PhotoDiodeReader.connectedInstruments" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="externalParameter.PhotodiodeReader.PhotoDiodeReader.measureSeparation">
+<code class="descname">measureSeparation</code><a class="headerlink" href="#externalParameter.PhotodiodeReader.PhotoDiodeReader.measureSeparation" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.PhotodiodeReader.PhotoDiodeReader.open">
+<code class="descname">open</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PhotodiodeReader.PhotoDiodeReader.open" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.PhotodiodeReader.PhotoDiodeReader.paramDef">
+<code class="descname">paramDef</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PhotodiodeReader.PhotoDiodeReader.paramDef" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.PhotodiodeReader.PhotoDiodeReader.query">
+<code class="descname">query</code><span class="sig-paren">(</span><em>question=None</em>, <em>length=100</em>, <em>timeout=None</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PhotodiodeReader.PhotoDiodeReader.query" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.PhotodiodeReader.PhotoDiodeReader.setDefaults">
+<code class="descname">setDefaults</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PhotodiodeReader.PhotoDiodeReader.setDefaults" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="externalParameter.PhotodiodeReader.PhotoDiodeReader.timeout">
+<code class="descname">timeout</code><a class="headerlink" href="#externalParameter.PhotodiodeReader.PhotoDiodeReader.timeout" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.PhotodiodeReader.PhotoDiodeReader.value">
+<code class="descname">value</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PhotodiodeReader.PhotoDiodeReader.value" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.PhotodiodeReader.PhotoDiodeReader.writeMeasureSeparation">
+<code class="descname">writeMeasureSeparation</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PhotodiodeReader.PhotoDiodeReader.writeMeasureSeparation" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="externalParameter.PhotodiodeReader.Settings">
+<em class="property">class </em><code class="descname">Settings</code><a class="headerlink" href="#externalParameter.PhotodiodeReader.Settings" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-externalParameter.PicoampMeter">
+<span id="picoampmeter"></span><h2>PicoampMeter<a class="headerlink" href="#module-externalParameter.PicoampMeter" title="Permalink to this headline">¶</a></h2>
+<p>Created on May 21, 2014</p>
+<p>&#64;author: pmaunz</p>
+<dl class="class">
+<dt id="externalParameter.PicoampMeter.PicoampMeter">
+<em class="property">class </em><code class="descname">PicoampMeter</code><a class="headerlink" href="#externalParameter.PicoampMeter.PicoampMeter" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="externalParameter.PicoampMeter.PicoampMeter.close">
+<code class="descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PicoampMeter.PicoampMeter.close" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.PicoampMeter.PicoampMeter.open">
+<code class="descname">open</code><span class="sig-paren">(</span><em>instrument</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PicoampMeter.PicoampMeter.open" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.PicoampMeter.PicoampMeter.read">
+<code class="descname">read</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PicoampMeter.PicoampMeter.read" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.PicoampMeter.PicoampMeter.reset">
+<code class="descname">reset</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PicoampMeter.PicoampMeter.reset" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.PicoampMeter.PicoampMeter.setAutoRange">
+<code class="descname">setAutoRange</code><span class="sig-paren">(</span><em>enable</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PicoampMeter.PicoampMeter.setAutoRange" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.PicoampMeter.PicoampMeter.setCurrentLimit">
+<code class="descname">setCurrentLimit</code><span class="sig-paren">(</span><em>limit</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PicoampMeter.PicoampMeter.setCurrentLimit" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.PicoampMeter.PicoampMeter.setCurrentRange">
+<code class="descname">setCurrentRange</code><span class="sig-paren">(</span><em>currentRange</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PicoampMeter.PicoampMeter.setCurrentRange" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.PicoampMeter.PicoampMeter.setVoltage">
+<code class="descname">setVoltage</code><span class="sig-paren">(</span><em>voltage</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PicoampMeter.PicoampMeter.setVoltage" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.PicoampMeter.PicoampMeter.setVoltageRange">
+<code class="descname">setVoltageRange</code><span class="sig-paren">(</span><em>voltageRange</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PicoampMeter.PicoampMeter.setVoltageRange" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.PicoampMeter.PicoampMeter.setZeroCheck">
+<code class="descname">setZeroCheck</code><span class="sig-paren">(</span><em>enable</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PicoampMeter.PicoampMeter.setZeroCheck" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.PicoampMeter.PicoampMeter.voltageEnable">
+<code class="descname">voltageEnable</code><span class="sig-paren">(</span><em>enable</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PicoampMeter.PicoampMeter.voltageEnable" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.PicoampMeter.PicoampMeter.zero">
+<code class="descname">zero</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PicoampMeter.PicoampMeter.zero" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="exception">
+<dt id="externalParameter.PicoampMeter.PicoampMeterException">
+<em class="property">exception </em><code class="descname">PicoampMeterException</code><a class="headerlink" href="#externalParameter.PicoampMeter.PicoampMeterException" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="externalParameter.PicoampMeter.ZeroCheckRestore">
+<em class="property">class </em><code class="descname">ZeroCheckRestore</code><span class="sig-paren">(</span><em>meter</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PicoampMeter.ZeroCheckRestore" title="Permalink to this definition">¶</a></dt>
+<dd><p>Encapsulate ZeroCheck in __enter__ __exit__ idiom</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="externalParameter.PicoampMeter.boolValue">
+<code class="descname">boolValue</code><span class="sig-paren">(</span><em>boolean</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PicoampMeter.boolValue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-externalParameter.PicoampMeterControl">
+<span id="picoampmetercontrol"></span><h2>PicoampMeterControl<a class="headerlink" href="#module-externalParameter.PicoampMeterControl" title="Permalink to this headline">¶</a></h2>
+<p>Created on May 21, 2014</p>
+<p>&#64;author: pmaunz</p>
+<dl class="class">
+<dt id="externalParameter.PicoampMeterControl.MeterState">
+<em class="property">class </em><code class="descname">MeterState</code><a class="headerlink" href="#externalParameter.PicoampMeterControl.MeterState" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="externalParameter.PicoampMeterControl.MeterState.__setstate__">
+<code class="descname">__setstate__</code><span class="sig-paren">(</span><em>state</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PicoampMeterControl.MeterState.__setstate__" title="Permalink to this definition">¶</a></dt>
+<dd><p>this function ensures that the given fields are present in the class object
+after unpickling. Only new class attributes need to be added here.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="externalParameter.PicoampMeterControl.PicoampMeterControl">
+<em class="property">class </em><code class="descname">PicoampMeterControl</code><span class="sig-paren">(</span><em>config</em>, <em>traceui</em>, <em>plotdict</em>, <em>parent</em>, <em>meter</em>, <em>meter_2=None</em>, <em>meter_3=None</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PicoampMeterControl.PicoampMeterControl" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="attribute">
+<dt id="externalParameter.PicoampMeterControl.PicoampMeterControl.currentLimits">
+<code class="descname">currentLimits</code><em class="property"> = [2.5e-05, 0.00025, 0.0025, 0.025]</em><a class="headerlink" href="#externalParameter.PicoampMeterControl.PicoampMeterControl.currentLimits" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.PicoampMeterControl.PicoampMeterControl.finalizeScan">
+<code class="descname">finalizeScan</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PicoampMeterControl.PicoampMeterControl.finalizeScan" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.PicoampMeterControl.PicoampMeterControl.initPoint">
+<code class="descname">initPoint</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PicoampMeterControl.PicoampMeterControl.initPoint" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.PicoampMeterControl.PicoampMeterControl.onAutoRange">
+<code class="descname">onAutoRange</code><span class="sig-paren">(</span><em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PicoampMeterControl.PicoampMeterControl.onAutoRange" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.PicoampMeterControl.PicoampMeterControl.onAutoRange_2">
+<code class="descname">onAutoRange_2</code><span class="sig-paren">(</span><em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PicoampMeterControl.PicoampMeterControl.onAutoRange_2" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.PicoampMeterControl.PicoampMeterControl.onAutoRange_3">
+<code class="descname">onAutoRange_3</code><span class="sig-paren">(</span><em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PicoampMeterControl.PicoampMeterControl.onAutoRange_3" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.PicoampMeterControl.PicoampMeterControl.onCurrentLimit">
+<code class="descname">onCurrentLimit</code><span class="sig-paren">(</span><em>index</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PicoampMeterControl.PicoampMeterControl.onCurrentLimit" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.PicoampMeterControl.PicoampMeterControl.onCurrentLimit_2">
+<code class="descname">onCurrentLimit_2</code><span class="sig-paren">(</span><em>index</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PicoampMeterControl.PicoampMeterControl.onCurrentLimit_2" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.PicoampMeterControl.PicoampMeterControl.onCurrentLimit_3">
+<code class="descname">onCurrentLimit_3</code><span class="sig-paren">(</span><em>index</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PicoampMeterControl.PicoampMeterControl.onCurrentLimit_3" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.PicoampMeterControl.PicoampMeterControl.onEnableOutput">
+<code class="descname">onEnableOutput</code><span class="sig-paren">(</span><em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PicoampMeterControl.PicoampMeterControl.onEnableOutput" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.PicoampMeterControl.PicoampMeterControl.onEnableOutput_2">
+<code class="descname">onEnableOutput_2</code><span class="sig-paren">(</span><em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PicoampMeterControl.PicoampMeterControl.onEnableOutput_2" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.PicoampMeterControl.PicoampMeterControl.onEnableOutput_3">
+<code class="descname">onEnableOutput_3</code><span class="sig-paren">(</span><em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PicoampMeterControl.PicoampMeterControl.onEnableOutput_3" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.PicoampMeterControl.PicoampMeterControl.onLogging">
+<code class="descname">onLogging</code><span class="sig-paren">(</span><em>checked</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PicoampMeterControl.PicoampMeterControl.onLogging" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.PicoampMeterControl.PicoampMeterControl.onMeasure">
+<code class="descname">onMeasure</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PicoampMeterControl.PicoampMeterControl.onMeasure" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.PicoampMeterControl.PicoampMeterControl.onMeasure_2">
+<code class="descname">onMeasure_2</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PicoampMeterControl.PicoampMeterControl.onMeasure_2" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.PicoampMeterControl.PicoampMeterControl.onMeasure_3">
+<code class="descname">onMeasure_3</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PicoampMeterControl.PicoampMeterControl.onMeasure_3" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.PicoampMeterControl.PicoampMeterControl.onScan">
+<code class="descname">onScan</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PicoampMeterControl.PicoampMeterControl.onScan" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.PicoampMeterControl.PicoampMeterControl.onStop">
+<code class="descname">onStop</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PicoampMeterControl.PicoampMeterControl.onStop" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.PicoampMeterControl.PicoampMeterControl.onStringValueChanged">
+<code class="descname">onStringValueChanged</code><span class="sig-paren">(</span><em>attr</em>, <em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PicoampMeterControl.PicoampMeterControl.onStringValueChanged" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.PicoampMeterControl.PicoampMeterControl.onValueChanged">
+<code class="descname">onValueChanged</code><span class="sig-paren">(</span><em>attr</em>, <em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PicoampMeterControl.PicoampMeterControl.onValueChanged" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.PicoampMeterControl.PicoampMeterControl.onVoltage">
+<code class="descname">onVoltage</code><span class="sig-paren">(</span><em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PicoampMeterControl.PicoampMeterControl.onVoltage" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.PicoampMeterControl.PicoampMeterControl.onVoltageRange">
+<code class="descname">onVoltageRange</code><span class="sig-paren">(</span><em>index</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PicoampMeterControl.PicoampMeterControl.onVoltageRange" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.PicoampMeterControl.PicoampMeterControl.onVoltageRange_2">
+<code class="descname">onVoltageRange_2</code><span class="sig-paren">(</span><em>index</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PicoampMeterControl.PicoampMeterControl.onVoltageRange_2" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.PicoampMeterControl.PicoampMeterControl.onVoltageRange_3">
+<code class="descname">onVoltageRange_3</code><span class="sig-paren">(</span><em>index</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PicoampMeterControl.PicoampMeterControl.onVoltageRange_3" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.PicoampMeterControl.PicoampMeterControl.onVoltage_2">
+<code class="descname">onVoltage_2</code><span class="sig-paren">(</span><em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PicoampMeterControl.PicoampMeterControl.onVoltage_2" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.PicoampMeterControl.PicoampMeterControl.onVoltage_3">
+<code class="descname">onVoltage_3</code><span class="sig-paren">(</span><em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PicoampMeterControl.PicoampMeterControl.onVoltage_3" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.PicoampMeterControl.PicoampMeterControl.onZero">
+<code class="descname">onZero</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PicoampMeterControl.PicoampMeterControl.onZero" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.PicoampMeterControl.PicoampMeterControl.onZeroCheck">
+<code class="descname">onZeroCheck</code><span class="sig-paren">(</span><em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PicoampMeterControl.PicoampMeterControl.onZeroCheck" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.PicoampMeterControl.PicoampMeterControl.onZeroCheck_2">
+<code class="descname">onZeroCheck_2</code><span class="sig-paren">(</span><em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PicoampMeterControl.PicoampMeterControl.onZeroCheck_2" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.PicoampMeterControl.PicoampMeterControl.onZeroCheck_3">
+<code class="descname">onZeroCheck_3</code><span class="sig-paren">(</span><em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PicoampMeterControl.PicoampMeterControl.onZeroCheck_3" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.PicoampMeterControl.PicoampMeterControl.onZero_2">
+<code class="descname">onZero_2</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PicoampMeterControl.PicoampMeterControl.onZero_2" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.PicoampMeterControl.PicoampMeterControl.onZero_3">
+<code class="descname">onZero_3</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PicoampMeterControl.PicoampMeterControl.onZero_3" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.PicoampMeterControl.PicoampMeterControl.openInstrument">
+<code class="descname">openInstrument</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PicoampMeterControl.PicoampMeterControl.openInstrument" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.PicoampMeterControl.PicoampMeterControl.openInstrument_2">
+<code class="descname">openInstrument_2</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PicoampMeterControl.PicoampMeterControl.openInstrument_2" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.PicoampMeterControl.PicoampMeterControl.openInstrument_3">
+<code class="descname">openInstrument_3</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PicoampMeterControl.PicoampMeterControl.openInstrument_3" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.PicoampMeterControl.PicoampMeterControl.saveConfig">
+<code class="descname">saveConfig</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PicoampMeterControl.PicoampMeterControl.saveConfig" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.PicoampMeterControl.PicoampMeterControl.setupUi">
+<code class="descname">setupUi</code><span class="sig-paren">(</span><em>parent</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PicoampMeterControl.PicoampMeterControl.setupUi" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.PicoampMeterControl.PicoampMeterControl.startLogging">
+<code class="descname">startLogging</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PicoampMeterControl.PicoampMeterControl.startLogging" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.PicoampMeterControl.PicoampMeterControl.startScan">
+<code class="descname">startScan</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PicoampMeterControl.PicoampMeterControl.startScan" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.PicoampMeterControl.PicoampMeterControl.stopLogging">
+<code class="descname">stopLogging</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PicoampMeterControl.PicoampMeterControl.stopLogging" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.PicoampMeterControl.PicoampMeterControl.takeLoggingPoint">
+<code class="descname">takeLoggingPoint</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PicoampMeterControl.PicoampMeterControl.takeLoggingPoint" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.PicoampMeterControl.PicoampMeterControl.takeScanPoint">
+<code class="descname">takeScanPoint</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PicoampMeterControl.PicoampMeterControl.takeScanPoint" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="externalParameter.PicoampMeterControl.PicoampMeterControl.voltageRanges">
+<code class="descname">voltageRanges</code><em class="property"> = [10, 50, 500]</em><a class="headerlink" href="#externalParameter.PicoampMeterControl.PicoampMeterControl.voltageRanges" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.PicoampMeterControl.PicoampMeterControl.writeAll">
+<code class="descname">writeAll</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PicoampMeterControl.PicoampMeterControl.writeAll" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.PicoampMeterControl.PicoampMeterControl.writeAll_2">
+<code class="descname">writeAll_2</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PicoampMeterControl.PicoampMeterControl.writeAll_2" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.PicoampMeterControl.PicoampMeterControl.writeAll_3">
+<code class="descname">writeAll_3</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PicoampMeterControl.PicoampMeterControl.writeAll_3" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="externalParameter.PicoampMeterControl.find_index_nearest">
+<code class="descname">find_index_nearest</code><span class="sig-paren">(</span><em>array</em>, <em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.PicoampMeterControl.find_index_nearest" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="spectrumanalyzern9342peak">
+<h2>SpectrumAnalyzerN9342Peak<a class="headerlink" href="#spectrumanalyzern9342peak" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="standardexternalparameter">
+<h2>StandardExternalParameter<a class="headerlink" href="#standardexternalparameter" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-externalParameter.TerranovaReader">
+<span id="terranovareader"></span><h2>TerranovaReader<a class="headerlink" href="#module-externalParameter.TerranovaReader" title="Permalink to this headline">¶</a></h2>
+<p>Created on May 16, 2014</p>
+<p>&#64;author: wolverine</p>
+<dl class="class">
+<dt id="externalParameter.TerranovaReader.TerranovaReader">
+<em class="property">class </em><code class="descname">TerranovaReader</code><span class="sig-paren">(</span><em>instrument='COM1'</em>, <em>baud=9600</em>, <em>deviceaddr=253</em>, <em>timeout=1</em>, <em>settings=None</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.TerranovaReader.TerranovaReader" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="externalParameter.TerranovaReader.TerranovaReader.close">
+<code class="descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.TerranovaReader.TerranovaReader.close" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="staticmethod">
+<dt id="externalParameter.TerranovaReader.TerranovaReader.connectedInstruments">
+<em class="property">static </em><code class="descname">connectedInstruments</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.TerranovaReader.TerranovaReader.connectedInstruments" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.TerranovaReader.TerranovaReader.open">
+<code class="descname">open</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.TerranovaReader.TerranovaReader.open" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.TerranovaReader.TerranovaReader.query">
+<code class="descname">query</code><span class="sig-paren">(</span><em>question</em>, <em>length=100</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.TerranovaReader.TerranovaReader.query" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="externalParameter.TerranovaReader.TerranovaReader.value">
+<code class="descname">value</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.TerranovaReader.TerranovaReader.value" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-externalParameter.VoltageOutputChannel">
+<span id="voltageoutputchannel"></span><h2>VoltageOutputChannel<a class="headerlink" href="#module-externalParameter.VoltageOutputChannel" title="Permalink to this headline">¶</a></h2>
+<p>Created on Dec 18, 2014</p>
+<p>&#64;author: pmaunz</p>
+<dl class="class">
+<dt id="externalParameter.VoltageOutputChannel.VoltageOutputChannel">
+<em class="property">class </em><code class="descname">VoltageOutputChannel</code><span class="sig-paren">(</span><em>device</em>, <em>deviceName</em>, <em>channelName</em><span class="sig-paren">)</span><a class="headerlink" href="#externalParameter.VoltageOutputChannel.VoltageOutputChannel" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="attribute">
+<dt id="externalParameter.VoltageOutputChannel.VoltageOutputChannel.delay">
+<code class="descname">delay</code><a class="headerlink" href="#externalParameter.VoltageOutputChannel.VoltageOutputChannel.delay" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="externalParameter.VoltageOutputChannel.VoltageOutputChannel.dimension">
+<code class="descname">dimension</code><a class="headerlink" href="#externalParameter.VoltageOutputChannel.VoltageOutputChannel.dimension" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="externalParameter.VoltageOutputChannel.VoltageOutputChannel.externalValue">
+<code class="descname">externalValue</code><a class="headerlink" href="#externalParameter.VoltageOutputChannel.VoltageOutputChannel.externalValue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="externalParameter.VoltageOutputChannel.VoltageOutputChannel.observable">
+<code class="descname">observable</code><a class="headerlink" href="#externalParameter.VoltageOutputChannel.VoltageOutputChannel.observable" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="externalParameter.VoltageOutputChannel.VoltageOutputChannel.strValue">
+<code class="descname">strValue</code><a class="headerlink" href="#externalParameter.VoltageOutputChannel.VoltageOutputChannel.strValue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="externalParameter.VoltageOutputChannel.VoltageOutputChannel.useExternalValue">
+<code class="descname">useExternalValue</code><a class="headerlink" href="#externalParameter.VoltageOutputChannel.VoltageOutputChannel.useExternalValue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="fit-doc.html" class="btn btn-neutral float-right" title="fit" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="digitalLock-doc.html" class="btn btn-neutral" title="digitalLock" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright .
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../',
+            VERSION:'0.8',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

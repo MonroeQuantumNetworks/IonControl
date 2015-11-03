@@ -1,0 +1,1257 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>trace &mdash; IonControl 0.8 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="IonControl 0.8 documentation" href="../index.html"/>
+        <link rel="up" title="Code Documentation" href="codeDocs.html"/>
+        <link rel="next" title="uiModules" href="uiModules-doc.html"/>
+        <link rel="prev" title="scripting" href="scripting-doc.html"/> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> IonControl
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.8
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FPGAhardware.html">Hardware</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../manual/experimentUi_manual.html">User Manual</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../manual/instrumentLoggerUi_manual.html">Instrument Logger User Manual</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="codeDocs.html">Code Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="AWG-doc.html">AWG</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ProjectConfig-doc.html">ProjectConfig</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dedicatedCounters-doc.html">dedicatedCounters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="digitalLock-doc.html">digitalLock</a></li>
+<li class="toctree-l2"><a class="reference internal" href="externalParameter-doc.html">externalParameter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fit-doc.html">fit</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gateSequence-doc.html">gateSequence</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gui-doc.html">gui</a></li>
+<li class="toctree-l2"><a class="reference internal" href="logicAnalyzer-doc.html">logicAnalyzer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules-doc.html">modules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mylogging-doc.html">mylogging</a></li>
+<li class="toctree-l2"><a class="reference internal" href="persist-doc.html">persist</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pppCompiler-doc.html">pppCompiler</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pulseProgram-doc.html">pulseProgram</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pulser-doc.html">pulser</a></li>
+<li class="toctree-l2"><a class="reference internal" href="scan-doc.html">scan</a></li>
+<li class="toctree-l2"><a class="reference internal" href="scripting-doc.html">scripting</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="">trace</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#module-trace.pens">pens</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-trace.PlottedTrace">PlottedTrace</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-trace.RawData">RawData</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#traceaverage">TraceAverage</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-trace.TraceCollection">TraceCollection</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-trace.TraceDescriptionTableModel">TraceDescriptionTableModel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-trace.TraceModel">TraceModel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-trace.Traceui">Traceui</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="uiModules-doc.html">uiModules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="voltageControl-doc.html">voltageControl</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DigitalLockUi-doc.html">DigitalLockUi</a></li>
+<li class="toctree-l2"><a class="reference internal" href="InstrumentLoggingUi-doc.html">InstrumentLoggingUi</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ExperimentUi-doc.html">ExperimentUi</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../index.html">IonControl</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="codeDocs.html">Code Documentation</a> &raquo;</li>
+      
+    <li>trace</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/code/trace-doc.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="trace">
+<h1>trace<a class="headerlink" href="#trace" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-trace.pens">
+<span id="pens"></span><h2>pens<a class="headerlink" href="#module-trace.pens" title="Permalink to this headline">¶</a></h2>
+<p>Created on Fri Dec 28 16:17:51 2012</p>
+<p>&#64;author: pmaunz</p>
+<dl class="class">
+<dt id="trace.pens.penicons">
+<em class="property">class </em><code class="descname">penicons</code><a class="headerlink" href="#trace.pens.penicons" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="trace.pens.penicons.loadicons">
+<code class="descname">loadicons</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#trace.pens.penicons.loadicons" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="trace.pens.penicons.penicons">
+<code class="descname">penicons</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#trace.pens.penicons.penicons" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-trace.PlottedTrace">
+<span id="plottedtrace"></span><h2>PlottedTrace<a class="headerlink" href="#module-trace.PlottedTrace" title="Permalink to this headline">¶</a></h2>
+<p>Created on Fri Dec 28 18:40:30 2012</p>
+<p>&#64;author: pmaunz</p>
+<dl class="class">
+<dt id="trace.PlottedTrace.PlottedTrace">
+<em class="property">class </em><code class="descname">PlottedTrace</code><span class="sig-paren">(</span><em>Trace</em>, <em>graphicsView</em>, <em>penList=None</em>, <em>pen=0</em>, <em>style=None</em>, <em>plotType=None</em>, <em>xColumn='x'</em>, <em>yColumn='y'</em>, <em>topColumn='top'</em>, <em>bottomColumn='bottom'</em>, <em>heightColumn='height'</em>, <em>rawColumn='raw'</em>, <em>tracePlotting=None</em>, <em>name=''</em>, <em>xAxisLabel=None</em>, <em>xAxisUnit=None</em>, <em>yAxisLabel=None</em>, <em>yAxisUnit=None</em>, <em>fill=True</em>, <em>windowName=None</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.PlottedTrace.PlottedTrace" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="attribute">
+<dt id="trace.PlottedTrace.PlottedTrace.PointsStyles">
+<code class="descname">PointsStyles</code><em class="property"> = [1, 4]</em><a class="headerlink" href="#trace.PlottedTrace.PlottedTrace.PointsStyles" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="trace.PlottedTrace.PlottedTrace.Styles">
+<code class="descname">Styles</code><a class="headerlink" href="#trace.PlottedTrace.PlottedTrace.Styles" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <code class="xref py py-class docutils literal"><span class="pre">Enum</span></code></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="trace.PlottedTrace.PlottedTrace.Types">
+<code class="descname">Types</code><a class="headerlink" href="#trace.PlottedTrace.PlottedTrace.Types" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <code class="xref py py-class docutils literal"><span class="pre">Enum</span></code></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="trace.PlottedTrace.PlottedTrace.bottom">
+<code class="descname">bottom</code><a class="headerlink" href="#trace.PlottedTrace.PlottedTrace.bottom" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="trace.PlottedTrace.PlottedTrace.fitFunction">
+<code class="descname">fitFunction</code><a class="headerlink" href="#trace.PlottedTrace.PlottedTrace.fitFunction" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="trace.PlottedTrace.PlottedTrace.hasBottomColumn">
+<code class="descname">hasBottomColumn</code><a class="headerlink" href="#trace.PlottedTrace.PlottedTrace.hasBottomColumn" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="trace.PlottedTrace.PlottedTrace.hasHeightColumn">
+<code class="descname">hasHeightColumn</code><a class="headerlink" href="#trace.PlottedTrace.PlottedTrace.hasHeightColumn" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="trace.PlottedTrace.PlottedTrace.hasRawColumn">
+<code class="descname">hasRawColumn</code><a class="headerlink" href="#trace.PlottedTrace.PlottedTrace.hasRawColumn" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="trace.PlottedTrace.PlottedTrace.hasTopColumn">
+<code class="descname">hasTopColumn</code><a class="headerlink" href="#trace.PlottedTrace.PlottedTrace.hasTopColumn" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="trace.PlottedTrace.PlottedTrace.height">
+<code class="descname">height</code><a class="headerlink" href="#trace.PlottedTrace.PlottedTrace.height" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="trace.PlottedTrace.PlottedTrace.isPlotted">
+<code class="descname">isPlotted</code><a class="headerlink" href="#trace.PlottedTrace.PlottedTrace.isPlotted" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="trace.PlottedTrace.PlottedTrace.okToDelete">
+<code class="descname">okToDelete</code><a class="headerlink" href="#trace.PlottedTrace.PlottedTrace.okToDelete" title="Permalink to this definition">¶</a></dt>
+<dd><p>A trace is OK to delete if it has been finalized</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="trace.PlottedTrace.PlottedTrace.plot">
+<code class="descname">plot</code><span class="sig-paren">(</span><em>penindex=-1</em>, <em>style=None</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.PlottedTrace.PlottedTrace.plot" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="trace.PlottedTrace.PlottedTrace.plotErrorBars">
+<code class="descname">plotErrorBars</code><span class="sig-paren">(</span><em>penindex</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.PlottedTrace.PlottedTrace.plotErrorBars" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="trace.PlottedTrace.PlottedTrace.plotFitfunction">
+<code class="descname">plotFitfunction</code><span class="sig-paren">(</span><em>penindex</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.PlottedTrace.PlottedTrace.plotFitfunction" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="trace.PlottedTrace.PlottedTrace.plotLines">
+<code class="descname">plotLines</code><span class="sig-paren">(</span><em>penindex</em>, <em>errorbars=True</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.PlottedTrace.PlottedTrace.plotLines" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="trace.PlottedTrace.PlottedTrace.plotLinespoints">
+<code class="descname">plotLinespoints</code><span class="sig-paren">(</span><em>penindex</em>, <em>errorbars=True</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.PlottedTrace.PlottedTrace.plotLinespoints" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="trace.PlottedTrace.PlottedTrace.plotPoints">
+<code class="descname">plotPoints</code><span class="sig-paren">(</span><em>penindex</em>, <em>errorbars=True</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.PlottedTrace.PlottedTrace.plotPoints" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="trace.PlottedTrace.PlottedTrace.plotSteps">
+<code class="descname">plotSteps</code><span class="sig-paren">(</span><em>penindex</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.PlottedTrace.PlottedTrace.plotSteps" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="trace.PlottedTrace.PlottedTrace.plotStepsFitfunction">
+<code class="descname">plotStepsFitfunction</code><span class="sig-paren">(</span><em>penindex</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.PlottedTrace.PlottedTrace.plotStepsFitfunction" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="trace.PlottedTrace.PlottedTrace.raw">
+<code class="descname">raw</code><a class="headerlink" href="#trace.PlottedTrace.PlottedTrace.raw" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="trace.PlottedTrace.PlottedTrace.removePlots">
+<code class="descname">removePlots</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#trace.PlottedTrace.PlottedTrace.removePlots" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="trace.PlottedTrace.PlottedTrace.replot">
+<code class="descname">replot</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#trace.PlottedTrace.PlottedTrace.replot" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="trace.PlottedTrace.PlottedTrace.replotFitFunction">
+<code class="descname">replotFitFunction</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#trace.PlottedTrace.PlottedTrace.replotFitFunction" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="trace.PlottedTrace.PlottedTrace.replotStepsFitFunction">
+<code class="descname">replotStepsFitFunction</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#trace.PlottedTrace.PlottedTrace.replotStepsFitFunction" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="trace.PlottedTrace.PlottedTrace.setGraphicsView">
+<code class="descname">setGraphicsView</code><span class="sig-paren">(</span><em>graphicsView</em>, <em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.PlottedTrace.PlottedTrace.setGraphicsView" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="trace.PlottedTrace.PlottedTrace.setView">
+<code class="descname">setView</code><span class="sig-paren">(</span><em>graphicsView</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.PlottedTrace.PlottedTrace.setView" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="trace.PlottedTrace.PlottedTrace.timeinterval">
+<code class="descname">timeinterval</code><a class="headerlink" href="#trace.PlottedTrace.PlottedTrace.timeinterval" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="trace.PlottedTrace.PlottedTrace.timeintervalAppend">
+<code class="descname">timeintervalAppend</code><span class="sig-paren">(</span><em>timeinterval</em>, <em>maxPoints=0</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.PlottedTrace.PlottedTrace.timeintervalAppend" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="trace.PlottedTrace.PlottedTrace.top">
+<code class="descname">top</code><a class="headerlink" href="#trace.PlottedTrace.PlottedTrace.top" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="trace.PlottedTrace.PlottedTrace.traceCollection">
+<code class="descname">traceCollection</code><a class="headerlink" href="#trace.PlottedTrace.PlottedTrace.traceCollection" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is to make the code more readable while maintaining backwards compatibility. self.traceCollection is the same thing as self.trace.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="trace.PlottedTrace.PlottedTrace.x">
+<code class="descname">x</code><a class="headerlink" href="#trace.PlottedTrace.PlottedTrace.x" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="trace.PlottedTrace.PlottedTrace.y">
+<code class="descname">y</code><a class="headerlink" href="#trace.PlottedTrace.PlottedTrace.y" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="trace.PlottedTrace.sort_lists_by">
+<code class="descname">sort_lists_by</code><span class="sig-paren">(</span><em>lists</em>, <em>key_list=0</em>, <em>desc=False</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.PlottedTrace.sort_lists_by" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-trace.RawData">
+<span id="rawdata"></span><h2>RawData<a class="headerlink" href="#module-trace.RawData" title="Permalink to this headline">¶</a></h2>
+<p>Created on Fri May 24 14:46:16 2013</p>
+<p>&#64;author: wolverine</p>
+<dl class="class">
+<dt id="trace.RawData.RawData">
+<em class="property">class </em><code class="descname">RawData</code><a class="headerlink" href="#trace.RawData.RawData" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="trace.RawData.RawData.addFloat">
+<code class="descname">addFloat</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.RawData.RawData.addFloat" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="trace.RawData.RawData.addInt">
+<code class="descname">addInt</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.RawData.RawData.addInt" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="trace.RawData.RawData.close">
+<code class="descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#trace.RawData.RawData.close" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="trace.RawData.RawData.delete">
+<code class="descname">delete</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#trace.RawData.RawData.delete" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="trace.RawData.RawData.hexdigest">
+<code class="descname">hexdigest</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#trace.RawData.RawData.hexdigest" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="trace.RawData.RawData.save">
+<code class="descname">save</code><span class="sig-paren">(</span><em>name=None</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.RawData.RawData.save" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="traceaverage">
+<h2>TraceAverage<a class="headerlink" href="#traceaverage" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-trace.TraceCollection">
+<span id="tracecollection"></span><h2>TraceCollection<a class="headerlink" href="#module-trace.TraceCollection" title="Permalink to this headline">¶</a></h2>
+<p>Created on Sun Dec 23 19:27:39 2012</p>
+<p>&#64;author: pmaunz</p>
+<p>This is the class in which the data associated with a single trace is stored.</p>
+<dl class="class">
+<dt id="trace.TraceCollection.ColumnSpec">
+<em class="property">class </em><code class="descname">ColumnSpec</code><a class="headerlink" href="#trace.TraceCollection.ColumnSpec" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="staticmethod">
+<dt id="trace.TraceCollection.ColumnSpec.fromXmlElement">
+<em class="property">static </em><code class="descname">fromXmlElement</code><span class="sig-paren">(</span><em>element</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.TraceCollection.ColumnSpec.fromXmlElement" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="trace.TraceCollection.ColumnSpec.toXmlElement">
+<code class="descname">toXmlElement</code><span class="sig-paren">(</span><em>root</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.TraceCollection.ColumnSpec.toXmlElement" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="trace.TraceCollection.TraceCollection">
+<em class="property">class </em><code class="descname">TraceCollection</code><span class="sig-paren">(</span><em>record_timestamps=False</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.TraceCollection.TraceCollection" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class to encapsulate a collection of traces with a common array of x values (or a single trace).</p>
+<p>This class contains the data for all the traces, and takes care of saving and loading the traces from file</p>
+<dl class="attribute">
+<dt id="trace.TraceCollection.TraceCollection.x">
+<code class="descname">x</code><a class="headerlink" href="#trace.TraceCollection.TraceCollection.x" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>list[float]</em></p>
+<p>array of x values</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="trace.TraceCollection.TraceCollection.y">
+<code class="descname">y</code><a class="headerlink" href="#trace.TraceCollection.TraceCollection.y" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>list[float]</em></p>
+<p>array of y values for single trace</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">y&lt;n&gt;</code></dt>
+<dd><p><em>list[float]</em></p>
+<p>generated array of y values for collection of traces, where n=0,1,2,...</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="trace.TraceCollection.TraceCollection.name">
+<code class="descname">name</code><a class="headerlink" href="#trace.TraceCollection.TraceCollection.name" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>str</em></p>
+<p>name associated with trace collection</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="trace.TraceCollection.TraceCollection.description">
+<code class="descname">description</code><a class="headerlink" href="#trace.TraceCollection.TraceCollection.description" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>dict</em></p>
+<p>description data</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">description[&quot;comment&quot;]</code></dt>
+<dd><p><em>str</em></p>
+<p>comment to add to file</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">description[&quot;traceCreation&quot;]</code></dt>
+<dd><p><em>str</em></p>
+<p>the time the collection was created</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="trace.TraceCollection.TraceCollection.header">
+<code class="descname">header</code><a class="headerlink" href="#trace.TraceCollection.TraceCollection.header" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>str</em></p>
+<p>header for saved file</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="trace.TraceCollection.TraceCollection.filenamePattern">
+<code class="descname">filenamePattern</code><a class="headerlink" href="#trace.TraceCollection.TraceCollection.filenamePattern" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>str</em></p>
+<p>filename pattern to use when saving the trace</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="trace.TraceCollection.TraceCollection.autosave">
+<code class="descname">autosave</code><a class="headerlink" href="#trace.TraceCollection.TraceCollection.autosave" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>bool</em></p>
+<p>if True, trace collection will be saved as soon as filenamePattern is set</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="trace.TraceCollection.TraceCollection.saved">
+<code class="descname">saved</code><a class="headerlink" href="#trace.TraceCollection.TraceCollection.saved" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>bool</em></p>
+<p>True if trace collection has been saved</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="trace.TraceCollection.TraceCollection.filename">
+<code class="descname">filename</code><a class="headerlink" href="#trace.TraceCollection.TraceCollection.filename" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>str</em></p>
+<p>full path to file</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="trace.TraceCollection.TraceCollection.fileleaf">
+<code class="descname">fileleaf</code><a class="headerlink" href="#trace.TraceCollection.TraceCollection.fileleaf" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>str</em></p>
+<p>name only</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="trace.TraceCollection.TraceCollection.filepath">
+<code class="descname">filepath</code><a class="headerlink" href="#trace.TraceCollection.TraceCollection.filepath" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>str</em></p>
+<p>path only</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="trace.TraceCollection.TraceCollection.columnNames">
+<code class="descname">columnNames</code><a class="headerlink" href="#trace.TraceCollection.TraceCollection.columnNames" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>list[str]</em></p>
+<p>all column names in the saved file</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="trace.TraceCollection.TraceCollection.addColumn">
+<code class="descname">addColumn</code><span class="sig-paren">(</span><em>name</em>, <em>ignoreExisting=False</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.TraceCollection.TraceCollection.addColumn" title="Permalink to this definition">¶</a></dt>
+<dd><p>adds a column with the given name, the column is saved in the file in the order added</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="trace.TraceCollection.TraceCollection.addTracePlotting">
+<code class="descname">addTracePlotting</code><span class="sig-paren">(</span><em>traceplotting</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.TraceCollection.TraceCollection.addTracePlotting" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="trace.TraceCollection.TraceCollection.comment">
+<code class="descname">comment</code><a class="headerlink" href="#trace.TraceCollection.TraceCollection.comment" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">filenamePattern</code></dt>
+<dd><p>Get the pattern of the file name</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="trace.TraceCollection.TraceCollection.indexColumn">
+<code class="descname">indexColumn</code><a class="headerlink" href="#trace.TraceCollection.TraceCollection.indexColumn" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="trace.TraceCollection.TraceCollection.loadTrace">
+<code class="descname">loadTrace</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.TraceCollection.TraceCollection.loadTrace" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="trace.TraceCollection.TraceCollection.loadTraceText">
+<code class="descname">loadTraceText</code><span class="sig-paren">(</span><em>stream</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.TraceCollection.TraceCollection.loadTraceText" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="trace.TraceCollection.TraceCollection.loadTraceXml">
+<code class="descname">loadTraceXml</code><span class="sig-paren">(</span><em>stream</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.TraceCollection.TraceCollection.loadTraceXml" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="trace.TraceCollection.TraceCollection.plot">
+<code class="descname">plot</code><span class="sig-paren">(</span><em>penindex</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.TraceCollection.TraceCollection.plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>plot the data, penindex &gt;= 0 gives requests the style with this number,
+penindex = -1 uses the first available style, penindex = -2 uses the previous style</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="trace.TraceCollection.TraceCollection.recordTimeinterval">
+<code class="descname">recordTimeinterval</code><span class="sig-paren">(</span><em>timeTickOffset</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.TraceCollection.TraceCollection.recordTimeinterval" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="trace.TraceCollection.TraceCollection.save">
+<code class="descname">save</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#trace.TraceCollection.TraceCollection.save" title="Permalink to this definition">¶</a></dt>
+<dd><p>save the trace to file</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="trace.TraceCollection.TraceCollection.saveBare">
+<code class="descname">saveBare</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#trace.TraceCollection.TraceCollection.saveBare" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="trace.TraceCollection.TraceCollection.saveDescriptionElement">
+<code class="descname">saveDescriptionElement</code><span class="sig-paren">(</span><em>name</em>, <em>value</em>, <em>element</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.TraceCollection.TraceCollection.saveDescriptionElement" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="trace.TraceCollection.TraceCollection.saveTraceHeader">
+<code class="descname">saveTraceHeader</code><span class="sig-paren">(</span><em>outfile</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.TraceCollection.TraceCollection.saveTraceHeader" title="Permalink to this definition">¶</a></dt>
+<dd><p>save the header of the trace to outfile</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="trace.TraceCollection.TraceCollection.saveTraceHeaderXml">
+<code class="descname">saveTraceHeaderXml</code><span class="sig-paren">(</span><em>outfile</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.TraceCollection.TraceCollection.saveTraceHeaderXml" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="trace.TraceCollection.TraceCollection.setPlotfunction">
+<code class="descname">setPlotfunction</code><span class="sig-paren">(</span><em>callback</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.TraceCollection.TraceCollection.setPlotfunction" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="trace.TraceCollection.TraceCollection.timeinterval">
+<code class="descname">timeinterval</code><a class="headerlink" href="#trace.TraceCollection.TraceCollection.timeinterval" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="trace.TraceCollection.TraceCollection.timeintervalAppend">
+<code class="descname">timeintervalAppend</code><span class="sig-paren">(</span><em>timeinterval</em>, <em>maxPoints=0</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.TraceCollection.TraceCollection.timeintervalAppend" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="trace.TraceCollection.TraceCollection.traceCreation">
+<code class="descname">traceCreation</code><a class="headerlink" href="#trace.TraceCollection.TraceCollection.traceCreation" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="trace.TraceCollection.TraceCollection.tracePlottingList">
+<code class="descname">tracePlottingList</code><a class="headerlink" href="#trace.TraceCollection.TraceCollection.tracePlottingList" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="trace.TraceCollection.TraceCollection.varFromXmlElement">
+<code class="descname">varFromXmlElement</code><span class="sig-paren">(</span><em>element</em>, <em>description</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.TraceCollection.TraceCollection.varFromXmlElement" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="trace.TraceCollection.TraceCollection.varstr">
+<code class="descname">varstr</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.TraceCollection.TraceCollection.varstr" title="Permalink to this definition">¶</a></dt>
+<dd><p>return the variable value as a string</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">x</code></dt>
+<dd><p>Get x array</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="trace.TraceCollection.TraceCollection.xUnit">
+<code class="descname">xUnit</code><a class="headerlink" href="#trace.TraceCollection.TraceCollection.xUnit" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">y</code></dt>
+<dd><p>Get y array</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="trace.TraceCollection.TraceCollection.yUnit">
+<code class="descname">yUnit</code><a class="headerlink" href="#trace.TraceCollection.TraceCollection.yUnit" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="exception">
+<dt id="trace.TraceCollection.TraceException">
+<em class="property">exception </em><code class="descname">TraceException</code><a class="headerlink" href="#trace.TraceCollection.TraceException" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="trace.TraceCollection.TracePlotting">
+<em class="property">class </em><code class="descname">TracePlotting</code><span class="sig-paren">(</span><em>xColumn='x'</em>, <em>yColumn='y'</em>, <em>topColumn=None</em>, <em>bottomColumn=None</em>, <em>heightColumn=None</em>, <em>rawColumn=None</em>, <em>name=''</em>, <em>type_=None</em>, <em>xAxisUnit=None</em>, <em>xAxisLabel=None</em>, <em>windowName=None</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.TraceCollection.TracePlotting" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="attribute">
+<dt id="trace.TraceCollection.TracePlotting.Types">
+<code class="descname">Types</code><a class="headerlink" href="#trace.TraceCollection.TracePlotting.Types" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <code class="xref py py-class docutils literal"><span class="pre">Enum</span></code></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="trace.TraceCollection.TracePlotting.attrFields">
+<code class="descname">attrFields</code><em class="property"> = ['xColumn', 'yColumn', 'topColumn', 'bottomColumn', 'heightColumn', 'name', 'type', 'xAxisUnit', 'xAxisLabel', 'windowName']</em><a class="headerlink" href="#trace.TraceCollection.TracePlotting.attrFields" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="trace.TraceCollection.TracePlottingList">
+<em class="property">class </em><code class="descname">TracePlottingList</code><a class="headerlink" href="#trace.TraceCollection.TracePlottingList" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="staticmethod">
+<dt id="trace.TraceCollection.TracePlottingList.fromXmlElement">
+<em class="property">static </em><code class="descname">fromXmlElement</code><span class="sig-paren">(</span><em>element</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.TraceCollection.TracePlottingList.fromXmlElement" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="trace.TraceCollection.TracePlottingList.toXmlElement">
+<code class="descname">toXmlElement</code><span class="sig-paren">(</span><em>root</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.TraceCollection.TracePlottingList.toXmlElement" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-trace.TraceDescriptionTableModel">
+<span id="tracedescriptiontablemodel"></span><h2>TraceDescriptionTableModel<a class="headerlink" href="#module-trace.TraceDescriptionTableModel" title="Permalink to this headline">¶</a></h2>
+<p>Created on Fri Feb 08 22:02:08 2013</p>
+<p>&#64;author: pmaunz</p>
+<dl class="class">
+<dt id="trace.TraceDescriptionTableModel.TraceDescriptionTableModel">
+<em class="property">class </em><code class="descname">TraceDescriptionTableModel</code><span class="sig-paren">(</span><em>parent=None</em>, <em>*args</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.TraceDescriptionTableModel.TraceDescriptionTableModel" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="trace.TraceDescriptionTableModel.TraceDescriptionTableModel.columnCount">
+<code class="descname">columnCount</code><span class="sig-paren">(</span><em>parent=&lt;PyQt4.QtCore.QModelIndex object at 0x000000000C70C3C8&gt;</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.TraceDescriptionTableModel.TraceDescriptionTableModel.columnCount" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="trace.TraceDescriptionTableModel.TraceDescriptionTableModel.data">
+<code class="descname">data</code><span class="sig-paren">(</span><em>index</em>, <em>role</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.TraceDescriptionTableModel.TraceDescriptionTableModel.data" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="trace.TraceDescriptionTableModel.TraceDescriptionTableModel.flags">
+<code class="descname">flags</code><span class="sig-paren">(</span><em>index</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.TraceDescriptionTableModel.TraceDescriptionTableModel.flags" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="trace.TraceDescriptionTableModel.TraceDescriptionTableModel.headerData">
+<code class="descname">headerData</code><span class="sig-paren">(</span><em>section</em>, <em>orientation</em>, <em>role</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.TraceDescriptionTableModel.TraceDescriptionTableModel.headerData" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="trace.TraceDescriptionTableModel.TraceDescriptionTableModel.headerDataLookup">
+<code class="descname">headerDataLookup</code><em class="property"> = ['Name', 'Value']</em><a class="headerlink" href="#trace.TraceDescriptionTableModel.TraceDescriptionTableModel.headerDataLookup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="trace.TraceDescriptionTableModel.TraceDescriptionTableModel.moveRow">
+<code class="descname">moveRow</code><span class="sig-paren">(</span><em>rows</em>, <em>up=True</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.TraceDescriptionTableModel.TraceDescriptionTableModel.moveRow" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="trace.TraceDescriptionTableModel.TraceDescriptionTableModel.onUpdate">
+<code class="descname">onUpdate</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#trace.TraceDescriptionTableModel.TraceDescriptionTableModel.onUpdate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="trace.TraceDescriptionTableModel.TraceDescriptionTableModel.rowCount">
+<code class="descname">rowCount</code><span class="sig-paren">(</span><em>parent=&lt;PyQt4.QtCore.QModelIndex object at 0x000000000C70C2E8&gt;</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.TraceDescriptionTableModel.TraceDescriptionTableModel.rowCount" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="trace.TraceDescriptionTableModel.TraceDescriptionTableModel.setDescription">
+<code class="descname">setDescription</code><span class="sig-paren">(</span><em>description</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.TraceDescriptionTableModel.TraceDescriptionTableModel.setDescription" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="trace.TraceDescriptionTableModel.TraceDescriptionTableModel.sort">
+<code class="descname">sort</code><span class="sig-paren">(</span><em>column</em>, <em>order</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.TraceDescriptionTableModel.TraceDescriptionTableModel.sort" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-trace.TraceModel">
+<span id="tracemodel"></span><h2>TraceModel<a class="headerlink" href="#module-trace.TraceModel" title="Permalink to this headline">¶</a></h2>
+<p>Created on Wed Jan 02 09:53:48 2013</p>
+<p>&#64;author: Jonathan Mizrahi</p>
+<p>This is the model used for the list of traces.</p>
+<dl class="class">
+<dt id="trace.TraceModel.TraceComboDelegate">
+<em class="property">class </em><code class="descname">TraceComboDelegate</code><span class="sig-paren">(</span><em>penicons</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.TraceModel.TraceComboDelegate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class for combo box editor to select what trace color to use</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>penicons</strong> (<em>list[Qicon]</em>) &#8211; list of icons to select trace color</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="trace.TraceModel.TraceComboDelegate.createEditor">
+<code class="descname">createEditor</code><span class="sig-paren">(</span><em>parent</em>, <em>option</em>, <em>index</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.TraceModel.TraceComboDelegate.createEditor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create the combo box editor</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="trace.TraceModel.TraceComboDelegate.setEditorData">
+<code class="descname">setEditorData</code><span class="sig-paren">(</span><em>editor</em>, <em>index</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.TraceModel.TraceComboDelegate.setEditorData" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the data in the editor based on the model</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="trace.TraceModel.TraceComboDelegate.setModelData">
+<code class="descname">setModelData</code><span class="sig-paren">(</span><em>editor</em>, <em>model</em>, <em>index</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.TraceModel.TraceComboDelegate.setModelData" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the data in the model based on the editor</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="trace.TraceModel.TraceComboDelegate.updateEditorGeometry">
+<code class="descname">updateEditorGeometry</code><span class="sig-paren">(</span><em>editor</em>, <em>option</em>, <em>index</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.TraceModel.TraceComboDelegate.updateEditorGeometry" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="trace.TraceModel.TraceModel">
+<em class="property">class </em><code class="descname">TraceModel</code><span class="sig-paren">(</span><em>traceList</em>, <em>penicons</em>, <em>graphicsViewDict</em>, <em>parent=None</em>, <em>highlightUnsaved=False</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.TraceModel.TraceModel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Construct the TraceModel.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>traceList</strong> (<em>list[PlottedTrace]</em>) &#8211; The initial list of traces</li>
+<li><strong>penicons</strong> (<em>list[QtGui.QIcon]</em>) &#8211; Icons for showing available plot colors</li>
+<li><strong>graphicsViewDict</strong> (<em>dict</em>) &#8211; dictionary of the available plot windows</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="trace.TraceModel.TraceModel.addTrace">
+<code class="descname">addTrace</code><span class="sig-paren">(</span><em>trace</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.TraceModel.TraceModel.addTrace" title="Permalink to this definition">¶</a></dt>
+<dd><p>add a trace to the model</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="trace.TraceModel.TraceModel.categoryCheckboxChange">
+<code class="descname">categoryCheckboxChange</code><span class="sig-paren">(</span><em>index</em>, <em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.TraceModel.TraceModel.categoryCheckboxChange" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check or uncheck the filename category of a set of traces</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="trace.TraceModel.TraceModel.checkboxChange">
+<code class="descname">checkboxChange</code><span class="sig-paren">(</span><em>index</em>, <em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.TraceModel.TraceModel.checkboxChange" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot or unplot the plottedTrace at the given index based on the checkbox</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="trace.TraceModel.TraceModel.choice">
+<code class="descname">choice</code><span class="sig-paren">(</span><em>index</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.TraceModel.TraceModel.choice" title="Permalink to this definition">¶</a></dt>
+<dd><p>return available plot windows</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="trace.TraceModel.TraceModel.comment">
+<code class="descname">comment</code><span class="sig-paren">(</span><em>node</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.TraceModel.TraceModel.comment" title="Permalink to this definition">¶</a></dt>
+<dd><p>return comment associated with node</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="trace.TraceModel.TraceModel.commentChange">
+<code class="descname">commentChange</code><span class="sig-paren">(</span><em>index</em>, <em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.TraceModel.TraceModel.commentChange" title="Permalink to this definition">¶</a></dt>
+<dd><p>change the comment and resave the trace</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="trace.TraceModel.TraceModel.emitParentDataChanged">
+<code class="descname">emitParentDataChanged</code><span class="sig-paren">(</span><em>node</em>, <em>leftCol</em>, <em>rightCol</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.TraceModel.TraceModel.emitParentDataChanged" title="Permalink to this definition">¶</a></dt>
+<dd><p>Recursively tell parent nodes to update data from leftCol to rightCol</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="trace.TraceModel.TraceModel.hasSiblings">
+<code class="descname">hasSiblings</code><span class="sig-paren">(</span><em>node</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.TraceModel.TraceModel.hasSiblings" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns True if node is not the only child of its parent, else False</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="trace.TraceModel.TraceModel.isCategoryChecked">
+<code class="descname">isCategoryChecked</code><span class="sig-paren">(</span><em>categoryNode</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.TraceModel.TraceModel.isCategoryChecked" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determine if category node should be checked or not, based on plot status of children</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="trace.TraceModel.TraceModel.isCategorySaved">
+<code class="descname">isCategorySaved</code><span class="sig-paren">(</span><em>categoryNode</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.TraceModel.TraceModel.isCategorySaved" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determine if category node has been saved or not</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="trace.TraceModel.TraceModel.isDataNode">
+<code class="descname">isDataNode</code><span class="sig-paren">(</span><em>index</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.TraceModel.TraceModel.isDataNode" title="Permalink to this definition">¶</a></dt>
+<dd><p>check if index refers to a data node</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="trace.TraceModel.TraceModel.nodeFromContent">
+<code class="descname">nodeFromContent</code><span class="sig-paren">(</span><em>trace</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.TraceModel.TraceModel.nodeFromContent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Use traceDict to efficiently find node from trace</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="trace.TraceModel.TraceModel.onMeasurementModelDataChanged">
+<code class="descname">onMeasurementModelDataChanged</code><span class="sig-paren">(</span><em>traceCreation</em>, <em>changeType</em>, <em>data</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.TraceModel.TraceModel.onMeasurementModelDataChanged" title="Permalink to this definition">¶</a></dt>
+<dd><p>Trace data changed via MeasurementTableModel. Update model.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="trace.TraceModel.TraceModel.onSaveUnsavedTrace">
+<code class="descname">onSaveUnsavedTrace</code><span class="sig-paren">(</span><em>dataNode</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.TraceModel.TraceModel.onSaveUnsavedTrace" title="Permalink to this definition">¶</a></dt>
+<dd><p>rename the category associated with dataNode, if any</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="trace.TraceModel.TraceModel.penChange">
+<code class="descname">penChange</code><span class="sig-paren">(</span><em>index</em>, <em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.TraceModel.TraceModel.penChange" title="Permalink to this definition">¶</a></dt>
+<dd><p>plot using the pen specified by value</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="trace.TraceModel.TraceModel.removeNode">
+<code class="descname">removeNode</code><span class="sig-paren">(</span><em>node</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.TraceModel.TraceModel.removeNode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove the node from the model, unplotting all connected traces</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="trace.TraceModel.TraceModel.setValue">
+<code class="descname">setValue</code><span class="sig-paren">(</span><em>index</em>, <em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.TraceModel.TraceModel.setValue" title="Permalink to this definition">¶</a></dt>
+<dd><p>set index EditRole to value</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="trace.TraceModel.TraceModel.traceModelDataChanged">
+<code class="descname">traceModelDataChanged</code><a class="headerlink" href="#trace.TraceModel.TraceModel.traceModelDataChanged" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="trace.TraceModel.TraceModel.traceRemoved">
+<code class="descname">traceRemoved</code><a class="headerlink" href="#trace.TraceModel.TraceModel.traceRemoved" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="trace.TraceModel.TraceModel.windowChange">
+<code class="descname">windowChange</code><span class="sig-paren">(</span><em>index</em>, <em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.TraceModel.TraceModel.windowChange" title="Permalink to this definition">¶</a></dt>
+<dd><p>change the plot window on which the plottedTrace is displayed</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-trace.Traceui">
+<span id="traceui"></span><h2>Traceui<a class="headerlink" href="#module-trace.Traceui" title="Permalink to this headline">¶</a></h2>
+<p>Created on Fri Dec 28 18:40:30 2012</p>
+<p>&#64;author: pmaunz</p>
+<dl class="class">
+<dt id="trace.Traceui.Settings">
+<em class="property">class </em><code class="descname">Settings</code><span class="sig-paren">(</span><em>lastDir=None</em>, <em>plotstyle=0</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.Traceui.Settings" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class to hold Traceui settings</p>
+<dl class="attribute">
+<dt id="trace.Traceui.Settings.lastDir">
+<code class="descname">lastDir</code><a class="headerlink" href="#trace.Traceui.Settings.lastDir" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>str</em></p>
+<p>last directory from which traces were opened</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="trace.Traceui.Settings.plotStyle">
+<code class="descname">plotStyle</code><a class="headerlink" href="#trace.Traceui.Settings.plotStyle" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>int</em></p>
+<p>style to use for plotting new traces (i.e. lines, points, etc.)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="trace.Traceui.Settings.unplotLastTrace">
+<code class="descname">unplotLastTrace</code><a class="headerlink" href="#trace.Traceui.Settings.unplotLastTrace" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>bool</em></p>
+<p>whether last trace should be unplotted when new trace is created</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="trace.Traceui.Settings.collapseLastTrace">
+<code class="descname">collapseLastTrace</code><a class="headerlink" href="#trace.Traceui.Settings.collapseLastTrace" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>bool</em></p>
+<p>whether last set of traces should be collapsed in tree when new trace set is created</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="trace.Traceui.Settings.expandNew">
+<code class="descname">expandNew</code><a class="headerlink" href="#trace.Traceui.Settings.expandNew" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>bool</em></p>
+<p>whether new trace sets should be expanded when they are created</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="trace.Traceui.Traceui">
+<em class="property">class </em><code class="descname">Traceui</code><span class="sig-paren">(</span><em>penicons</em>, <em>config</em>, <em>experimentName</em>, <em>graphicsViewDict</em>, <em>parent=None</em>, <em>lastDir=None</em>, <em>hasMeasurementLog=False</em>, <em>highlightUnsaved=False</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.Traceui.Traceui" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class for the trace interface.
+.. attribute:: penicons</p>
+<blockquote>
+<div><p><em>list[QtGui.QIcon]</em></p>
+<p>icons to display available trace pens</p>
+</div></blockquote>
+<dl class="attribute">
+<dt id="trace.Traceui.Traceui.config">
+<code class="descname">config</code><a class="headerlink" href="#trace.Traceui.Traceui.config" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>configshelve</em></p>
+<p>configuration dictionary</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="trace.Traceui.Traceui.experimentName">
+<code class="descname">experimentName</code><a class="headerlink" href="#trace.Traceui.Traceui.experimentName" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>str</em></p>
+<p>name of experiment with which this Traceui is associated</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="trace.Traceui.Traceui.graphicsViewDict">
+<code class="descname">graphicsViewDict</code><a class="headerlink" href="#trace.Traceui.Traceui.graphicsViewDict" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>dict</em></p>
+<p>dict of available plot windows</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="trace.Traceui.Traceui.addTrace">
+<code class="descname">addTrace</code><span class="sig-paren">(</span><em>trace</em>, <em>pen</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.Traceui.Traceui.addTrace" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a trace to the model and plot it.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="trace.Traceui.Traceui.collapse">
+<code class="descname">collapse</code><span class="sig-paren">(</span><em>trace</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.Traceui.Traceui.collapse" title="Permalink to this definition">¶</a></dt>
+<dd><p>collapse node associated with trace</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="trace.Traceui.Traceui.collapseLastTrace">
+<code class="descname">collapseLastTrace</code><a class="headerlink" href="#trace.Traceui.Traceui.collapseLastTrace" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="trace.Traceui.Traceui.expand">
+<code class="descname">expand</code><span class="sig-paren">(</span><em>trace</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.Traceui.Traceui.expand" title="Permalink to this definition">¶</a></dt>
+<dd><p>expand node associated with trace</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="trace.Traceui.Traceui.expandNew">
+<code class="descname">expandNew</code><a class="headerlink" href="#trace.Traceui.Traceui.expandNew" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="trace.Traceui.Traceui.onActiveTraceChanged">
+<code class="descname">onActiveTraceChanged</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#trace.Traceui.Traceui.onActiveTraceChanged" title="Permalink to this definition">¶</a></dt>
+<dd><p>Display trace creation/finalized date/time when a trace is selected</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="trace.Traceui.Traceui.onApplyStyle">
+<code class="descname">onApplyStyle</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#trace.Traceui.Traceui.onApplyStyle" title="Permalink to this definition">¶</a></dt>
+<dd><p>Execute when apply style button is clicked. Changed style of selected traces.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="trace.Traceui.Traceui.onClearOrPlot">
+<code class="descname">onClearOrPlot</code><span class="sig-paren">(</span><em>changeType</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.Traceui.Traceui.onClearOrPlot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Execute when clear or plot action buttons are clicked.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="trace.Traceui.Traceui.onCollapseLastTrace">
+<code class="descname">onCollapseLastTrace</code><span class="sig-paren">(</span><em>checked</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.Traceui.Traceui.onCollapseLastTrace" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="trace.Traceui.Traceui.onExpandNew">
+<code class="descname">onExpandNew</code><span class="sig-paren">(</span><em>checked</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.Traceui.Traceui.onExpandNew" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="trace.Traceui.Traceui.onMeasurementLog">
+<code class="descname">onMeasurementLog</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#trace.Traceui.Traceui.onMeasurementLog" title="Permalink to this definition">¶</a></dt>
+<dd><p>Execute when open measurement log is clicked. Emit signal containing list of trace creation keys selected.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="trace.Traceui.Traceui.onOpenFile">
+<code class="descname">onOpenFile</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#trace.Traceui.Traceui.onOpenFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Execute when the open button is clicked. Open an existing trace file from disk.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="trace.Traceui.Traceui.onSave">
+<code class="descname">onSave</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#trace.Traceui.Traceui.onSave" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save button is clicked. Save selected traces. If a trace has never been saved before, update model.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="trace.Traceui.Traceui.onShowOnlyLast">
+<code class="descname">onShowOnlyLast</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#trace.Traceui.Traceui.onShowOnlyLast" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="trace.Traceui.Traceui.onUnplotSetting">
+<code class="descname">onUnplotSetting</code><span class="sig-paren">(</span><em>checked</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.Traceui.Traceui.onUnplotSetting" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="trace.Traceui.Traceui.onViewClicked">
+<code class="descname">onViewClicked</code><span class="sig-paren">(</span><em>index</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.Traceui.Traceui.onViewClicked" title="Permalink to this definition">¶</a></dt>
+<dd><p>If one of the editable columns is clicked, begin to edit it.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="trace.Traceui.Traceui.openFile">
+<code class="descname">openFile</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.Traceui.Traceui.openFile" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="trace.Traceui.Traceui.openMeasurementLog">
+<code class="descname">openMeasurementLog</code><a class="headerlink" href="#trace.Traceui.Traceui.openMeasurementLog" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="trace.Traceui.Traceui.resizeColumnsToContents">
+<code class="descname">resizeColumnsToContents</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#trace.Traceui.Traceui.resizeColumnsToContents" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="trace.Traceui.Traceui.saveConfig">
+<code class="descname">saveConfig</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#trace.Traceui.Traceui.saveConfig" title="Permalink to this definition">¶</a></dt>
+<dd><p>Execute when the UI is closed. Save the settings to the config file.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="trace.Traceui.Traceui.selectedRowIndexes">
+<code class="descname">selectedRowIndexes</code><span class="sig-paren">(</span><em>useLastIfNoSelection=True</em>, <em>allowUnplotted=True</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.Traceui.Traceui.selectedRowIndexes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return selected row indexes, modified according to the boolean controls</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="trace.Traceui.Traceui.selectedTraces">
+<code class="descname">selectedTraces</code><span class="sig-paren">(</span><em>useLastIfNoSelection=False</em>, <em>allowUnplotted=True</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.Traceui.Traceui.selectedTraces" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a list of the selected traces.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="trace.Traceui.Traceui.setPlotStyle">
+<code class="descname">setPlotStyle</code><span class="sig-paren">(</span><em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.Traceui.Traceui.setPlotStyle" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the plot style to &#8216;value&#8217;.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="trace.Traceui.Traceui.setupUi">
+<code class="descname">setupUi</code><span class="sig-paren">(</span><em>MainWindow</em><span class="sig-paren">)</span><a class="headerlink" href="#trace.Traceui.Traceui.setupUi" title="Permalink to this definition">¶</a></dt>
+<dd><p>Setup the UI. Create the model and the view. Connect all the buttons.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="trace.Traceui.Traceui.unplotLastTrace">
+<code class="descname">unplotLastTrace</code><a class="headerlink" href="#trace.Traceui.Traceui.unplotLastTrace" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="uiModules-doc.html" class="btn btn-neutral float-right" title="uiModules" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="scripting-doc.html" class="btn btn-neutral" title="scripting" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright .
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../',
+            VERSION:'0.8',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

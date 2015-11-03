@@ -1,0 +1,349 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>AWG.AWGDevices &mdash; IonControl 0.8 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="IonControl 0.8 documentation" href="../../index.html"/>
+        <link rel="up" title="Module code" href="../index.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> IonControl
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.8
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FPGAhardware.html">Hardware</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../manual/experimentUi_manual.html">User Manual</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../manual/instrumentLoggerUi_manual.html">Instrument Logger User Manual</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../code/codeDocs.html">Code Documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../index.html">IonControl</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+      
+    <li>AWG.AWGDevices</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for AWG.AWGDevices</h1><div class="highlight"><pre>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">Created on Jul 2, 2015</span>
+
+<span class="sd">@author: Geoffrey Ji</span>
+
+<span class="sd">AWG Devices are defined here. If a new AWG needs to be added, </span>
+<span class="sd">it must inherit AWGDevice and implement open, program, and close.</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="kn">from</span> <span class="nn">ctypes</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="kn">from</span> <span class="nn">modules.magnitude</span> <span class="kn">import</span> <span class="n">Magnitude</span>
+
+<span class="kn">from</span> <span class="nn">externalParameter.ExternalParameterBase</span> <span class="kn">import</span> <span class="n">ExternalParameterBase</span>
+<span class="kn">import</span> <span class="nn">modules.magnitude</span> <span class="kn">as</span> <span class="nn">magnitude</span>
+<span class="kn">from</span> <span class="nn">modules.Observable</span> <span class="kn">import</span> <span class="n">Observable</span>
+
+
+
+
+<div class="viewcode-block" id="AWGDevice"><a class="viewcode-back" href="../../code/AWG-doc.html#AWG.AWGDevices.AWGDevice">[docs]</a><span class="k">class</span> <span class="nc">AWGDevice</span><span class="p">(</span><span class="n">ExternalParameterBase</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The AWG does not fit into the external parameter framework,</span>
+<span class="sd">    but given a waveform, the variables can act as external</span>
+<span class="sd">    parameters. This class wraps a waveform into an external</span>
+<span class="sd">    parameter-based device.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">className</span> <span class="o">=</span> <span class="s">&quot;Generic AWG&quot;</span>
+    <span class="n">_outputChannels</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">_waveform</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="n">enabled</span> <span class="o">=</span> <span class="bp">False</span>
+    
+    <span class="c"># parent should be the AWGUi, which we read whether or not to modify the internal scan as well</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">name</span><span class="p">,</span><span class="n">config</span><span class="p">,</span><span class="n">waveform</span><span class="p">,</span><span class="n">parent</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="n">ExternalParameterBase</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">name</span><span class="p">,</span><span class="n">config</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setWaveform</span><span class="p">(</span><span class="n">waveform</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parent</span> <span class="o">=</span> <span class="n">parent</span>
+        
+<div class="viewcode-block" id="AWGDevice.setWaveform"><a class="viewcode-back" href="../../code/AWG-doc.html#AWG.AWGDevices.AWGDevice.setWaveform">[docs]</a>    <span class="k">def</span> <span class="nf">setWaveform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">waveform</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_waveform</span> <span class="o">=</span> <span class="n">waveform</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setDefaults</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">displayValueObservable</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">([(</span><span class="n">name</span><span class="p">,</span><span class="n">Observable</span><span class="p">())</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_outputChannels</span><span class="p">])</span>
+        <span class="n">vardict</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="s">&quot;&quot;</span> <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="s">&#39;value&#39;</span><span class="p">],</span> <span class="n">Magnitude</span><span class="p">))</span> <span class="ow">or</span> <span class="n">v</span><span class="p">[</span><span class="s">&#39;value&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">dimensionless</span><span class="p">()</span> <span class="k">else</span> \
+                      <span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="s">&#39;value&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot; &quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_waveform</span><span class="o">.</span><span class="n">vars</span><span class="o">.</span><span class="n">iteritems</span><span class="p">()}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_outputChannels</span> <span class="o">=</span> <span class="n">vardict</span>
+        <span class="k">for</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="ow">in</span> <span class="n">vardict</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_waveform</span><span class="o">.</span><span class="n">vars</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="s">&#39;value&#39;</span><span class="p">]</span>
+    </div>
+<div class="viewcode-block" id="AWGDevice.fullName"><a class="viewcode-back" href="../../code/AWG-doc.html#AWG.AWGDevices.AWGDevice.fullName">[docs]</a>    <span class="k">def</span> <span class="nf">fullName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">channel</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&quot;{0}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">channel</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="AWGDevice.scanParam"><a class="viewcode-back" href="../../code/AWG-doc.html#AWG.AWGDevices.AWGDevice.scanParam">[docs]</a>    <span class="k">def</span> <span class="nf">scanParam</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">setScanParam</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">scanParam</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="AWGDevice.setDefaults"><a class="viewcode-back" href="../../code/AWG-doc.html#AWG.AWGDevices.AWGDevice.setDefaults">[docs]</a>    <span class="k">def</span> <span class="nf">setDefaults</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">ExternalParameterBase</span><span class="o">.</span><span class="n">setDefaults</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s">&#39;stepsize&#39;</span> <span class="p">,</span> <span class="n">magnitude</span><span class="o">.</span><span class="n">mg</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="s">&#39;&#39;</span><span class="p">))</span>
+                </div>
+    <span class="k">def</span> <span class="nf">_setValue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">continuous</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_waveform</span><span class="o">.</span><span class="n">vars</span><span class="p">[</span><span class="n">channel</span><span class="p">][</span><span class="s">&#39;value&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">program</span><span class="p">(</span><span class="n">continuous</span><span class="p">)</span>
+        
+<div class="viewcode-block" id="AWGDevice.setValue"><a class="viewcode-back" href="../../code/AWG-doc.html#AWG.AWGDevices.AWGDevice.setValue">[docs]</a>    <span class="k">def</span> <span class="nf">setValue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">continuous</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This function returns True if the value is reached. Otherwise</span>
+<span class="sd">        it should return False. The user should call repeatedly until the intended value is reached</span>
+<span class="sd">        and True is returned.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_setValue</span><span class="p">(</span><span class="n">channel</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">continuous</span><span class="p">)</span>
+        
+        <span class="c">#self.setWaveform(self._waveform)</span>
+        
+        <span class="k">return</span> <span class="bp">True</span>
+        </div>
+<div class="viewcode-block" id="AWGDevice.paramDef"><a class="viewcode-back" href="../../code/AWG-doc.html#AWG.AWGDevices.AWGDevice.paramDef">[docs]</a>    <span class="k">def</span> <span class="nf">paramDef</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        return the parameter definition used by pyqtgraph parametertree to show the gui</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">superior</span> <span class="o">=</span> <span class="n">ExternalParameterBase</span><span class="o">.</span><span class="n">paramDef</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">superior</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s">&#39;name&#39;</span><span class="p">:</span> <span class="s">&#39;stepsize&#39;</span><span class="p">,</span> <span class="s">&#39;type&#39;</span><span class="p">:</span> <span class="s">&#39;magnitude&#39;</span><span class="p">,</span> <span class="s">&#39;value&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">stepsize</span><span class="p">})</span>
+        <span class="k">return</span> <span class="n">superior</span>
+        </div>
+<div class="viewcode-block" id="AWGDevice.isEnabled"><a class="viewcode-back" href="../../code/AWG-doc.html#AWG.AWGDevices.AWGDevice.isEnabled">[docs]</a>    <span class="k">def</span> <span class="nf">isEnabled</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">enabled</span>
+    </div>
+<div class="viewcode-block" id="AWGDevice.open"><a class="viewcode-back" href="../../code/AWG-doc.html#AWG.AWGDevices.AWGDevice.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s">&quot;Method must be implemented by specific AWG device class!&quot;</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="AWGDevice.program"><a class="viewcode-back" href="../../code/AWG-doc.html#AWG.AWGDevices.AWGDevice.program">[docs]</a>    <span class="k">def</span> <span class="nf">program</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">continuous</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s">&quot;Method must be implemented by specific AWG device class!&quot;</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="AWGDevice.close"><a class="viewcode-back" href="../../code/AWG-doc.html#AWG.AWGDevices.AWGDevice.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s">&quot;Method must be implemented by specific AWG device class!&quot;</span><span class="p">)</span>
+ </div></div>
+<div class="viewcode-block" id="ChaseDA12000"><a class="viewcode-back" href="../../code/AWG-doc.html#AWG.AWGDevices.ChaseDA12000">[docs]</a><span class="k">class</span> <span class="nc">ChaseDA12000</span><span class="p">(</span><span class="n">AWGDevice</span><span class="p">):</span>
+    <span class="n">className</span> <span class="o">=</span> <span class="s">&quot;Chase DA12000 AWG&quot;</span>
+    <span class="n">_dllName</span> <span class="o">=</span> <span class="s">&quot;DA12000_DLL64.dll&quot;</span>
+ 
+<div class="viewcode-block" id="ChaseDA12000.SEGMENT"><a class="viewcode-back" href="../../code/AWG-doc.html#AWG.AWGDevices.ChaseDA12000.SEGMENT">[docs]</a>    <span class="k">class</span> <span class="nc">SEGMENT</span><span class="p">(</span><span class="n">Structure</span><span class="p">):</span>
+        <span class="n">_fields_</span> <span class="o">=</span> <span class="p">[(</span><span class="s">&quot;SegmentNum&quot;</span><span class="p">,</span> <span class="n">c_ulong</span><span class="p">),</span>
+                    <span class="p">(</span><span class="s">&quot;SegmentPtr&quot;</span><span class="p">,</span> <span class="n">POINTER</span><span class="p">(</span><span class="n">c_ulong</span><span class="p">)),</span>
+                    <span class="p">(</span><span class="s">&quot;NumPoints&quot;</span><span class="p">,</span> <span class="n">c_ulong</span><span class="p">),</span>
+                    <span class="p">(</span><span class="s">&quot;NumLoops&quot;</span><span class="p">,</span> <span class="n">c_ulong</span><span class="p">),</span>
+                    <span class="p">(</span><span class="s">&quot;BeginPadVal &quot;</span><span class="p">,</span> <span class="n">c_ulong</span><span class="p">),</span> <span class="c"># Not used</span>
+                    <span class="p">(</span><span class="s">&quot;EndingPadVal&quot;</span><span class="p">,</span> <span class="n">c_ulong</span><span class="p">),</span> <span class="c"># Not used</span>
+                    <span class="p">(</span><span class="s">&quot;TrigEn&quot;</span><span class="p">,</span> <span class="n">c_ulong</span><span class="p">),</span>
+                    <span class="p">(</span><span class="s">&quot;NextSegNum&quot;</span><span class="p">,</span> <span class="n">c_ulong</span><span class="p">)]</span>
+    </div>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">da</span> <span class="o">=</span> <span class="n">WinDLL</span> <span class="p">(</span><span class="n">_dllName</span><span class="p">)</span>
+        <span class="n">enabled</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;{0} unavailable. Unable to open {1}.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">className</span><span class="p">,</span> <span class="n">_dllName</span><span class="p">))</span>
+        <span class="n">enabled</span> <span class="o">=</span> <span class="bp">False</span>
+
+<div class="viewcode-block" id="ChaseDA12000.open"><a class="viewcode-back" href="../../code/AWG-doc.html#AWG.AWGDevices.ChaseDA12000.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">ChaseDA12000</span><span class="o">.</span><span class="n">da</span><span class="o">.</span><span class="n">da12000_Open</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">enabled</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Unable to open {0}.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">className</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">enabled</span> <span class="o">=</span> <span class="bp">False</span>
+    </div>
+<div class="viewcode-block" id="ChaseDA12000.program"><a class="viewcode-back" href="../../code/AWG-doc.html#AWG.AWGDevices.ChaseDA12000.program">[docs]</a>    <span class="k">def</span> <span class="nf">program</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">continuous</span><span class="p">):</span>
+        <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">enabled</span><span class="p">:</span>
+            <span class="n">pts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_waveform</span><span class="o">.</span><span class="n">evaluate</span><span class="p">()</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;writing &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">pts</span><span class="p">))</span> <span class="o">+</span> <span class="s">&quot; points to AWG&quot;</span><span class="p">)</span>
+            <span class="n">seg_pts</span> <span class="o">=</span> <span class="p">(</span><span class="n">c_ulong</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">pts</span><span class="p">))(</span><span class="o">*</span><span class="n">pts</span><span class="p">)</span>
+            <span class="n">seg0</span> <span class="o">=</span> <span class="n">ChaseDA12000</span><span class="o">.</span><span class="n">SEGMENT</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">seg_pts</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">pts</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2048</span><span class="p">,</span> <span class="mi">2048</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="n">seg</span> <span class="o">=</span> <span class="p">(</span><span class="n">ChaseDA12000</span><span class="o">.</span><span class="n">SEGMENT</span><span class="o">*</span><span class="mi">1</span><span class="p">)(</span><span class="n">seg0</span><span class="p">)</span>
+
+            <span class="n">ChaseDA12000</span><span class="o">.</span><span class="n">da</span><span class="o">.</span><span class="n">da12000_CreateSegments</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">seg</span><span class="p">)</span>
+            <span class="n">ChaseDA12000</span><span class="o">.</span><span class="n">da</span><span class="o">.</span><span class="n">da12000_SetTriggerMode</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">continuous</span> <span class="k">else</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;{0} unavailable. Unable to program.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">className</span><span class="p">))</span> 
+</div>
+<div class="viewcode-block" id="ChaseDA12000.close"><a class="viewcode-back" href="../../code/AWG-doc.html#AWG.AWGDevices.ChaseDA12000.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">enabled</span><span class="p">:</span>
+            <span class="n">ChaseDA12000</span><span class="o">.</span><span class="n">da</span><span class="o">.</span><span class="n">da12000_Close</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        </div></div>
+<div class="viewcode-block" id="DummyAWG"><a class="viewcode-back" href="../../code/AWG-doc.html#AWG.AWGDevices.DummyAWG">[docs]</a><span class="k">class</span> <span class="nc">DummyAWG</span><span class="p">(</span><span class="n">AWGDevice</span><span class="p">):</span>
+    <span class="n">className</span> <span class="o">=</span> <span class="s">&quot;Dummy AWG&quot;</span>
+    
+<div class="viewcode-block" id="DummyAWG.open"><a class="viewcode-back" href="../../code/AWG-doc.html#AWG.AWGDevices.DummyAWG.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="k">pass</span></div>
+<div class="viewcode-block" id="DummyAWG.close"><a class="viewcode-back" href="../../code/AWG-doc.html#AWG.AWGDevices.DummyAWG.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="k">pass</span></div>
+<div class="viewcode-block" id="DummyAWG.program"><a class="viewcode-back" href="../../code/AWG-doc.html#AWG.AWGDevices.DummyAWG.program">[docs]</a>    <span class="k">def</span> <span class="nf">program</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">continuous</span><span class="p">):</span> <span class="k">pass</span>
+        
+        </div></div>
+<span class="n">AWGDeviceList</span> <span class="o">=</span> <span class="p">[</span><span class="n">ChaseDA12000</span><span class="p">,</span>
+                 <span class="n">DummyAWG</span>
+                 <span class="p">]</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright .
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'0.8',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

@@ -12,10 +12,10 @@ Contents:
    :maxdepth: 2
 
    installation
-   hardware
-   experimentUi_manual
-   instrumentLoggerUi_manual
-   docs
+   FPGAhardware
+   /manual/experimentUi_manual
+   /manual/instrumentLoggerUi_manual
+   /code/codeDocs
 
 Indices and tables
 ==================

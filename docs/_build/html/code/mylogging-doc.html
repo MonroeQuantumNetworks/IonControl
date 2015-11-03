@@ -1,0 +1,501 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>mylogging &mdash; IonControl 0.8 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="IonControl 0.8 documentation" href="../index.html"/>
+        <link rel="up" title="Code Documentation" href="codeDocs.html"/>
+        <link rel="next" title="persist" href="persist-doc.html"/>
+        <link rel="prev" title="modules" href="modules-doc.html"/> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> IonControl
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.8
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FPGAhardware.html">Hardware</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../manual/experimentUi_manual.html">User Manual</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../manual/instrumentLoggerUi_manual.html">Instrument Logger User Manual</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="codeDocs.html">Code Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="AWG-doc.html">AWG</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ProjectConfig-doc.html">ProjectConfig</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dedicatedCounters-doc.html">dedicatedCounters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="digitalLock-doc.html">digitalLock</a></li>
+<li class="toctree-l2"><a class="reference internal" href="externalParameter-doc.html">externalParameter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fit-doc.html">fit</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gateSequence-doc.html">gateSequence</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gui-doc.html">gui</a></li>
+<li class="toctree-l2"><a class="reference internal" href="logicAnalyzer-doc.html">logicAnalyzer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules-doc.html">modules</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="">mylogging</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#module-mylogging.ExceptionLogButton">ExceptionLogButton</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-mylogging.LoggerLevelsUi">LoggerLevelsUi</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-mylogging.LoggingSetup">LoggingSetup</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-mylogging.ServerLogging">ServerLogging</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="persist-doc.html">persist</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pppCompiler-doc.html">pppCompiler</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pulseProgram-doc.html">pulseProgram</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pulser-doc.html">pulser</a></li>
+<li class="toctree-l2"><a class="reference internal" href="scan-doc.html">scan</a></li>
+<li class="toctree-l2"><a class="reference internal" href="scripting-doc.html">scripting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="trace-doc.html">trace</a></li>
+<li class="toctree-l2"><a class="reference internal" href="uiModules-doc.html">uiModules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="voltageControl-doc.html">voltageControl</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DigitalLockUi-doc.html">DigitalLockUi</a></li>
+<li class="toctree-l2"><a class="reference internal" href="InstrumentLoggingUi-doc.html">InstrumentLoggingUi</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ExperimentUi-doc.html">ExperimentUi</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../index.html">IonControl</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="codeDocs.html">Code Documentation</a> &raquo;</li>
+      
+    <li>mylogging</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/code/mylogging-doc.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="mylogging">
+<h1>mylogging<a class="headerlink" href="#mylogging" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-mylogging.ExceptionLogButton">
+<span id="exceptionlogbutton"></span><h2>ExceptionLogButton<a class="headerlink" href="#module-mylogging.ExceptionLogButton" title="Permalink to this headline">¶</a></h2>
+<p>Created on Fri Apr 12 20:15:47 2013</p>
+<p>&#64;author: pmaunz</p>
+<dl class="class">
+<dt id="mylogging.ExceptionLogButton.ExceptionLogButton">
+<em class="property">class </em><code class="descname">ExceptionLogButton</code><span class="sig-paren">(</span><em>parent=None</em><span class="sig-paren">)</span><a class="headerlink" href="#mylogging.ExceptionLogButton.ExceptionLogButton" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="mylogging.ExceptionLogButton.ExceptionLogButton.excepthookSlot">
+<code class="descname">excepthookSlot</code><span class="sig-paren">(</span><em>exceptinfo</em><span class="sig-paren">)</span><a class="headerlink" href="#mylogging.ExceptionLogButton.ExceptionLogButton.excepthookSlot" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mylogging.ExceptionLogButton.ExceptionLogButton.myexcepthook">
+<code class="descname">myexcepthook</code><span class="sig-paren">(</span><em>excepttype</em>, <em>value</em>, <em>tback</em><span class="sig-paren">)</span><a class="headerlink" href="#mylogging.ExceptionLogButton.ExceptionLogButton.myexcepthook" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="mylogging.ExceptionLogButton.ExceptionMessage">
+<em class="property">class </em><code class="descname">ExceptionMessage</code><span class="sig-paren">(</span><em>message</em>, <em>parent=None</em>, <em>showTime=True</em><span class="sig-paren">)</span><a class="headerlink" href="#mylogging.ExceptionLogButton.ExceptionMessage" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="mylogging.ExceptionLogButton.ExceptionMessage.increaseCount">
+<code class="descname">increaseCount</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mylogging.ExceptionLogButton.ExceptionMessage.increaseCount" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mylogging.ExceptionLogButton.ExceptionMessage.messageText">
+<code class="descname">messageText</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mylogging.ExceptionLogButton.ExceptionMessage.messageText" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mylogging.ExceptionLogButton.ExceptionMessage.setupUi">
+<code class="descname">setupUi</code><span class="sig-paren">(</span><em>parent</em><span class="sig-paren">)</span><a class="headerlink" href="#mylogging.ExceptionLogButton.ExceptionMessage.setupUi" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="mylogging.ExceptionLogButton.LogButton">
+<em class="property">class </em><code class="descname">LogButton</code><span class="sig-paren">(</span><em>parent=None</em>, <em>noMessageIcon=None</em>, <em>messageIcon=None</em>, <em>maxMessages=None</em>, <em>messageName=None</em><span class="sig-paren">)</span><a class="headerlink" href="#mylogging.ExceptionLogButton.LogButton" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="mylogging.ExceptionLogButton.LogButton.addClearAllAction">
+<code class="descname">addClearAllAction</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mylogging.ExceptionLogButton.LogButton.addClearAllAction" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mylogging.ExceptionLogButton.LogButton.addMessage">
+<code class="descname">addMessage</code><span class="sig-paren">(</span><em>message</em><span class="sig-paren">)</span><a class="headerlink" href="#mylogging.ExceptionLogButton.LogButton.addMessage" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mylogging.ExceptionLogButton.LogButton.removeAll">
+<code class="descname">removeAll</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mylogging.ExceptionLogButton.LogButton.removeAll" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mylogging.ExceptionLogButton.LogButton.removeMessage">
+<code class="descname">removeMessage</code><span class="sig-paren">(</span><em>action</em><span class="sig-paren">)</span><a class="headerlink" href="#mylogging.ExceptionLogButton.LogButton.removeMessage" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-mylogging.LoggerLevelsUi">
+<span id="loggerlevelsui"></span><h2>LoggerLevelsUi<a class="headerlink" href="#module-mylogging.LoggerLevelsUi" title="Permalink to this headline">¶</a></h2>
+<p>Created on Sat Feb 09 22:00:58 2013</p>
+<p>&#64;author: pmaunz</p>
+<dl class="class">
+<dt id="mylogging.LoggerLevelsUi.LoggerLevelsTableModel">
+<em class="property">class </em><code class="descname">LoggerLevelsTableModel</code><span class="sig-paren">(</span><em>config</em>, <em>parent=None</em>, <em>*args</em><span class="sig-paren">)</span><a class="headerlink" href="#mylogging.LoggerLevelsUi.LoggerLevelsTableModel" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="mylogging.LoggerLevelsUi.LoggerLevelsTableModel.choice">
+<code class="descname">choice</code><span class="sig-paren">(</span><em>index</em><span class="sig-paren">)</span><a class="headerlink" href="#mylogging.LoggerLevelsUi.LoggerLevelsTableModel.choice" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mylogging.LoggerLevelsUi.LoggerLevelsTableModel.columnCount">
+<code class="descname">columnCount</code><span class="sig-paren">(</span><em>parent=&lt;PyQt4.QtCore.QModelIndex object at 0x000000000C128B38&gt;</em><span class="sig-paren">)</span><a class="headerlink" href="#mylogging.LoggerLevelsUi.LoggerLevelsTableModel.columnCount" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mylogging.LoggerLevelsUi.LoggerLevelsTableModel.data">
+<code class="descname">data</code><span class="sig-paren">(</span><em>index</em>, <em>role</em><span class="sig-paren">)</span><a class="headerlink" href="#mylogging.LoggerLevelsUi.LoggerLevelsTableModel.data" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mylogging.LoggerLevelsUi.LoggerLevelsTableModel.flags">
+<code class="descname">flags</code><span class="sig-paren">(</span><em>index</em><span class="sig-paren">)</span><a class="headerlink" href="#mylogging.LoggerLevelsUi.LoggerLevelsTableModel.flags" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="mylogging.LoggerLevelsUi.LoggerLevelsTableModel.flagsLookup">
+<code class="descname">flagsLookup</code><em class="property"> = [&lt;PyQt4.QtCore.ItemFlags object at 0x000000000C128DD8&gt;, &lt;PyQt4.QtCore.ItemFlags object at 0x000000000C128EB8&gt;]</em><a class="headerlink" href="#mylogging.LoggerLevelsUi.LoggerLevelsTableModel.flagsLookup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mylogging.LoggerLevelsUi.LoggerLevelsTableModel.headerData">
+<code class="descname">headerData</code><span class="sig-paren">(</span><em>section</em>, <em>orientation</em>, <em>role</em><span class="sig-paren">)</span><a class="headerlink" href="#mylogging.LoggerLevelsUi.LoggerLevelsTableModel.headerData" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mylogging.LoggerLevelsUi.LoggerLevelsTableModel.rowCount">
+<code class="descname">rowCount</code><span class="sig-paren">(</span><em>parent=&lt;PyQt4.QtCore.QModelIndex object at 0x000000000C128A58&gt;</em><span class="sig-paren">)</span><a class="headerlink" href="#mylogging.LoggerLevelsUi.LoggerLevelsTableModel.rowCount" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mylogging.LoggerLevelsUi.LoggerLevelsTableModel.saveConfig">
+<code class="descname">saveConfig</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mylogging.LoggerLevelsUi.LoggerLevelsTableModel.saveConfig" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mylogging.LoggerLevelsUi.LoggerLevelsTableModel.setData">
+<code class="descname">setData</code><span class="sig-paren">(</span><em>index</em>, <em>value</em>, <em>role</em><span class="sig-paren">)</span><a class="headerlink" href="#mylogging.LoggerLevelsUi.LoggerLevelsTableModel.setData" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mylogging.LoggerLevelsUi.LoggerLevelsTableModel.setLevel">
+<code class="descname">setLevel</code><span class="sig-paren">(</span><em>index</em>, <em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#mylogging.LoggerLevelsUi.LoggerLevelsTableModel.setLevel" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mylogging.LoggerLevelsUi.LoggerLevelsTableModel.setValue">
+<code class="descname">setValue</code><span class="sig-paren">(</span><em>index</em>, <em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#mylogging.LoggerLevelsUi.LoggerLevelsTableModel.setValue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mylogging.LoggerLevelsUi.LoggerLevelsTableModel.sort">
+<code class="descname">sort</code><span class="sig-paren">(</span><em>column</em>, <em>order</em><span class="sig-paren">)</span><a class="headerlink" href="#mylogging.LoggerLevelsUi.LoggerLevelsTableModel.sort" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mylogging.LoggerLevelsUi.LoggerLevelsTableModel.update">
+<code class="descname">update</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mylogging.LoggerLevelsUi.LoggerLevelsTableModel.update" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="mylogging.LoggerLevelsUi.LoggerLevelsUi">
+<em class="property">class </em><code class="descname">LoggerLevelsUi</code><span class="sig-paren">(</span><em>config</em>, <em>parent=None</em><span class="sig-paren">)</span><a class="headerlink" href="#mylogging.LoggerLevelsUi.LoggerLevelsUi" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="mylogging.LoggerLevelsUi.LoggerLevelsUi.edit">
+<code class="descname">edit</code><span class="sig-paren">(</span><em>index</em><span class="sig-paren">)</span><a class="headerlink" href="#mylogging.LoggerLevelsUi.LoggerLevelsUi.edit" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mylogging.LoggerLevelsUi.LoggerLevelsUi.saveConfig">
+<code class="descname">saveConfig</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mylogging.LoggerLevelsUi.LoggerLevelsUi.saveConfig" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mylogging.LoggerLevelsUi.LoggerLevelsUi.setupUi">
+<code class="descname">setupUi</code><span class="sig-paren">(</span><em>parent</em>, <em>dynupdate=False</em><span class="sig-paren">)</span><a class="headerlink" href="#mylogging.LoggerLevelsUi.LoggerLevelsUi.setupUi" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-mylogging.LoggingSetup">
+<span id="loggingsetup"></span><h2>LoggingSetup<a class="headerlink" href="#module-mylogging.LoggingSetup" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="mylogging.LoggingSetup.LevelFilter">
+<em class="property">class </em><code class="descname">LevelFilter</code><span class="sig-paren">(</span><em>passlevel</em><span class="sig-paren">)</span><a class="headerlink" href="#mylogging.LoggingSetup.LevelFilter" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="mylogging.LoggingSetup.LevelFilter.filter">
+<code class="descname">filter</code><span class="sig-paren">(</span><em>record</em><span class="sig-paren">)</span><a class="headerlink" href="#mylogging.LoggingSetup.LevelFilter.filter" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="mylogging.LoggingSetup.LevelListFilter">
+<em class="property">class </em><code class="descname">LevelListFilter</code><span class="sig-paren">(</span><em>passlevellist</em><span class="sig-paren">)</span><a class="headerlink" href="#mylogging.LoggingSetup.LevelListFilter" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="mylogging.LoggingSetup.LevelListFilter.filter">
+<code class="descname">filter</code><span class="sig-paren">(</span><em>record</em><span class="sig-paren">)</span><a class="headerlink" href="#mylogging.LoggingSetup.LevelListFilter.filter" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="mylogging.LoggingSetup.LevelThresholdFilter">
+<em class="property">class </em><code class="descname">LevelThresholdFilter</code><span class="sig-paren">(</span><em>passlevel</em>, <em>reject</em><span class="sig-paren">)</span><a class="headerlink" href="#mylogging.LoggingSetup.LevelThresholdFilter" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="mylogging.LoggingSetup.LevelThresholdFilter.filter">
+<code class="descname">filter</code><span class="sig-paren">(</span><em>record</em><span class="sig-paren">)</span><a class="headerlink" href="#mylogging.LoggingSetup.LevelThresholdFilter.filter" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="mylogging.LoggingSetup.QtLoggingHandler">
+<em class="property">class </em><code class="descname">QtLoggingHandler</code><a class="headerlink" href="#mylogging.LoggingSetup.QtLoggingHandler" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="mylogging.LoggingSetup.QtLoggingHandler.emit">
+<code class="descname">emit</code><span class="sig-paren">(</span><em>record</em><span class="sig-paren">)</span><a class="headerlink" href="#mylogging.LoggingSetup.QtLoggingHandler.emit" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="mylogging.LoggingSetup.QtLoggingHandler.textWritten">
+<code class="descname">textWritten</code><a class="headerlink" href="#mylogging.LoggingSetup.QtLoggingHandler.textWritten" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="mylogging.LoggingSetup.QtWarningButtonHandler">
+<em class="property">class </em><code class="descname">QtWarningButtonHandler</code><a class="headerlink" href="#mylogging.LoggingSetup.QtWarningButtonHandler" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="mylogging.LoggingSetup.QtWarningButtonHandler.emit">
+<code class="descname">emit</code><span class="sig-paren">(</span><em>record</em><span class="sig-paren">)</span><a class="headerlink" href="#mylogging.LoggingSetup.QtWarningButtonHandler.emit" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="mylogging.LoggingSetup.QtWarningButtonHandler.textWritten">
+<code class="descname">textWritten</code><a class="headerlink" href="#mylogging.LoggingSetup.QtWarningButtonHandler.textWritten" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="mylogging.LoggingSetup.setErrorFilename">
+<code class="descname">setErrorFilename</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="headerlink" href="#mylogging.LoggingSetup.setErrorFilename" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="mylogging.LoggingSetup.setTraceFilename">
+<code class="descname">setTraceFilename</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="headerlink" href="#mylogging.LoggingSetup.setTraceFilename" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="mylogging.LoggingSetup.trace">
+<code class="descname">trace</code><span class="sig-paren">(</span><em>self</em>, <em>message</em>, <em>*args</em>, <em>**kws</em><span class="sig-paren">)</span><a class="headerlink" href="#mylogging.LoggingSetup.trace" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-mylogging.ServerLogging">
+<span id="serverlogging"></span><h2>ServerLogging<a class="headerlink" href="#module-mylogging.ServerLogging" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="mylogging.ServerLogging.QueueHandler">
+<em class="property">class </em><code class="descname">QueueHandler</code><span class="sig-paren">(</span><em>queue</em><span class="sig-paren">)</span><a class="headerlink" href="#mylogging.ServerLogging.QueueHandler" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is a logging handler which sends events to a multiprocessing queue.</p>
+<p>The plan is to add it to Python 3.2, but this can be copy pasted into
+user code for use with earlier Python versions.</p>
+<dl class="method">
+<dt id="mylogging.ServerLogging.QueueHandler.emit">
+<code class="descname">emit</code><span class="sig-paren">(</span><em>record</em><span class="sig-paren">)</span><a class="headerlink" href="#mylogging.ServerLogging.QueueHandler.emit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Emit a record.</p>
+<p>Writes the LogRecord to the queue.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="mylogging.ServerLogging.configureServerLogging">
+<code class="descname">configureServerLogging</code><span class="sig-paren">(</span><em>queue</em><span class="sig-paren">)</span><a class="headerlink" href="#mylogging.ServerLogging.configureServerLogging" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="persist-doc.html" class="btn btn-neutral float-right" title="persist" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="modules-doc.html" class="btn btn-neutral" title="modules" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright .
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../',
+            VERSION:'0.8',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

@@ -1,0 +1,422 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>dedicatedCounters.DedicatedCounters &mdash; IonControl 0.8 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="IonControl 0.8 documentation" href="../../index.html"/>
+        <link rel="up" title="Module code" href="../index.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> IonControl
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.8
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FPGAhardware.html">Hardware</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../manual/experimentUi_manual.html">User Manual</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../manual/instrumentLoggerUi_manual.html">Instrument Logger User Manual</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../code/codeDocs.html">Code Documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../index.html">IonControl</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+      
+    <li>dedicatedCounters.DedicatedCounters</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for dedicatedCounters.DedicatedCounters</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Created on Sat Feb 16 16:56:57 2013</span>
+
+<span class="sd">@author: pmaunz</span>
+
+<span class="sd">DedicatedCounters reads and displays the counts from the simple counters and ADCs.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">PyQt4</span> <span class="kn">import</span> <span class="n">QtCore</span><span class="p">,</span> <span class="n">QtGui</span>
+<span class="kn">import</span> <span class="nn">PyQt4.uic</span>
+<span class="kn">import</span> <span class="nn">numpy</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="kn">from</span> <span class="nn">dedicatedCounters</span> <span class="kn">import</span> <span class="n">AutoLoad</span>
+<span class="kn">from</span> <span class="nn">dedicatedCounters</span> <span class="kn">import</span> <span class="n">DedicatedCountersSettings</span>
+<span class="kn">from</span> <span class="nn">dedicatedCounters</span> <span class="kn">import</span> <span class="n">DedicatedDisplay</span>
+<span class="kn">from</span> <span class="nn">dedicatedCounters</span> <span class="kn">import</span> <span class="n">InputCalibrationUi</span>
+<span class="kn">from</span> <span class="nn">modules</span> <span class="kn">import</span> <span class="n">enum</span>
+<span class="kn">from</span> <span class="nn">trace.TraceCollection</span> <span class="kn">import</span> <span class="n">TraceCollection</span><span class="p">,</span> <span class="n">TracePlotting</span>
+<span class="kn">from</span> <span class="nn">modules.DataDirectory</span> <span class="kn">import</span> <span class="n">DataDirectory</span>
+<span class="kn">from</span> <span class="nn">trace.pens</span> <span class="kn">import</span> <span class="n">penList</span>
+<span class="kn">from</span> <span class="nn">dedicatedCounters.StatusDisplay</span> <span class="kn">import</span> <span class="n">StatusDisplay</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="n">uipath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">__file__</span><span class="p">),</span> <span class="s">&#39;..&#39;</span><span class="p">,</span> <span class="s">r&#39;ui</span><span class="se">\\</span><span class="s">DedicatedCounters.ui&#39;</span><span class="p">)</span>
+<span class="n">DedicatedCountersForm</span><span class="p">,</span> <span class="n">DedicatedCountersBase</span> <span class="o">=</span> <span class="n">PyQt4</span><span class="o">.</span><span class="n">uic</span><span class="o">.</span><span class="n">loadUiType</span><span class="p">(</span><span class="n">uipath</span><span class="p">)</span>
+
+<span class="c">#curvecolors = [ &#39;b&#39;, &#39;g&#39;, &#39;r&#39;, &#39;b&#39;, &#39;c&#39;, &#39;m&#39;, &#39;y&#39;, &#39;g&#39; ]</span>
+
+<div class="viewcode-block" id="Settings"><a class="viewcode-back" href="../../code/dedicatedCounters-doc.html#dedicatedCounters.DedicatedCounters.Settings">[docs]</a><span class="k">class</span> <span class="nc">Settings</span><span class="p">:</span>
+    <span class="k">pass</span>
+</div>
+<div class="viewcode-block" id="DedicatedCounters"><a class="viewcode-back" href="../../code/dedicatedCounters-doc.html#dedicatedCounters.DedicatedCounters.DedicatedCounters">[docs]</a><span class="k">class</span> <span class="nc">DedicatedCounters</span><span class="p">(</span><span class="n">DedicatedCountersForm</span><span class="p">,</span><span class="n">DedicatedCountersBase</span> <span class="p">):</span>
+    <span class="n">dataAvailable</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">pyqtSignal</span><span class="p">(</span> <span class="nb">object</span> <span class="p">)</span>
+    <span class="n">OpStates</span> <span class="o">=</span> <span class="n">enum</span><span class="o">.</span><span class="n">enum</span><span class="p">(</span><span class="s">&#39;idle&#39;</span><span class="p">,</span><span class="s">&#39;running&#39;</span><span class="p">,</span><span class="s">&#39;paused&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">config</span><span class="p">,</span><span class="n">dbConnection</span><span class="p">,</span><span class="n">pulserHardware</span><span class="p">,</span><span class="n">globalVariablesUi</span><span class="p">,</span><span class="n">externalInstrumentObservable</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="n">DedicatedCountersForm</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">DedicatedCountersBase</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">parent</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataSlotConnected</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">settings</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;DedicatedCounter.Settings&#39;</span><span class="p">,</span><span class="n">Settings</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pulserHardware</span> <span class="o">=</span> <span class="n">pulserHardware</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OpStates</span><span class="o">.</span><span class="n">idle</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">xData</span> <span class="o">=</span> <span class="p">[</span><span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([])]</span><span class="o">*</span><span class="mi">8</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">yData</span> <span class="o">=</span> <span class="p">[</span><span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([])]</span><span class="o">*</span><span class="mi">8</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">integrationTime</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">integrationTimeLookup</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tick</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">analogCalbrations</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">globalVariablesUi</span> <span class="o">=</span> <span class="n">globalVariablesUi</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">externalInstrumentObservable</span> <span class="o">=</span> <span class="n">externalInstrumentObservable</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dbConnection</span> <span class="o">=</span> <span class="n">dbConnection</span>
+<span class="c">#        [</span>
+<span class="c">#            AnalogInputCalibration.PowerDetectorCalibration(),</span>
+<span class="c">#            AnalogInputCalibration.PowerDetectorCalibrationTwo(),</span>
+<span class="c">#            AnalogInputCalibration.AnalogInputCalibration(),</span>
+<span class="c">#            AnalogInputCalibration.AnalogInputCalibration() ]</span>
+
+<div class="viewcode-block" id="DedicatedCounters.setupUi"><a class="viewcode-back" href="../../code/dedicatedCounters-doc.html#dedicatedCounters.DedicatedCounters.DedicatedCounters.setupUi">[docs]</a>    <span class="k">def</span> <span class="nf">setupUi</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+        <span class="n">DedicatedCountersForm</span><span class="o">.</span><span class="n">setupUi</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">parent</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">actionSave</span><span class="o">.</span><span class="n">triggered</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">onSave</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">actionClear</span><span class="o">.</span><span class="n">triggered</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">onClear</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">actionStart</span><span class="o">.</span><span class="n">triggered</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">onStart</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">actionStop</span><span class="o">.</span><span class="n">triggered</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">onStop</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">settingsUi</span> <span class="o">=</span> <span class="n">DedicatedCountersSettings</span><span class="o">.</span><span class="n">DedicatedCountersSettings</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">settingsUi</span><span class="o">.</span><span class="n">setupUi</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">settingsUi</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">settingsDock</span><span class="o">.</span><span class="n">setWidget</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">settingsUi</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">settingsUi</span><span class="o">.</span><span class="n">valueChanged</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">onSettingsChanged</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">settings</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">settingsUi</span><span class="o">.</span><span class="n">settings</span>
+        <span class="c"># Input Calibrations        </span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">calibrationUi</span> <span class="o">=</span> <span class="n">InputCalibrationUi</span><span class="o">.</span><span class="n">InputCalibrationUi</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">calibrationUi</span><span class="o">.</span><span class="n">setupUi</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">calibrationUi</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">calibrationDock</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QDockWidget</span><span class="p">(</span><span class="s">&quot;Input Calibration&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">calibrationDock</span><span class="o">.</span><span class="n">setObjectName</span><span class="p">(</span><span class="s">&quot;Input Calibration&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">calibrationDock</span><span class="o">.</span><span class="n">setWidget</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">calibrationUi</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">addDockWidget</span><span class="p">(</span><span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">RightDockWidgetArea</span> <span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">calibrationDock</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">analogCalbrations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calibrationUi</span><span class="o">.</span><span class="n">calibrations</span>
+        <span class="c"># Display Channels 0-3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">displayUi</span> <span class="o">=</span> <span class="n">DedicatedDisplay</span><span class="o">.</span><span class="n">DedicatedDisplay</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span><span class="s">&quot;Channel 0-3&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">displayUi</span><span class="o">.</span><span class="n">setupUi</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">displayUi</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">displayDock</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QDockWidget</span><span class="p">(</span><span class="s">&quot;Channel 0-3&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">displayDock</span><span class="o">.</span><span class="n">setObjectName</span><span class="p">(</span><span class="s">&quot;Channel 0-3&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">displayDock</span><span class="o">.</span><span class="n">setWidget</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">displayUi</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">addDockWidget</span><span class="p">(</span><span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">RightDockWidgetArea</span> <span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">displayDock</span><span class="p">)</span>
+        <span class="c"># Display Channel 4-7</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">displayUi2</span> <span class="o">=</span> <span class="n">DedicatedDisplay</span><span class="o">.</span><span class="n">DedicatedDisplay</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span><span class="s">&quot;Channel 4-7&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">displayUi2</span><span class="o">.</span><span class="n">setupUi</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">displayUi2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">displayDock2</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QDockWidget</span><span class="p">(</span><span class="s">&quot;Channel 4-7&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">displayDock2</span><span class="o">.</span><span class="n">setObjectName</span><span class="p">(</span><span class="s">&quot;Channel 4-7&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">displayDock2</span><span class="o">.</span><span class="n">setWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">displayUi2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">addDockWidget</span><span class="p">(</span><span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">RightDockWidgetArea</span> <span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">displayDock2</span><span class="p">)</span>
+        <span class="c"># Display ADC 0-3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">displayUiADC</span> <span class="o">=</span> <span class="n">DedicatedDisplay</span><span class="o">.</span><span class="n">DedicatedDisplay</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span><span class="s">&quot;Analog Channels&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">displayUiADC</span><span class="o">.</span><span class="n">setupUi</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">displayUiADC</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">displayDockADC</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QDockWidget</span><span class="p">(</span><span class="s">&quot;Analog Channels&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">displayDockADC</span><span class="o">.</span><span class="n">setObjectName</span><span class="p">(</span><span class="s">&quot;Analog Channels&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">displayDockADC</span><span class="o">.</span><span class="n">setWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">displayUiADC</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">addDockWidget</span><span class="p">(</span><span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">RightDockWidgetArea</span> <span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">displayDockADC</span><span class="p">)</span>
+        <span class="c"># Arrange the dock widgets</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tabifyDockWidget</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">displayDockADC</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">displayDock2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tabifyDockWidget</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">displayDock2</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">displayDock</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tabifyDockWidget</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">calibrationDock</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">settingsDock</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">calibrationDock</span><span class="o">.</span><span class="n">hide</span><span class="p">()</span>        
+        <span class="c"># AutoLoad</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">autoLoad</span> <span class="o">=</span> <span class="n">AutoLoad</span><span class="o">.</span><span class="n">AutoLoad</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dbConnection</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pulserHardware</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dataAvailable</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">globalVariablesUi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">externalInstrumentObservable</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">autoLoad</span><span class="o">.</span><span class="n">setupUi</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">autoLoad</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">autoLoadDock</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QDockWidget</span><span class="p">(</span><span class="s">&quot;Auto Loader&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">autoLoadDock</span><span class="o">.</span><span class="n">setObjectName</span><span class="p">(</span><span class="s">&quot;Auto Loader&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">autoLoadDock</span><span class="o">.</span><span class="n">setWidget</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">autoLoad</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">addDockWidget</span><span class="p">(</span><span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">LeftDockWidgetArea</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">autoLoadDock</span><span class="p">)</span>
+        <span class="c"># external Status display</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">statusDisplay</span> <span class="o">=</span> <span class="n">StatusDisplay</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">statusDisplay</span><span class="o">.</span><span class="n">setupUi</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">statusDisplay</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">statusDock</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QDockWidget</span><span class="p">(</span><span class="s">&quot;Status display&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">statusDock</span><span class="o">.</span><span class="n">setObjectName</span><span class="p">(</span><span class="s">&quot;Status display&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">statusDock</span><span class="o">.</span><span class="n">setWidget</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">statusDisplay</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">addDockWidget</span><span class="p">(</span><span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">LeftDockWidgetArea</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">statusDock</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">curves</span> <span class="o">=</span> <span class="p">[</span><span class="bp">None</span><span class="p">]</span><span class="o">*</span><span class="mi">8</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_graphicsView</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">graphicsLayout</span><span class="o">.</span><span class="n">_graphicsView</span>
+        <span class="k">if</span> <span class="s">&#39;DedicatedCounter.MainWindow.State&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">:</span>
+            <span class="n">QtGui</span><span class="o">.</span><span class="n">QMainWindow</span><span class="o">.</span><span class="n">restoreState</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;DedicatedCounter.MainWindow.State&#39;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">onSettingsChanged</span><span class="p">()</span>
+                </div>
+<div class="viewcode-block" id="DedicatedCounters.onSettingsChanged"><a class="viewcode-back" href="../../code/dedicatedCounters-doc.html#dedicatedCounters.DedicatedCounters.DedicatedCounters.onSettingsChanged">[docs]</a>    <span class="k">def</span> <span class="nf">onSettingsChanged</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">integrationTimeLookup</span><span class="p">[</span> <span class="bp">self</span><span class="o">.</span><span class="n">pulserHardware</span><span class="o">.</span><span class="n">getIntegrationTimeBinary</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">integrationTime</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xffffff</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">integrationTime</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pulserHardware</span><span class="o">.</span><span class="n">integrationTime</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">integrationTime</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">settings</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">settingsUi</span><span class="o">.</span><span class="n">settings</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="o">==</span><span class="bp">self</span><span class="o">.</span><span class="n">OpStates</span><span class="o">.</span><span class="n">running</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pulserHardware</span><span class="o">.</span><span class="n">counterMask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">counterMask</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pulserHardware</span><span class="o">.</span><span class="n">adcMask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">adcMask</span>
+        <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">8</span><span class="p">):</span> 
+            <span class="n">show</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">counterMask</span> <span class="o">&amp;</span> <span class="p">(</span><span class="mi">1</span><span class="o">&lt;&lt;</span><span class="n">index</span><span class="p">)</span>
+            <span class="k">if</span>  <span class="n">show</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">curves</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">curves</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_graphicsView</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">pen</span><span class="o">=</span><span class="n">penList</span><span class="p">[</span><span class="n">index</span><span class="o">+</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">elif</span> <span class="p">(</span><span class="ow">not</span> <span class="n">show</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">curves</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_graphicsView</span><span class="o">.</span><span class="n">removeItem</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">curves</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">curves</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="bp">None</span>
+                </div>
+<div class="viewcode-block" id="DedicatedCounters.saveConfig"><a class="viewcode-back" href="../../code/dedicatedCounters-doc.html#dedicatedCounters.DedicatedCounters.DedicatedCounters.saveConfig">[docs]</a>    <span class="k">def</span> <span class="nf">saveConfig</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;DedicatedCounter.pos&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;DedicatedCounter.size&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;DedicatedCounter.Settings&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;DedicatedCounter.MainWindow.State&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QMainWindow</span><span class="o">.</span><span class="n">saveState</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">autoLoad</span><span class="o">.</span><span class="n">saveConfig</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">calibrationUi</span><span class="o">.</span><span class="n">saveConfig</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">settingsUi</span><span class="o">.</span><span class="n">saveConfig</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">statusDisplay</span><span class="o">.</span><span class="n">saveConfig</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="DedicatedCounters.onClose"><a class="viewcode-back" href="../../code/dedicatedCounters-doc.html#dedicatedCounters.DedicatedCounters.DedicatedCounters.onClose">[docs]</a>    <span class="k">def</span> <span class="nf">onClose</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">autoLoad</span><span class="o">.</span><span class="n">onClose</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="DedicatedCounters.closeEvent"><a class="viewcode-back" href="../../code/dedicatedCounters-doc.html#dedicatedCounters.DedicatedCounters.DedicatedCounters.closeEvent">[docs]</a>    <span class="k">def</span> <span class="nf">closeEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">e</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">onClose</span><span class="p">()</span>
+        </div>
+<div class="viewcode-block" id="DedicatedCounters.reject"><a class="viewcode-back" href="../../code/dedicatedCounters-doc.html#dedicatedCounters.DedicatedCounters.DedicatedCounters.reject">[docs]</a>    <span class="k">def</span> <span class="nf">reject</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;DedicatedCounter.pos&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;DedicatedCounter.size&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pulserHardware</span><span class="o">.</span><span class="n">dedicatedDataAvailable</span><span class="o">.</span><span class="n">disconnect</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">onData</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hide</span><span class="p">()</span>
+        </div>
+<div class="viewcode-block" id="DedicatedCounters.show"><a class="viewcode-back" href="../../code/dedicatedCounters-doc.html#dedicatedCounters.DedicatedCounters.DedicatedCounters.show">[docs]</a>    <span class="k">def</span> <span class="nf">show</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="s">&#39;DedicatedCounter.pos&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;DedicatedCounter.pos&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="s">&#39;DedicatedCounter.size&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;DedicatedCounter.size&#39;</span><span class="p">])</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">DedicatedCounters</span><span class="p">,</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">dataSlotConnected</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pulserHardware</span><span class="o">.</span><span class="n">dedicatedDataAvailable</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">onData</span> <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dataSlotConnected</span> <span class="o">=</span> <span class="bp">True</span>
+        </div>
+<div class="viewcode-block" id="DedicatedCounters.onStart"><a class="viewcode-back" href="../../code/dedicatedCounters-doc.html#dedicatedCounters.DedicatedCounters.DedicatedCounters.onStart">[docs]</a>    <span class="k">def</span> <span class="nf">onStart</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pulserHardware</span><span class="o">.</span><span class="n">counterMask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">counterMask</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pulserHardware</span><span class="o">.</span><span class="n">adcMask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">adcMask</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OpStates</span><span class="o">.</span><span class="n">running</span>
+</div>
+<div class="viewcode-block" id="DedicatedCounters.onStop"><a class="viewcode-back" href="../../code/dedicatedCounters-doc.html#dedicatedCounters.DedicatedCounters.DedicatedCounters.onStop">[docs]</a>    <span class="k">def</span> <span class="nf">onStop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pulserHardware</span><span class="o">.</span><span class="n">counterMask</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pulserHardware</span><span class="o">.</span><span class="n">adcMask</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OpStates</span><span class="o">.</span><span class="n">idle</span>
+                </div>
+<div class="viewcode-block" id="DedicatedCounters.onSave"><a class="viewcode-back" href="../../code/dedicatedCounters-doc.html#dedicatedCounters.DedicatedCounters.DedicatedCounters.onSave">[docs]</a>    <span class="k">def</span> <span class="nf">onSave</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">counter</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">8</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xData</span><span class="p">[</span><span class="n">counter</span><span class="p">])</span><span class="o">&gt;</span><span class="mi">0</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">yData</span><span class="p">[</span><span class="n">counter</span><span class="p">])</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
+                <span class="n">trace</span> <span class="o">=</span> <span class="n">TraceCollection</span><span class="p">()</span>
+                <span class="n">trace</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xData</span><span class="p">[</span><span class="n">counter</span><span class="p">]</span>
+                <span class="n">trace</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">yData</span><span class="p">[</span><span class="n">counter</span><span class="p">]</span>
+                <span class="n">trace</span><span class="o">.</span><span class="n">description</span><span class="p">[</span><span class="s">&quot;counter&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">counter</span>
+                <span class="n">filename</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">DataDirectory</span><span class="p">()</span><span class="o">.</span><span class="n">sequencefile</span><span class="p">(</span><span class="s">&quot;DedicatedCounter_{0}.txt&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">counter</span><span class="p">))</span>
+                <span class="n">trace</span><span class="o">.</span><span class="n">addTracePlotting</span><span class="p">(</span> <span class="n">TracePlotting</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">&quot;Counter {0}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">counter</span><span class="p">))</span> <span class="p">)</span>
+                <span class="n">trace</span><span class="o">.</span><span class="n">saveTrace</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;saving dedicated counters&quot;</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="DedicatedCounters.onClear"><a class="viewcode-back" href="../../code/dedicatedCounters-doc.html#dedicatedCounters.DedicatedCounters.DedicatedCounters.onClear">[docs]</a>    <span class="k">def</span> <span class="nf">onClear</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">xData</span> <span class="o">=</span> <span class="p">[</span><span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([])]</span><span class="o">*</span><span class="mi">8</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">yData</span> <span class="o">=</span> <span class="p">[</span><span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([])]</span><span class="o">*</span><span class="mi">8</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tick</span> <span class="o">=</span> <span class="mi">0</span>        
+    </div>
+<div class="viewcode-block" id="DedicatedCounters.onData"><a class="viewcode-back" href="../../code/dedicatedCounters-doc.html#dedicatedCounters.DedicatedCounters.DedicatedCounters.onData">[docs]</a>    <span class="k">def</span> <span class="nf">onData</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tick</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">displayUi</span><span class="o">.</span><span class="n">values</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">4</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">displayUi2</span><span class="o">.</span><span class="n">values</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">4</span><span class="p">:</span><span class="mi">8</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">displayUiADC</span><span class="o">.</span><span class="n">values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">convertAnalog</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">analog</span><span class="p">())</span>
+        <span class="n">data</span><span class="o">.</span><span class="n">analogValues</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">displayUiADC</span><span class="o">.</span><span class="n">values</span>
+        <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">16</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> <span class="n">data</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">16</span><span class="p">]</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">integrationTimeLookup</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dataIntegrationTime</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">integrationTimeLookup</span><span class="p">[</span> <span class="n">data</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">16</span><span class="p">]</span> <span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dataIntegrationTime</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">integrationTime</span>
+        <span class="n">data</span><span class="o">.</span><span class="n">integrationTime</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dataIntegrationTime</span> 
+        <span class="k">for</span> <span class="n">counter</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">8</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">counter</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">displayUnit</span><span class="o">.</span><span class="n">convert</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">counter</span><span class="p">],</span><span class="bp">self</span><span class="o">.</span><span class="n">dataIntegrationTime</span><span class="o">.</span><span class="n">ounit</span><span class="p">(</span><span class="s">&#39;ms&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">toval</span><span class="p">())</span>
+                <span class="n">Start</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span> <span class="mi">1</span><span class="o">+</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xData</span><span class="p">[</span><span class="n">counter</span><span class="p">])</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">pointsToKeep</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">yData</span><span class="p">[</span><span class="n">counter</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">yData</span><span class="p">[</span><span class="n">counter</span><span class="p">][</span><span class="n">Start</span><span class="p">:],</span> <span class="n">y</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">xData</span><span class="p">[</span><span class="n">counter</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xData</span><span class="p">[</span><span class="n">counter</span><span class="p">][</span><span class="n">Start</span><span class="p">:],</span> <span class="n">data</span><span class="o">.</span><span class="n">timestamp</span> <span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">curves</span><span class="p">[</span><span class="n">counter</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">curves</span><span class="p">[</span><span class="n">counter</span><span class="p">]</span><span class="o">.</span><span class="n">setData</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xData</span><span class="p">[</span><span class="n">counter</span><span class="p">],</span><span class="bp">self</span><span class="o">.</span><span class="n">yData</span><span class="p">[</span><span class="n">counter</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">statusDisplay</span><span class="o">.</span><span class="n">setData</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataAvailable</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+ </div>
+<div class="viewcode-block" id="DedicatedCounters.convertAnalog"><a class="viewcode-back" href="../../code/dedicatedCounters-doc.html#dedicatedCounters.DedicatedCounters.DedicatedCounters.convertAnalog">[docs]</a>    <span class="k">def</span> <span class="nf">convertAnalog</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">data</span><span class="p">):</span>
+        <span class="n">converted</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">channel</span><span class="p">,</span> <span class="n">cal</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">analogCalbrations</span><span class="p">):</span>
+            <span class="n">converted</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">cal</span><span class="o">.</span><span class="n">convertMagnitude</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">channel</span><span class="p">])</span> <span class="p">)</span>
+        <span class="k">return</span> <span class="n">converted</span>
+    </div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright .
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'0.8',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
