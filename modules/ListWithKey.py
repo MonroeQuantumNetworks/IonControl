@@ -7,7 +7,18 @@ class ListWithKeyError(Exception):
     pass
 
 class ListWithKey(MutableSequence):
+    """
+    List container with key and constant time lookup.
+    The key of an element has to stay contant and may ONLY be changed via the updateKey fucntion.
+    """
     def __init__(self, iterable=[], key=identity, setkey=None):
+        """
+        Construct ListWithKey
+        :param iterable: iterable with initial list elements
+        :param key:  a function where key(element) returns the desired key. Idenityty by default.
+        :param setkey: a function that updates the key in an element and returns the updated element.
+        :return:
+        """
         self.list = list(iterable)
         self.lookup = dict((key(elem),index) for index, elem in enumerate(self.list))
         if len(self.lookup) != len(self.list):
@@ -40,6 +51,10 @@ class ListWithKey(MutableSequence):
         self.lookup = dict((self.key(elem),index) for index, elem in enumerate(self.list))
 
     def mapping(self):
+        """
+        :return: MutableMapping with key(element), element pairs.
+        Can be used to change the container elements
+        """
         return ListWithKeyLookup(self)
 
     def sort(self, reverse=False):
@@ -47,6 +62,12 @@ class ListWithKey(MutableSequence):
         self.rebuildLookup()
 
     def updateKey(self, index, newkey):
+        """
+        Update the key at the given index. Uses newelement = setkey(oldelement, newkey)
+        :param index:
+        :param newkey:
+        :return: None
+        """
         elem = self.list[index]
         oldkey = self.key(elem)
         if newkey != oldkey and newkey in self.lookup:
@@ -57,9 +78,10 @@ class ListWithKey(MutableSequence):
 
     def rebuildLookup(self):
         self.lookup.clear()
-        self.lookup.update(dict((self.key(elem),index) for index, elem in enumerate(self.list)))
+        self.lookup.update(dict((self.key(elem), index) for index, elem in enumerate(self.list)))
 
 class ListWithKeyLookup(MutableMapping):
+    """MutableMapping view of the ListWithKey container"""
     def __init__(self, listWithKey):
         self.listWithKey = listWithKey
 
