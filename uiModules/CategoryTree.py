@@ -390,7 +390,7 @@ class CategoryTreeView(QtGui.QTreeView):
     def restoreTreeState(self, state):
         """load in a tree state from the given column widths, expanded nodes, bold nodes, and idTree"""
         columnWidths, expandedNodeKeys, boldNodeKeys, idTree = state
-        if self.model().allowReordering:
+        if self.model().allowReordering and idTree:
             self.model().beginResetModel()
             for id, childList in idTree.iteritems():
                 node=self.model().nodeFromId(id)

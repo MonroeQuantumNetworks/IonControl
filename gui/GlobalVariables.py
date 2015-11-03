@@ -6,7 +6,7 @@ Created on Sat Feb 16 16:56:57 2013
 from PyQt4 import QtGui, QtCore
 import PyQt4.uic
 
-from GlobalVariableTableModel import GlobalVariableTableModel
+from GlobalVariablesModel import GlobalVariablesModel
 from modules.Utility import unique
 from uiModules.KeyboardFilter import KeyListFilter
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
@@ -21,8 +21,9 @@ from modules.magnitude import is_magnitude
 from collections import deque
 from modules.ListWithKey import ListWithKey, ListWithKeyLookup
 import time
-
+import logging
 import os
+
 uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\GlobalVariables.ui')
 Form, Base = PyQt4.uic.loadUiType(uipath)
 
@@ -123,8 +124,8 @@ class GlobalVariableUi(Form, Base ):
         Form.__init__(self)
         Base.__init__(self, parent)
         self.config = config
-        self.configname = 'GlobalVariables'
-        self._variables_ = GlobalVariables(self.config.get(self.configname, []))
+        self.configName = 'GlobalVariables'
+        self._variables_ = GlobalVariables(self.config.get(self.configName, []))
         self._map = self._variables_.map
 
     @property
@@ -141,24 +142,25 @@ class GlobalVariableUi(Form, Base ):
     def setupUi(self, parent):
         Form.setupUi(self,parent)
         self.addButton.clicked.connect( self.onAddVariable )
-        self.dropButton.clicked.connect( self.onDropVariable )
-        self.model = GlobalVariableTableModel(self.config, self._variables_)
-        self.tableView.setModel( self.model )
+        self.dropButton.clicked.connect( self.view.onDelete )
+        self.model = GlobalVariablesModel(self.config, self._variables_)
+        self.view.setModel( self.model )
         self.delegate = MagnitudeSpinBoxDelegate()
-        self.tableView.setItemDelegateForColumn(1,self.delegate) 
-        self.tableView.setSortingEnabled(True)   # triggers sorting
-        self.model.restoreCustomOrder()          # to restore the last custom order
-        self.filter = KeyListFilter( [QtCore.Qt.Key_PageUp, QtCore.Qt.Key_PageDown], [QtCore.Qt.Key_B] )
-        self.filter.keyPressed.connect( self.onReorder )
-        self.filter.controlKeyPressed.connect( self.onBold )
-        self.tableView.installEventFilter(self.filter)
         self.newNameEdit.returnPressed.connect( self.onAddVariable )
+        self.view.setItemDelegateForColumn(self.model.column.value, self.delegate)
+        # self.view.setSortingEnabled(True)   # triggers sorting
+        # self.model.restoreCustomOrder()          # to restore the last custom order
         # Context Menu
-        self.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
-        self.restoreCustomOrderAction = QtGui.QAction( "restore custom order" , self)
-        self.restoreCustomOrderAction.triggered.connect( self.model.restoreCustomOrder  )
-        self.addAction( self.restoreCustomOrderAction )
-        restoreGuiState( self, self.config.get(self.configname+".guiState") )
+        # self.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
+        # self.restoreCustomOrderAction = QtGui.QAction( "restore custom order" , self)
+        # self.restoreCustomOrderAction.triggered.connect( self.model.restoreCustomOrder  )
+        # self.addAction( self.restoreCustomOrderAction )
+        restoreGuiState( self, self.config.get(self.configName+".guiState") )
+#        try:
+        self.view.restoreTreeState(self.config.get(self.configName+'.treeState',tuple([None]*4)))
+ #       except Exception as e:
+  #          logging.getLogger(__name__).error("unable to restore tree state in {0}: {1}".format(self.configName, e))
+
         self.exportXmlButton.clicked.connect( self.onExportXml )
 
     def onExportXml(self, element=None, writeToFile=True):
@@ -193,37 +195,18 @@ class GlobalVariableUi(Form, Base ):
     def onAddVariable(self):
         self.model.addVariable( str(self.newNameEdit.text()))
         self.newNameEdit.setText("")
-    
-    def onDropVariable(self):
-        for index in sorted(unique([ i.row() for i in self.tableView.selectedIndexes() ]),reverse=True):
-            self.model.dropVariableByIndex(index)
-        
-    def saveConfig(self):
-        self.config[self.configname] = list(self._variables_)
-        self.config[self.configname+".guiState"] = saveGuiState( self )
-        self.model.saveConfig()
 
-    def onReorder(self, key):
-        if key in [QtCore.Qt.Key_PageUp, QtCore.Qt.Key_PageDown]:
-            indexes = self.tableView.selectedIndexes()
-            up = key==QtCore.Qt.Key_PageUp
-            delta = -1 if up else 1
-            rows = sorted(unique([ i.row() for i in indexes ]),reverse=not up)
-            if self.model.moveRow( rows, up=up ):
-                selectionModel = self.tableView.selectionModel()
-                selectionModel.clearSelection()
-                for index in indexes:
-                    selectionModel.select( self.model.createIndex(index.row()+delta,index.column()), QtGui.QItemSelectionModel.Select )
-                    
-    def onBold(self, key):
-        indexes = self.tableView.selectedIndexes()
-        for index in indexes:
-            self.model.toggleBold( index )
-                    
+    def saveConfig(self):
+        self.config[self.configName] = list(self._variables_)
+        self.config[self.configName+".guiState"] = saveGuiState( self )
+        try:
+            self.config[self.configName+'.treeState'] = self.treeState()
+        except Exception as e:
+            logging.getLogger(__name__).error("unable to save tree state in {0}: {1}".format(self.configName, e))
+
     def update(self, updlist):
         self.model.update(updlist)
         
-            
 
 if __name__=="__main__":
     import sys
