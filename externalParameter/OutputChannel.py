@@ -97,7 +97,7 @@ class OutputChannel(QtCore.QObject):
         save current value
         """
         if self.savedValue is None or overwrite:
-            self.savedValue = self.settings.value
+            self.savedValue = self.value
         return self.savedValue
 
     def restoreValue(self):
