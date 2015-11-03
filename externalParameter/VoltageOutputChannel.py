@@ -41,4 +41,3 @@ class VoltageOutputChannel(OutputChannel):
     @property
     def useExternalValue(self):
         return False
-    
