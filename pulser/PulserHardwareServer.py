@@ -395,7 +395,19 @@ class PulserHardwareServer(Process, OKBase):
             logging.getLogger(__name__).debug("Writing Extended wire {0} value {1} {2}".format(address,value,hex(value)))
         else:
             logging.getLogger(__name__).warning("Pulser Hardware not available")
-            
+
+    def setMultipleExtendedWireIn(self, items):
+        if self.xem:
+            #writebuffer = bytearray()
+            # The current firmware does not take the data in a single stream.
+            for address, value in items:
+                #writebuffer.extend(bytearray(struct.pack('=HQ' if value>0 else '=Hq', address, value)))
+                self.xem.WriteToPipeIn(0x84, bytearray(struct.pack('=HQ' if value>0 else '=Hq', address, value)))
+            #self.xem.WriteToPipeIn(0x84, writebuffer)
+            logging.getLogger(__name__).debug("Writing All Extended wire values")
+        else:
+            logging.getLogger(__name__).warning("Pulser Hardware not available")
+
     def setTrigger(self,value):
         if self.xem:
             self.xem.WriteToPipeIn(0x84, bytearray(struct.pack('=HQ', 0x11, value)) )

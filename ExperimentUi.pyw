@@ -238,6 +238,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.pulserParameterUiDock.setWidget(self.pulserParameterUi)
         self.pulserParameterUiDock.setObjectName("_pulserParameterUi")
         self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.pulserParameterUiDock)
+        self.tabDict['Scan'].NeedsDDSRewrite.connect( self.pulserParameterUi.onWriteAll )
 
         self.DDSUi = DDSUi.DDSUi(self.config, self.pulser, self.globalVariablesUi.variables )
         self.DDSUi.setupUi(self.DDSUi)
