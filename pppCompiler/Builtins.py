@@ -124,6 +124,13 @@ def pulse( symboltable, arg=list(), kwarg=dict() ):
     """
     pulse( [shutter=shutter] [, counter=counter] [, trigger=trigger] [, duration=time] [, end_shutter=shuttervar] )
     Generate a pulse with shutter, trigger, counter and duration time. Equivalent to
+    set_shutter(shutter)  # only if shutter is given
+    set_trigger(trigger)  # only if trigger is given
+    set_counter(counter)  # only if counter is given
+    update(duration, pulse_mode=False if end_shutter is given else True) # if duration is given
+    update()              # without duration
+    set_shutter(end_shutter) # if end_shutter is given
+    set_inv_shutter(shutter) # if NO end_shutter is given and shutter is given
     """
     code = list()
     if 'shutter' in kwarg:
