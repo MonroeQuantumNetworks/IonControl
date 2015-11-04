@@ -460,6 +460,7 @@ class CategoryTreeView(QtGui.QTreeView):
 
 if __name__ == "__main__":
     import sys
+    from functools import partial
     app = QtGui.QApplication(sys.argv)
     class myContent(object):
         def __init__(self, data1, data2, categories=None, hasDependency=False, string='', isBold=False):
@@ -514,13 +515,20 @@ if __name__ == "__main__":
                      myContent('Dewey', 1251,['People']),
                      myContent('Louie', 12,['People']),
                      myContent('other',125121)
-                     ])
+                     ], nodeNameAttr='data1')
     view = CategoryTreeView()
     view.setModel(model)
     view.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection)
     window = QtGui.QMainWindow()
     dock = QtGui.QDockWidget("Category Tree View")
     dock.setWidget(view)
-    window.addDockWidget(QtCore.Qt.RightDockWidgetArea, dock)
+    window.addDockWidget(QtCore.Qt.BottomDockWidgetArea, dock)
+    button = QtGui.QPushButton('move')
+    button.clicked.connect(partial(model.changeCategory, model.nodeDict['Games_ball based_golf'], ['a','b','c']))
+
+    window.setCentralWidget(button)
+    view.expandAll()
+    view.resizeColumnToContents(0)
+    view.resizeColumnToContents(1)
     window.show()
     sys.exit(app.exec_())
