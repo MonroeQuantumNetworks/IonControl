@@ -15,7 +15,6 @@ from modules.Expression import Expression
 from scan.ScanControl import Scan
 
 
-ExpectedLookup = { 'd': 0, 'u' : 1, '1':0.5, '-1':0.5, 'i':0.5, '-i':0.5 }
 OpStates = enum.enum('idle','running','paused','starting','stopping', 'interrupted')
 
 
@@ -278,7 +277,7 @@ class GateSequenceScanGenerator:
     def expected(self, index):
         if self.gateSequenceAttributes is not None:
             try:
-                expected = ExpectedLookup[ self.gateSequenceAttributes[self.scan.index[index]]['expected'] ]
+                expected = self.gateSequenceAttributes[self.scan.index[index]]['expected']
             except (IndexError, KeyError):
                 expected = None
             return expected

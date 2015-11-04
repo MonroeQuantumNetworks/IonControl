@@ -11,7 +11,7 @@ import logging
 from PyQt4 import QtCore, QtGui
 import PyQt4.uic
 
-from scan.EvaluationAlgorithms import EvaluationAlgorithms
+from scan.EvaluationBase import EvaluationAlgorithms
 from EvaluationTableModel import EvaluationTableModel
 from modules import MagnitudeUtilit, DataDirectory
 from modules.HashableDict import HashableDict
