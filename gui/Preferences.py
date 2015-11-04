@@ -20,10 +20,16 @@ class PrintPreferences(object):
         self.savePng = False
         self.doPrint = True
         self.saveSvg = True
+        self.exportEmf = True
+        self.exportPdf = True
+        self.inkscapeExecutable = r'C:\Program Files\Inkscape\inkscape.exe'
         
     def __setstate__(self, state):
         self.__dict__ = state
-        self.__dict__.setdefault('saveSvg',True)
+        self.__dict__.setdefault('saveSvg', True)
+        self.__dict__.setdefault('exportEmf', True)
+        self.__dict__.setdefault('exportPdf', True)
+        self.__dict__.setdefault('inkscapeExecutable', r'C:\Program Files\Inkscape\inkscape.exe')
 
     def paramDef(self):
         return [ {'name': 'resolution (dpi)', 'object': self, 'field': 'printResolution', 'type': 'int', 'value': self.printResolution},
@@ -34,7 +40,10 @@ class PrintPreferences(object):
                 {'name': 'curve linewidth (px)', 'object': self, 'field': 'curveLinewidth', 'type': 'int', 'value': self.curveLinewidth},
                 {'name': 'save pdf', 'object': self, 'field': 'savePdf', 'type': 'bool', 'value': self.savePdf},
                 {'name': 'save svg', 'object': self, 'field': 'saveSvg', 'type': 'bool', 'value': self.saveSvg},
-                {'name': 'print', 'object': self, 'field': 'doPrint', 'type': 'bool', 'value': self.doPrint}]    
+                {'name': 'print', 'object': self, 'field': 'doPrint', 'type': 'bool', 'value': self.doPrint},
+                {'name': 'export emf', 'object': self, 'field': 'exportEmf', 'type': 'bool', 'value': self.saveSvg},
+                {'name': 'export pdf', 'object': self, 'field': 'exportPdf', 'type': 'bool', 'value': self.saveSvg},
+                {'name': 'inkscape executable', 'object': self, 'field': 'inkscapeExecutable', 'type': 'str', 'value': self.inkscapeExecutable}]
 
 
 class Preferences(object):
