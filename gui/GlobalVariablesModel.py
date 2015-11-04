@@ -14,28 +14,40 @@ import modules.magnitude as magnitude
 from modules import MagnitudeUtilit
 from modules.MagnitudeParser import isIdentifier
 from functools import partial
-from uiModules.CategoryTree import CategoryTreeModel
+from uiModules.CategoryTree import CategoryTreeModel, nodeTypes
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 from modules.enum import enum
+from modules.PyqtUtility import textSize
 
 api2 = sip.getapi("QVariant") == 2
 
-class MagnitudeSpinBoxGridDelegate(MagnitudeSpinBoxDelegate):
+gridColor = QtGui.QColor(215, 215, 215, 255) #light gray
+
+class GridDelegateMixin(object):
     def paint(self, painter, option, index):
-        painter.save()
-        painter.setPen(QtGui.QColor(QtCore.Qt.black))
-        painter.drawRect(option.rect)
-        painter.restore()
+        if index.model().nodeFromIndex(index).nodeType == nodeTypes.data:
+            painter.save()
+            painter.setPen(gridColor)
+            painter.drawRect(option.rect)
+            painter.restore()
         QtGui.QStyledItemDelegate.paint(self, painter, option, index)
 
+    def sizeHint(self, option, index):
+        text = str(index.data(QtCore.Qt.DisplayRole).toString())
+        width = 1.05*textSize(text).width()
+        height = 30
+        size = QtCore.QSize(width, height)
+        return size
 
-class GridDelegate(QtGui.QStyledItemDelegate):
-    def paint(self, painter, option, index):
-        painter.save()
-        painter.setPen(QtGui.QColor(QtCore.Qt.black))
-        painter.drawRect(option.rect)
-        painter.restore()
-        QtGui.QStyledItemDelegate.paint(self, painter, option, index)
+
+class MagnitudeSpinBoxGridDelegate(MagnitudeSpinBoxDelegate, GridDelegateMixin):
+    paint = GridDelegateMixin.paint
+    sizeHint = GridDelegateMixin.sizeHint
+
+
+class GridDelegate(QtGui.QStyledItemDelegate, GridDelegateMixin):
+    paint = GridDelegateMixin.paint
+    sizeHint = GridDelegateMixin.sizeHint
 
 
 class GlobalVariablesModel(CategoryTreeModel):
