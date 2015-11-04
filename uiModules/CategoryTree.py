@@ -254,10 +254,12 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
         oldParent = node.parent
         oldID = copy(node.id)
         oldRow = copy(node.row)
-        categories = [categories] if categories.__class__==str else categories # make a list of one if it's a string
-        categories = None if categories.__class__!=list else categories #no categories if it's not a list
-        categories = map(str, categories) if categories else categories #make sure it's a list of strings
-        newParent = self.makeCategoryNodes(categories) if categories else self.root
+        if categories:
+            categories = [categories] if categories.__class__!=list else categories # make a list of one if it's not a list
+            categories = map(str, categories) #make sure it's a list of strings
+            newParent = self.makeCategoryNodes(categories)
+        else:
+            newParent = self.root
         newID = newParent.id+'_'+name if newParent.id else name
         if newID in self.nodeDict: #nodeIDs must be unique. If the nodeID has already been used, we add "_n" to the ID and increment 'n' until we find an available ID
             count=0
