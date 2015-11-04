@@ -15,9 +15,28 @@ from modules import MagnitudeUtilit
 from modules.MagnitudeParser import isIdentifier
 from functools import partial
 from uiModules.CategoryTree import CategoryTreeModel
+from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 from modules.enum import enum
 
 api2 = sip.getapi("QVariant") == 2
+
+class MagnitudeSpinBoxGridDelegate(MagnitudeSpinBoxDelegate):
+    def paint(self, painter, option, index):
+        painter.save()
+        painter.setPen(QtGui.QColor(QtCore.Qt.black))
+        painter.drawRect(option.rect)
+        painter.restore()
+        QtGui.QStyledItemDelegate.paint(self, painter, option, index)
+
+
+class GridDelegate(QtGui.QStyledItemDelegate):
+    def paint(self, painter, option, index):
+        painter.save()
+        painter.setPen(QtGui.QColor(QtCore.Qt.black))
+        painter.drawRect(option.rect)
+        painter.restore()
+        QtGui.QStyledItemDelegate.paint(self, painter, option, index)
+
 
 class GlobalVariablesModel(CategoryTreeModel):
     valueChanged = QtCore.pyqtSignal(object)

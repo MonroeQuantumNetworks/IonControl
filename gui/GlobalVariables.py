@@ -6,7 +6,7 @@ Created on Sat Feb 16 16:56:57 2013
 from PyQt4 import QtGui, QtCore
 import PyQt4.uic
 
-from GlobalVariablesModel import GlobalVariablesModel
+from GlobalVariablesModel import GlobalVariablesModel, MagnitudeSpinBoxGridDelegate, GridDelegate
 from modules.Utility import unique
 from uiModules.KeyboardFilter import KeyListFilter
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
@@ -146,8 +146,10 @@ class GlobalVariableUi(Form, Base ):
         Form.setupUi(self,parent)
         self.model = GlobalVariablesModel(self.config, self._variables_)
         self.view.setModel( self.model )
-        self.delegate = MagnitudeSpinBoxDelegate()
-        self.view.setItemDelegateForColumn(self.model.column.value, self.delegate)
+        self.nameDelegate = GridDelegate()
+        self.valueDelegate = MagnitudeSpinBoxGridDelegate()
+        self.view.setItemDelegateForColumn(self.model.column.name, self.nameDelegate)
+        self.view.setItemDelegateForColumn(self.model.column.value, self.valueDelegate)
         restoreGuiState( self, self.config.get(self.configName+".guiState") )
         try:
             self.view.restoreTreeState(self.config.get(self.configName+'.treeState',tuple([None]*4)))
