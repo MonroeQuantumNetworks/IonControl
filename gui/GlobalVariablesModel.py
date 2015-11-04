@@ -23,7 +23,7 @@ class GlobalVariablesModel(CategoryTreeModel):
     valueChanged = QtCore.pyqtSignal(object)
     expression = Expression.Expression()
     def __init__(self, config, variables, parent=None):
-        super(GlobalVariablesModel, self).__init__(variables.list, parent)
+        super(GlobalVariablesModel, self).__init__(variables, parent)
         self.config = config
         self.variables = variables
         self.columnNames = ['name', 'value']
@@ -96,31 +96,33 @@ class GlobalVariablesModel(CategoryTreeModel):
     def getVariableValue(self, name):
         return self.variables.map[name]
     
-    def addVariable(self, name):
+    def addVariable(self, name, categories):
         if name=="":
             name = 'NewGlobalVariable'
         if name not in self.variables.map and isIdentifier(name):
             self.variables.map[name] = magnitude.mg(0, '')
             self.variables.map.valueChanged(name).connect(partial(self.onValueChanged, name))
-            node = self.addNode(self.variables.map[name])
-            self.variables.map[name].node = node #store pointer to tree node in global variable itself
+            var = self.variables.varFromName(name)
+            var.categories = categories
+            node = self.addNode(var)
+#            var.node = node #store pointer to tree node in global variable itself
         return len(self.variables) - 1
 
     def removeNode(self, node):
         var = node.content
         super(GlobalVariablesModel, self).removeNode(node)
-        dropped = self.variables.map.pop(var.name)
-        return dropped.name
+        self.variables.map.pop(var.name)
+        return var.name
         
     def dropVariableByName(self, name):
         if name in self.variables.map:
-            var = self.variables.map(name)
+            var = self.variables.varFromName(name)
             node = self.nodeFromContent(var)
             return self.removeNode(node)
 
     def dropVariableByIndex(self, row):
-        if 0 <= row < len(self.variables.list):
-            var = self.variables.list[row]
+        if 0 <= row < len(self.variables):
+            var = self.variables[row]
             node = self.nodeFromContent(var)
             return self.removeNode(node)
 
@@ -131,9 +133,10 @@ class GlobalVariablesModel(CategoryTreeModel):
                 old = self.variables.map[name]
                 if value.dimension() != old.dimension() or value != old:
                     self.variables.map[name] = value
-                    node = self.nodeFromContent(self.variables.map[name])
+                    var = self.variables.varFromName(name)
+                    node = self.nodeFromContent(var)
                     ind = self.indexFromNode(node, col=self.column.value)
                     self.dataChanged.emit(ind, ind)
-
-    def nodeFromContent(self, content):
-        return content.node
+    #
+    # def nodeFromContent(self, content):
+    #     return content.node

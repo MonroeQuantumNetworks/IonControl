@@ -116,6 +116,9 @@ class GlobalVariables(ListWithKey):
         newglobals.map.update(xmlParseDictionary(element, "Variable"))
         return newglobals
 
+    def varFromName(self, name):
+        return self[self.lookup[name]]
+
     def keyindex(self, key):
         return self.lookup[key]
 
@@ -141,13 +144,30 @@ class GlobalVariableUi(Form, Base ):
 
     def setupUi(self, parent):
         Form.setupUi(self,parent)
-        self.addButton.clicked.connect( self.onAddVariable )
-        self.dropButton.clicked.connect( self.view.onDelete )
         self.model = GlobalVariablesModel(self.config, self._variables_)
         self.view.setModel( self.model )
         self.delegate = MagnitudeSpinBoxDelegate()
-        self.newNameEdit.returnPressed.connect( self.onAddVariable )
         self.view.setItemDelegateForColumn(self.model.column.value, self.delegate)
+        restoreGuiState( self, self.config.get(self.configName+".guiState") )
+        try:
+            self.view.restoreTreeState(self.config.get(self.configName+'.treeState',tuple([None]*4)))
+        except Exception as e:
+            logging.getLogger(__name__).error("unable to restore tree state in {0}: {1}".format(self.configName, e))
+
+        #signals
+        self.newNameEdit.returnPressed.connect( self.onAddVariable )
+        self.addButton.clicked.connect( self.onAddVariable )
+        self.dropButton.clicked.connect( self.view.onDelete )
+        self.exportXmlButton.clicked.connect( self.onExportXml )
+        self.collapseAllButton.clicked.connect( self.view.collapseAll )
+        self.expandAllButton.clicked.connect( self.view.expandAll )
+
+        #categories
+        self.categoriesList = ['']
+        self.categoriesListModel = QtGui.QStringListModel()
+        self.categoriesListModel.setStringList(self.categoriesList)
+        self.categoriesListComboBox.setModel(self.categoriesListModel)
+
         # self.view.setSortingEnabled(True)   # triggers sorting
         # self.model.restoreCustomOrder()          # to restore the last custom order
         # Context Menu
@@ -155,13 +175,6 @@ class GlobalVariableUi(Form, Base ):
         # self.restoreCustomOrderAction = QtGui.QAction( "restore custom order" , self)
         # self.restoreCustomOrderAction.triggered.connect( self.model.restoreCustomOrder  )
         # self.addAction( self.restoreCustomOrderAction )
-        restoreGuiState( self, self.config.get(self.configName+".guiState") )
-#        try:
-        self.view.restoreTreeState(self.config.get(self.configName+'.treeState',tuple([None]*4)))
- #       except Exception as e:
-  #          logging.getLogger(__name__).error("unable to restore tree state in {0}: {1}".format(self.configName, e))
-
-        self.exportXmlButton.clicked.connect( self.onExportXml )
 
     def onExportXml(self, element=None, writeToFile=True):
         root = element if element is not None else ElementTree.Element('GlobalVariables')
@@ -193,8 +206,17 @@ class GlobalVariableUi(Form, Base ):
         self.model.endResetModel()
         
     def onAddVariable(self):
-        self.model.addVariable( str(self.newNameEdit.text()))
+        name = str(self.newNameEdit.text())
+        categories = str(self.categoriesListComboBox.currentText())
+        categories = categories.strip('.')
+        self.model.addVariable(name, categories.split('.'))
         self.newNameEdit.setText("")
+        self.view.resizeColumnToContents(self.model.column.name)
+        if categories not in self.categoriesList:
+            self.categoriesList.append(categories)
+            self.categoriesListModel.setStringList(self.categoriesList)
+        blankInd = self.categoriesListComboBox.findText('', QtCore.Qt.MatchExactly)
+        self.categoriesListComboBox.setCurrentIndex(blankInd)
 
     def saveConfig(self):
         self.config[self.configName] = list(self._variables_)
