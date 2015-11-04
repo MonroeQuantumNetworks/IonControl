@@ -20,6 +20,7 @@ from modules import magnitude
 from modules.magnitude import is_magnitude
 from collections import deque
 from modules.ListWithKey import ListWithKey, ListWithKeyLookup
+from functools import partial
 import time
 import logging
 import os
@@ -172,11 +173,30 @@ class GlobalVariableUi(Form, Base ):
 
         # self.view.setSortingEnabled(True)   # triggers sorting
         # self.model.restoreCustomOrder()          # to restore the last custom order
+
         # Context Menu
-        # self.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
-        # self.restoreCustomOrderAction = QtGui.QAction( "restore custom order" , self)
-        # self.restoreCustomOrderAction.triggered.connect( self.model.restoreCustomOrder  )
-        # self.addAction( self.restoreCustomOrderAction )
+        self.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
+        self.categorizeAction = QtGui.QAction("Categorize", self)
+        self.categorizeMenu = QtGui.QMenu(self)
+        self.categorizeAction.setMenu(self.categorizeMenu)
+        self.addAction(self.categorizeAction)
+        self.newCategoryAction = QtGui.QAction("New category", self)
+        self.categorizeMenu.addAction(self.newCategoryAction)
+        self.newCategoryAction.triggered.connect(self.onNewCategory)
+        self.noCategoryAction = QtGui.QAction("No category", self)
+        self.noCategoryAction.triggered.connect(partial(self.onCategorize, None))
+        self.categorizeMenu.addAction(self.noCategoryAction)
+
+
+    def onNewCategory(self):
+        categories, ok = QtGui.QInputDialog.getText(self, 'New category', 'Please enter new category(ies) (dot sub-categories: cat1.cat2.cat3): ')
+        if ok:
+            self.onCategorize(categories)
+
+    def onCategorize(self, categories):
+        nodes = self.view.selectedNodes()
+        for node in nodes:
+            self.model.changeCategory(node, categories)
 
     def onExportXml(self, element=None, writeToFile=True):
         root = element if element is not None else ElementTree.Element('GlobalVariables')
