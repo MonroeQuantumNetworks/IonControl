@@ -191,10 +191,11 @@ class GlobalVariableUi(Form, Base ):
     def onNewCategory(self):
         categories, ok = QtGui.QInputDialog.getText(self, 'New category', 'Please enter new category(ies) (dot sub-categories: cat1.cat2.cat3): ')
         if ok:
-            self.onCategorize(categories)
+            self.onCategorize(str(categories))
 
     def onCategorize(self, categories):
         nodes = self.view.selectedNodes()
+        categories = categories.strip('.').split('.')
         for node in nodes:
             self.model.changeCategory(node, categories)
 
