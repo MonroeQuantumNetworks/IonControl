@@ -48,7 +48,21 @@ Python Modules
 
 * Install pyvisa_ -- used for communicating with many external instruments
 
+    * get via pip:
+
+      .. code-block::
+
+         pip install pyvisa
+
     * **Note:** versions 1.7 and 1.8 are definitely fine
+
+* Install *locket* -- used for ensuring same config file is not used by multiple programs
+
+    * get via pip:
+
+    .. code-block::
+
+         pip install locket
 
 * Equipment specific dependencies
 
