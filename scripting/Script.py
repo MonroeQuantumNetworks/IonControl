@@ -372,7 +372,11 @@ class Script(QtCore.QThread):
     @scriptFunction()
     def fit(self, fitName, traceName):
         """fit(fitName, traceName)
-        fit the data in 'traceName' using 'fitName'"""
+        Fit trace using specified fit.
+        Args:
+            traceName (str): name of trace to fit
+            fitName (str): name of fit settings to use (from fit GUI)
+        """
         self.fitSignal.emit(fitName, traceName)
         
     @scriptFunction(waitForGui=False)
