@@ -15,6 +15,10 @@ class VoltageOutputChannel(OutputChannel):
         return self.channelName
 
     @property
+    def value(self):
+        return self.device.getValue(self.channelName)
+
+    @property
     def externalValue(self):
         return self.device.currentValue(self.channelName)
     

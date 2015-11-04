@@ -26,7 +26,16 @@ DigitalStatusChannels = [ ("PI 0 underflow", 0, 1),
                           ("PI 2 underflow", 4, 1),
                           ("PI 2 overflow", 5, 1),
                           ("PI 3 underflow", 6, 1),
-                          ("PI 3 overflow", 7, 1) ]        
+                          ("PI 3 overflow", 7, 1),
+                          ("PI 4 underflow", 8, 1),
+                          ("PI 4 overflow", 9, 1),
+                          ("PI 5 underflow", 10, 1),
+                          ("PI 5 overflow", 11, 1),
+                          ("PI 6 underflow", 12, 1),
+                          ("PI 6 overflow", 13, 1),
+                          ("PI 7 underflow", 14, 1),
+                          ("PI 7 overflow", 15, 1),
+                          ("Ext Clk", 16, 1) ]        
 
 class StatusDisplay(Form,Base ):
     def __init__(self,config,parent=None):

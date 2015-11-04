@@ -46,6 +46,8 @@ from pulser.PulserParameterUi import PulserParameterUi
 from gui.FPGASettings import FPGASettings
 import ctypes
 import locket
+import scan.EvaluationAlgorithms #@UnusedImport
+
 setID = ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID
 if __name__=='__main__': #imports that aren't just definitions
     from uiModules import MagnitudeParameter #@UnusedImport
@@ -238,6 +240,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.pulserParameterUiDock.setWidget(self.pulserParameterUi)
         self.pulserParameterUiDock.setObjectName("_pulserParameterUi")
         self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.pulserParameterUiDock)
+        self.tabDict['Scan'].NeedsDDSRewrite.connect( self.pulserParameterUi.onWriteAll )
 
         self.DDSUi = DDSUi.DDSUi(self.config, self.pulser, self.globalVariablesUi.variables )
         self.DDSUi.setupUi(self.DDSUi)

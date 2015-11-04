@@ -1,6 +1,6 @@
 from PyQt4 import QtCore, QtGui
 
-from scan.EvaluationAlgorithms import EvaluationAlgorithms
+from scan.EvaluationBase import EvaluationAlgorithms
 from modules import MagnitudeUtilit
 from scan.AbszisseType import AbszisseType
 from modules import magnitude

@@ -133,3 +133,6 @@ class PulserParameterUi(CategoryTreeView):
             node = self.model().nodeFromContent(parameter)
             index = self.model().indexFromNode(node, col=1)
             self.model().dataChanged.emit(index, index)
+
+    def onWriteAll(self, writeUnchecked=True):
+        self.pulser.setMultipleExtendedWireIn(self.currentWireValues.items())
