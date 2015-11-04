@@ -46,6 +46,8 @@ from pulser.PulserParameterUi import PulserParameterUi
 from gui.FPGASettings import FPGASettings
 import ctypes
 import locket
+import scan.EvaluationAlgorithms #@UnusedImport
+
 setID = ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID
 if __name__=='__main__': #imports that aren't just definitions
     from uiModules import MagnitudeParameter #@UnusedImport

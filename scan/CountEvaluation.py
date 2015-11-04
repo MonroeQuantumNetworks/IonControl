@@ -6,76 +6,14 @@ This is used for simple averaging but also for different state detection algorit
 algorithms are expected to defined the fileds as stated in MeanEvaluation
 
 """
-import copy
 import math
-
-from PyQt4 import QtCore
 import numpy
-from pyqtgraph.parametertree import Parameter
-
-from modules.Observable import Observable
 from modules.enum import enum 
-import logging
 from modules.Expression import Expression
 from modules import MagnitudeUtilit
 from modules import magnitude
+from EvaluationBase import EvaluationBase, EvaluationException
 
-class EvaluationException(Exception):
-    pass
-
-class EvaluationBase(Observable):
-    hasChannel = True
-    def __init__(self,settings =  None):
-        Observable.__init__(self)
-        self.settings = settings if settings else dict()
-        self.setDefault()
-        self._parameter = Parameter.create(name='params', type='group',children=self.children())     
-        try:
-            self._parameter.sigTreeStateChanged.connect(self.update, QtCore.Qt.UniqueConnection)
-        except TypeError:
-            # connection already exists, just ignore it
-            logging.getLogger(__name__).warning("EvaluationBase parameter connection already exists")
-        self.settingsName = None
-               
-    def update(self, param, changes):
-        for param, _, data in changes:
-            self.settings[param.name()] = data
-        self.firebare()
-            
-    def children(self):
-        return []    
-    
-    def setSettings(self, settings, settingsName):
-        try:
-            for name, value in self.settings.iteritems():
-                settings.setdefault(name, value)
-            self.settings = settings
-            for name, value in settings.items():
-                try:
-                    self._parameter[name] = value
-                except Exception:
-                    settings.pop(name)
-            self.settingsName = settingsName if settingsName else "unnamed"
-        except Exception as ex:
-            logging.getLogger(__name__).exception(ex)
-        
-    def setSettingsName(self, settingsName):
-        self.settingsName = settingsName
-
-    @property
-    def parameter(self):
-        # re-create to prevent exception for signal not connected
-        self._parameter = Parameter.create(name=self.settingsName, type='group',children=self.children())     
-        self._parameter.sigTreeStateChanged.connect(self.update, QtCore.Qt.UniqueConnection)
-        return self._parameter
-    
-    def __deepcopy__(self, memo=None):
-        return type(self)( copy.deepcopy(self.settings,memo) )
-  
-    def histogram(self, data, evaluation, histogramBins=50 ):
-        countarray = evaluation.getChannelData(data)
-        y, x = numpy.histogram( countarray , range=(0,histogramBins), bins=histogramBins)
-        return y, x, None   # third parameter is optional function 
 
 class MeanEvaluation(EvaluationBase):
     """
@@ -345,6 +283,7 @@ class FidelityEvaluation(EvaluationBase):
     """
     name = "Fidelity"
     tooltip = "Obove threshold is bright"
+    ExpectedLookup = { 'd': 0, 'u' : 1, '1':0.5, '-1':0.5, 'i':0.5, '-i':0.5 }
     def __init__(self,settings=None):
         EvaluationBase.__init__(self,settings)
         
@@ -372,6 +311,7 @@ class FidelityEvaluation(EvaluationBase):
         rootb = -1-1/N +4*p+4*N*(1-p)*p
         bottom = max( 0, (2*N*p - math.sqrt(rootb))/(2*(N+1)) ) if rootb>=0 else 0  
         if expected is not None:
+            expected = self.ExpectedLookup[expected]
             p = abs(expected-p)
             bottom = abs(expected-bottom)
             top = abs(expected-top)
@@ -487,7 +427,4 @@ class TwoIonEvaluation(EvaluationBase):
                 {'name':'bd','type':'float','value':self.settings['bd'], 'tip': 'multiplicator for bd' },
                 {'name':'bb','type':'float','value':self.settings['bb'], 'tip': 'multiplicator for bb' }]     
 
-
-
-   
 
