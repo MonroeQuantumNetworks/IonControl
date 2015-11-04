@@ -5,6 +5,8 @@ from modules.enum import enum
 from modules.Utility import indexWithDefault
 from sys import getrefcount
 from uiModules.KeyboardFilter import KeyListFilter
+from copy import copy
+
 nodeTypes = enum('category', 'data')
 
 class Node(object):
@@ -240,6 +242,44 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
     def nodeFromId(self, id):
         """return the node associated with the specified node id"""
         return self.nodeDict.get(id)
+
+    def changeCategory(self, node, categories=None, deleteOldIfEmpty=True):
+        """change node category
+        Args:
+            node (Node): the node to move
+            categories (str or list[str]): new category(ies) for node. defaults to None
+            deleteOldIfEmpty (bool): if True, delete the node's former category node if it is now empty
+        """
+        name = str(getattr(node.content, self.nodeNameAttr, ''))
+        oldParent = node.parent
+        oldID = copy(node.id)
+        oldRow = copy(node.row)
+        categories = [categories] if categories.__class__==str else categories # make a list of one if it's a string
+        categories = None if categories.__class__!=list else categories #no categories if it's not a list
+        categories = map(str, categories) if categories else categories #make sure it's a list of strings
+        newParent = self.makeCategoryNodes(categories) if categories else self.root
+        newID = newParent.id+'_'+name if newParent.id else name
+        if newID in self.nodeDict: #nodeIDs must be unique. If the nodeID has already been used, we add "_n" to the ID and increment 'n' until we find an available ID
+            count=0
+            baseNodeID = newID
+            while newID in self.nodeDict:
+                newID = baseNodeID+"_{0}".format(count)
+                count+=1
+        #remove node from dict, oldParent children
+        oldParentIndex = self.indexFromNode(oldParent)
+        self.beginRemoveRows(oldParentIndex, oldRow, oldRow)
+        del oldParent.children[oldRow]
+        del self.nodeDict[oldID]
+        self.endRemoveRows()
+        #add node to new parent
+        node.id = newID
+        node.parent = newParent
+        self.addRow(newParent, node)
+        self.nodeDict[newID] = node
+        #delete old category node if necessary
+        if deleteOldIfEmpty and oldParent.children==[] and oldParent!=self.root:
+            self.removeNode(oldParent)
+        return node
 
     def clear(self):
         """clear the tree content"""
