@@ -178,4 +178,66 @@ class FitHistogramEvaluation(EvaluationBase):
         return y, x, deepcopy(self.fitFunction)   # third parameter is optional function 
 
   
+class TwoIonFidelityEvaluation(EvaluationBase):
+    """
+    simple threshold state detection: if more than threshold counts are observed 
+    the ion is considered bright. For threshold photons or less it is considered
+    dark.
+    In addition it receives the expected state and calculates the fidelity
+    """
+    name = "TwoIonFidelity"
+    tooltip = "Obove threshold is bright"
+    ExpectedLookup = { '424': [0.25, 0.5, 0.25], '202': [0.5, 0.0, 0.5], '001': [0.0, 0.0, 1.0], '100': [1.0, 0.0, 0.0] }
+    def __init__(self,settings=None):
+        EvaluationBase.__init__(self,settings)
+        
+    def setDefault(self):
+        self.settings.setdefault('Path',r'')
+        self.settings.setdefault('ZeroBright','ZeroIonHistogram')
+        self.settings.setdefault('OneBright','OneIonHistogram')
+        self.settings.setdefault('TwoBright','TwoIonHistogram')
+        self.settings.setdefault('HistogramBins',50)
+        self.settings.setdefault('Mode','Zero')
+        
+    def evaluate(self, data, evaluation, expected=None, ppDict=None, globalDict=None ):
+        #countarray = evaluation.getChannelData(data)
+        params, confidence, reducedchisq = data.evaluated.get('FitHistogramsResult',(None,None,None))
+        if params is None:
+            return 0, None, 0
+        elif expected is not None:
+            if self.settings['Mode']=='Zero':
+                p = 1.0-abs(params[0] - self.ExpectedLookup[expected][0])
+                pbottom = confidence[0]
+                ptop = confidence[0]
+                x = params[0]
+            elif self.settings['Mode']=='One':
+                p = 1.0-abs(params[1] - self.ExpectedLookup[expected][1])
+                pbottom = confidence[1]
+                ptop = confidence[1]
+                x = params[1]
+            elif self.settings['Mode']=='Two':
+                p = 1.0-abs(params[2] - self.ExpectedLookup[expected][2])
+                pbottom = confidence[2]
+                ptop = confidence[2]
+                x = params[2]
+            elif self.settings['Mode']=='All':
+                p = 1.0-(abs(params[0] - self.ExpectedLookup[expected][0]) + abs(params[1] - self.ExpectedLookup[expected][1]) + abs(params[2] - self.ExpectedLookup[expected][2]))/3.0
+                pbottom = confidence[2]
+                ptop = confidence[2]
+                x = params[0]+params[1]+params[2]
+        else:
+            return 0, None, 0
+        return p, (pbottom, ptop), x
+
+        
+    def children(self):
+        return [{'name':'Path','type':'str','value':str(self.settings['Path']), 'tip': 'Path for histogram files' },
+                {'name':'ZeroBright','type':'str','value':str(self.settings['ZeroBright']), 'tip': 'filename for ZeroBright data' },
+                {'name':'OneBright','type':'str','value':str(self.settings['OneBright']), 'tip': 'filename for OneBright data' },
+                {'name':'TwoBright','type':'str','value':str(self.settings['TwoBright']), 'tip': 'filename for TwoBright data' },
+                {'name':'HistogramBins','type':'int','value':int(self.settings['HistogramBins']), 'tip': 'Number of histogram bins in data' },
+                {'name':'Mode','type':'list', 'values': ['Zero','One','Two','All'], 'value': str(self.settings['Mode']), 'tip': 'Evaluation mode' }]     
+
+   
+
 
