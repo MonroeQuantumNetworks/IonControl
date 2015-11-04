@@ -64,9 +64,10 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
         #styling for different types of content
         #self.normalBgColor = QtGui.QColor(QtCore.Qt.white)
         self.dependencyBgColor = QtGui.QColor(QtCore.Qt.green).lighter(175)
-        self.defaultFontName = str(QtGui.QFont().defaultFamily())
-        self.normalFont = QtGui.QFont(self.defaultFontName,-1,QtGui.QFont.Normal)
-        self.boldFont = QtGui.QFont(self.defaultFontName,-1,QtGui.QFont.Bold)
+        self.defaultFontName = "Segoe UI"
+        self.defaultFontSize = 9
+        self.normalFont = QtGui.QFont(self.defaultFontName,self.defaultFontSize,QtGui.QFont.Normal)
+        self.boldFont = QtGui.QFont(self.defaultFontName,self.defaultFontSize,QtGui.QFont.Bold)
 
         #lookups to determine the appearance of the model
         self.fontLookup = {True:self.boldFont, False:self.normalFont}

@@ -2,9 +2,10 @@ from PyQt4 import QtGui, QtCore
 import functools
 
 def textSize(text):
-    """return the default size of a block of text"""
-    defaultFontName = QtGui.QFont().defaultFamily()
-    font = QtGui.QFont(defaultFontName,-1,QtGui.QFont.Normal)
+    """return the size of a block of text"""
+    defaultFontName = "Segoe UI"
+    defaultFontSize = 9
+    font = QtGui.QFont(defaultFontName,defaultFontSize,QtGui.QFont.Normal)
     fm = QtGui.QFontMetrics(font)
     width = fm.width(text)
     height = fm.height()
