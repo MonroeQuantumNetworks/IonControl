@@ -289,7 +289,8 @@ class CategoryTreeView(QtGui.QTreeView):
     """Class for viewing category trees"""
     def __init__(self, parent=None):
         super(CategoryTreeView, self).__init__(parent)
-        self.filter = KeyListFilter( [QtCore.Qt.Key_PageUp, QtCore.Qt.Key_PageDown, QtCore.Qt.Key_Delete], [QtCore.Qt.Key_B] )
+        self.filter = KeyListFilter( [QtCore.Qt.Key_PageUp, QtCore.Qt.Key_PageDown, QtCore.Qt.Key_Delete],
+                                     [QtCore.Qt.Key_B, QtCore.Qt.Key_Up, QtCore.Qt.Key_Down] )
         self.filter.keyPressed.connect(self.onKey)
         self.filter.controlKeyPressed.connect(self.onControl)
         self.installEventFilter(self.filter)
@@ -304,6 +305,10 @@ class CategoryTreeView(QtGui.QTreeView):
     def onControl(self, key):
         if key==QtCore.Qt.Key_B:
             self.onBold()
+        elif key==QtCore.Qt.Key_Up:
+            self.collapseAll()
+        elif key==QtCore.Qt.Key_Down:
+            self.expandAll()
 
     def onBold(self):
         indexList = self.selectedRowIndexes()
