@@ -127,7 +127,7 @@ class GlobalVariablesModel(CategoryTreeModel):
             node = self.addNode(newGlobal)
             newGlobal.nodeID = node.id #store ID to tree node in global variable itself for fast lookup
             self._globalDict_[name] = newGlobal
-        return len(self._globalDict_) - 1
+            return node
 
     def removeNode(self, node):
         if node.nodeType==nodeTypes.data:
@@ -135,8 +135,7 @@ class GlobalVariablesModel(CategoryTreeModel):
             var = node.content
             super(GlobalVariablesModel, self).removeNode(node)
             del self._globalDict_[var.name]
-            if parent.children==[]:
-                self.removeNode(parent)
+            self.removeAllEmptyParents(parent)
         elif node.nodeType==nodeTypes.category and node.children==[]: #deleting whole categories of global variables with one keystroke is a bad idea
             super(GlobalVariablesModel, self).removeNode(node)
 

@@ -116,7 +116,8 @@ class GlobalVariablesUi(Form, Base):
             self.onCategorize(categories)
 
     def onCategorize(self, categories):
-        categories = categories.split('.')
+        if categories:
+            categories = categories.split('.')
         nodes = self.view.selectedNodes()
         for node in nodes:
             self.model.changeCategory(node, categories)

@@ -285,11 +285,16 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
         self.addRow(newParent, node)
         self.nodeDict[newID] = node
         #delete old category node if necessary
-        oldDeleted = False
-        if deleteOldIfEmpty and oldParent.children==[] and oldParent!=self.root:
-            self.removeNode(oldParent)
-            oldDeleted = True
+        if deleteOldIfEmpty:
+            oldDeleted = self.removeAllEmptyParents(oldParent)
         return node, categories, oldDeleted
+
+    def removeAllEmptyParents(self, oldParent):
+        if oldParent.children==[] and oldParent != self.root:
+            self.removeNode(oldParent)
+            self.removeAllEmptyParents(oldParent.parent)
+            return True
+        return False
 
     def clear(self):
         """clear the tree content"""
