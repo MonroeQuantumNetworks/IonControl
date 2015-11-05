@@ -18,6 +18,7 @@ class Node(object):
         self.children = []
         self.nodeType = nodeType #nodeTypes.category or nodeTypes.data
         self.isBold = False #Determines whether node is shown bold
+        self.bgColor = None #background color
 
     def childCount(self):
         return len(self.children)
@@ -64,7 +65,6 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
         self.nodeNameAttr = nodeNameAttr
 
         #styling for different types of content
-        #self.normalBgColor = QtGui.QColor(QtCore.Qt.white)
         self.dependencyBgColor = QtGui.QColor(QtCore.Qt.green).lighter(175)
         self.defaultFontName = "Segoe UI"
         self.defaultFontSize = 9
@@ -78,7 +78,7 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
                            (QtCore.Qt.DisplayRole, 0):
                                lambda node: str(node.content) #default, normally overwritten
                            }
-        self.backgroundFunction = lambda node: self.dependencyBgColor if getattr(node.content,'hasDependency',None) else None
+        self.backgroundFunction = lambda node: self.dependencyBgColor if getattr(node.content,'hasDependency',None) else getattr(node, 'bgColor', None)
         self.toolTipFunction = lambda node: getattr(node.content,'string','') if getattr(node.content,'hasDependency',None) else None
         self.dataAllColLookup = { #data lookup that applies to all columns
             QtCore.Qt.FontRole:
@@ -173,10 +173,13 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
             name = getattr(content, self.nodeNameAttr, '')
         name = str(name)
         categories = getattr(content, self.categoriesAttr, None)
-        categories = [categories] if categories.__class__==str else categories # make a list of one if it's a string
-        categories = None if categories.__class__!=list else categories #no categories if it's not a list
-        categories = map(str, categories) if categories else categories #turn into list of strings
-        parent = self.makeCategoryNodes(categories) if categories else self.root
+        if categories:
+            if categories.__class__!=list:
+                categories = [categories]  # make a list of one if it's not a list
+            categories = map(str, categories) #make sure it's a list of strings
+            parent = self.makeCategoryNodes(categories)
+        else:
+            parent = self.root
         nodeID = parent.id+'_'+name if parent.id else name
         nodeType = nodeTypes.data
         if nodeID in self.nodeDict: #nodeIDs must be unique. If the nodeID has already been used, we add "_n" to the ID and increment 'n' until we find an available ID
@@ -279,9 +282,11 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
         self.addRow(newParent, node)
         self.nodeDict[newID] = node
         #delete old category node if necessary
+        oldDeleted = False
         if deleteOldIfEmpty and oldParent.children==[] and oldParent!=self.root:
             self.removeNode(oldParent)
-        return node
+            oldDeleted = True
+        return node, categories, oldDeleted
 
     def clear(self):
         """clear the tree content"""
@@ -458,6 +463,20 @@ class CategoryTreeView(QtGui.QTreeView):
                 if key in self.model().nodeDict:
                     node = self.model().nodeDict[key]
                     node.isBold=True
+
+    def onSetBackgroundColor(self):
+        nodes = self.selectedNodes()
+        model = self.model()
+
+
+    def onRemoveBackgroundColor(self):
+        nodes = self.selectedNodes()
+        model = self.model()
+        for node in nodes:
+            node.bgColor = None
+            leftIndex = model.indexFromNode(node, 0)
+            rightIndex = model.indexFromNode(node, model.numColumns-1)
+            model.dataChanged.emit(leftIndex, rightIndex)
 
 
 if __name__ == "__main__":

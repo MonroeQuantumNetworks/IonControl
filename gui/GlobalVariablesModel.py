@@ -136,26 +136,28 @@ class GlobalVariablesModel(CategoryTreeModel):
             var = self.variables.varFromName(name)
             var.categories = categories
             node = self.addNode(var)
-#            var.node = node #store pointer to tree node in global variable itself
+            var.nodeID = node.id #store ID to tree node in global variable itself for fast lookup
         return len(self.variables) - 1
 
     def removeNode(self, node):
-        var = node.content
-        super(GlobalVariablesModel, self).removeNode(node)
-        self.variables.map.pop(var.name)
-        return var.name
-        
-    def dropVariableByName(self, name):
-        if name in self.variables.map:
-            var = self.variables.varFromName(name)
-            node = self.nodeFromContent(var)
-            return self.removeNode(node)
+        if node.nodeType==nodeTypes.data:
+            parent = node.parent
+            var = node.content
+            super(GlobalVariablesModel, self).removeNode(node)
+            self.variables.map.pop(var.name)
+            if parent.children==[]:
+                self.removeNode(parent)
+            return var.name
+        elif node.nodeType==nodeTypes.category and node.children==[]: #deleting whole categories of global variables with one keystroke is a bad idea
+            super(GlobalVariablesModel, self).removeNode(node)
 
-    def dropVariableByIndex(self, row):
-        if 0 <= row < len(self.variables):
-            var = self.variables[row]
-            node = self.nodeFromContent(var)
-            return self.removeNode(node)
+    def changeCategory(self, node, categories=None, deleteOldIfEmpty=True):
+        node, categories, oldDeleted = super(GlobalVariablesModel, self).changeCategory(node, categories, deleteOldIfEmpty)
+        #update global variable to reflect category change
+        var = node.content
+        var.nodeID = node.id
+        var.categories = categories
+        return node, categories, oldDeleted
 
     def update(self, updlist):
         for destination, name, value in updlist:
@@ -168,6 +170,6 @@ class GlobalVariablesModel(CategoryTreeModel):
                     node = self.nodeFromContent(var)
                     ind = self.indexFromNode(node, col=self.column.value)
                     self.dataChanged.emit(ind, ind)
-    #
-    # def nodeFromContent(self, content):
-    #     return content.node
+
+    def nodeFromContent(self, content):
+        return self.nodeDict[content.nodeID]

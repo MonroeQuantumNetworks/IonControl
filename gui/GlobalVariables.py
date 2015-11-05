@@ -24,6 +24,7 @@ from functools import partial
 import time
 import logging
 import os
+from copy import copy
 
 uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\GlobalVariables.ui')
 Form, Base = PyQt4.uic.loadUiType(uipath)
@@ -165,37 +166,60 @@ class GlobalVariableUi(Form, Base ):
         self.collapseAllButton.clicked.connect( self.view.collapseAll )
         self.expandAllButton.clicked.connect( self.view.expandAll )
 
+        # Context Menu
+        self.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
+        categorizeAction = QtGui.QAction("Categorize", self)
+        self.categorizeMenu = QtGui.QMenu(self)
+        categorizeAction.setMenu(self.categorizeMenu)
+        self.addAction(categorizeAction)
+        newCategoryAction = QtGui.QAction("New category", self)
+        self.categorizeMenu.addAction(newCategoryAction)
+        newCategoryAction.triggered.connect(self.onNewCategory)
+        noCategoryAction = QtGui.QAction("No category", self)
+        noCategoryAction.triggered.connect(partial(self.onCategorize, None))
+        self.categorizeMenu.addAction(noCategoryAction)
+
+        backgroundColorAction = QtGui.QAction("Background Color", self)
+        backgroundColorMenu = QtGui.QMenu(self)
+        backgroundColorAction.setMenu(backgroundColorMenu)
+        self.addAction(backgroundColorAction)
+        setBackgroundColorAction = QtGui.QAction("Set Background Color", self)
+        setBackgroundColorAction.triggered.connect(self.onSetBackgroundColor)
+        backgroundColorMenu.addAction(setBackgroundColorAction)
+        removeBackgroundColorAction = QtGui.QAction("Remove Background Color", self)
+        removeBackgroundColorAction.triggered.connect(self.onRemoveBackgroundColor)
+        backgroundColorMenu.addAction(removeBackgroundColorAction)
+
         #categories
         self.categoriesList = ['']
         self.categoriesListModel = QtGui.QStringListModel()
-        self.categoriesListModel.setStringList(self.categoriesList)
         self.categoriesListComboBox.setModel(self.categoriesListModel)
+        for var in self._variables_:
+            categories = copy(var.categories)
+            if categories:
+                categories = [categories] if categories.__class__!=list else categories # make a list of one if it's not a list
+                categories = map(str, categories) #make sure it's a list of strings
+                categories = '.'.join(categories)
+                self.addCategories(categories)
 
-        # self.view.setSortingEnabled(True)   # triggers sorting
-        # self.model.restoreCustomOrder()          # to restore the last custom order
-
-        # Context Menu
-        self.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
-        self.categorizeAction = QtGui.QAction("Categorize", self)
-        self.categorizeMenu = QtGui.QMenu(self)
-        self.categorizeAction.setMenu(self.categorizeMenu)
-        self.addAction(self.categorizeAction)
-        self.newCategoryAction = QtGui.QAction("New category", self)
-        self.categorizeMenu.addAction(self.newCategoryAction)
-        self.newCategoryAction.triggered.connect(self.onNewCategory)
-        self.noCategoryAction = QtGui.QAction("No category", self)
-        self.noCategoryAction.triggered.connect(partial(self.onCategorize, None))
-        self.categorizeMenu.addAction(self.noCategoryAction)
-
+    def addCategories(self, categories):
+        if categories not in self.categoriesList:
+            self.categoriesList.append(categories)
+            self.categoriesListModel.setStringList(self.categoriesList)
+            action = QtGui.QAction(categories, self)
+            self.categorizeMenu.addAction(action)
+            action.triggered.connect(partial(self.onCategorize, categories))
 
     def onNewCategory(self):
         categories, ok = QtGui.QInputDialog.getText(self, 'New category', 'Please enter new category(ies) (dot sub-categories: cat1.cat2.cat3): ')
         if ok:
-            self.onCategorize(str(categories))
+            categories = str(categories).strip('.')
+            self.addCategories(categories)
+            self.onCategorize(categories)
 
     def onCategorize(self, categories):
+        categories = categories.split('.')
         nodes = self.view.selectedNodes()
-        categories = categories.strip('.').split('.')
         for node in nodes:
             self.model.changeCategory(node, categories)
 
@@ -235,9 +259,7 @@ class GlobalVariableUi(Form, Base ):
         self.model.addVariable(name, categories.split('.'))
         self.newNameEdit.setText("")
         self.view.resizeColumnToContents(self.model.column.name)
-        if categories not in self.categoriesList:
-            self.categoriesList.append(categories)
-            self.categoriesListModel.setStringList(self.categoriesList)
+        self.addCategories(categories)
         blankInd = self.categoriesListComboBox.findText('', QtCore.Qt.MatchExactly)
         self.categoriesListComboBox.setCurrentIndex(blankInd)
 
