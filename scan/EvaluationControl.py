@@ -165,13 +165,13 @@ class EvaluationControl(ControlForm, ControlBase ):
     currentEvaluationChanged = QtCore.pyqtSignal( object )
     integrationMode = enum('IntegrateAll','IntegrateRun','NoIntegration')
     logger = logging.getLogger(__name__)
-    def __init__(self, config, globalVariablesUi, parentname, plotnames=None, parent=None, analysisNames=None, counterNames=None):
+    def __init__(self, config, globalDict, parentname, plotnames=None, parent=None, analysisNames=None, counterNames=None):
         logger = logging.getLogger(__name__)
         ControlForm.__init__(self)
         ControlBase.__init__(self,parent)
         self.config = config
         self.configname = 'EvaluationControl.'+parentname
-        self.globalDict = globalVariablesUi.variables
+        self.globalDict = globalDict
         self.ppDict = None
         self.counterNames = counterNames
         # History and Dictionary
@@ -192,7 +192,6 @@ class EvaluationControl(ControlForm, ControlBase ):
         self.analysisNames = analysisNames
         self.pulseProgramUi = None
         self.parameters = self.config.get( self.configname+'.parameters', EvaluationControlParameters() )
-        self.globalVariablesUi = globalVariablesUi
         self.project = getProject()
         self.timestampsEnabled = self.project.isEnabled('software', 'Timestamps')
 

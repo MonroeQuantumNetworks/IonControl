@@ -1,27 +1,18 @@
 """
-Created on Sat Feb 16 16:56:57 2013
+Created on 05 Nov 2015 at 3:52 PM
 
-@author: pmaunz
+author: jmizrahi
 """
 from PyQt4 import QtGui, QtCore
 import PyQt4.uic
 
 from GlobalVariablesModel import GlobalVariablesModel, MagnitudeSpinBoxGridDelegate, GridDelegate
-from modules.Utility import unique
-from uiModules.KeyboardFilter import KeyListFilter
-from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
+from GlobalVariable import GlobalVariable, GlobalVariablesLookup
 from modules.GuiAppearance import restoreGuiState, saveGuiState   #@UnresolvedImport
 from modules.XmlUtilit import xmlEncodeDictionary, xmlParseDictionary, prettify
 import xml.etree.ElementTree as ElementTree
 from modules import DataDirectory
-from externalParameter.persistence import DBPersist
-from externalParameter.decimation import StaticDecimation
-from modules import magnitude
-from modules.magnitude import is_magnitude
-from collections import deque, MutableMapping
-from modules.ListWithKey import ListWithKey, ListWithKeyLookup
 from functools import partial
-import time
 import logging
 import os
 from copy import copy
@@ -29,98 +20,18 @@ from copy import copy
 uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\GlobalVariables.ui')
 Form, Base = PyQt4.uic.loadUiType(uipath)
 
-class GlobalVariablesException(Exception):
-    pass
-
-
-class GlobalVariable(QtCore.QObject):
-    valueChanged = QtCore.pyqtSignal(object, object, object)
-    persistSpace = 'globalVar'
-    persistence = DBPersist()
-
-    def __init__(self, name, value=magnitude.mg(0)):
-        super(GlobalVariable, self).__init__()
-        self.decimation = StaticDecimation(magnitude.mg(10, 's'))
-        self.history = deque(maxlen=10)
-        self._value = value
-        self.name = name
-        self.categories = None
-
-    @property
-    def value(self):
-        return self._value
-
-    @value.setter
-    def value(self, newvalue):
-        if isinstance(newvalue, tuple):
-            v, o = newvalue
-        else:
-            v, o = newvalue, None
-        if self._value != v:
-            self._value = v
-            self.valueChanged.emit(self.name, v, o)
-            self.history.appendleft((v, time.time(), o))
-            if o is not None:
-                self.persistCallback((time.time(), v, None, None))
-            else:
-                self.decimation.decimate(time.time(), v, self.persistCallback)
-
-    def rename(self, newname):
-        self.name, oldname = newname, self.name
-        self.persistence.rename(self.persistSpace, oldname, newname)
-        return self
-
-    def __getstate__(self):
-        return self.name, self._value, self.categories, self.history
-
-    def __setstate__(self, state):
-        super(GlobalVariable, self).__init__()
-        self.decimation = StaticDecimation(magnitude.mg(10, 's'))
-        self.name, self._value, self.categories, self.history = state
-
-    def persistCallback(self, data):
-        time, value, minval, maxval = data
-        unit = None
-        if is_magnitude(value):
-            value, unit = value.toval(returnUnit=True)
-        self.persistence.persist(self.persistSpace, self.name, time, value, minval, maxval, unit)
-
-
-class GlobalVariablesLookup(MutableMapping):
-    def __init__(self, globalDict):
-        self.globalDict = globalDict
-
-    def __getitem__(self, key):
-        return self.globalDict[key].value
-
-    def __setitem__(self, key, value):
-        self.globalDict[key].value = value
-
-    def __delitem__(self, key):
-        raise GlobalVariablesException("Cannot delete globals via the GlobalVariablesLookup class")
-
-    def __len__(self):
-        return len(self.globalDict)
-
-    def __contains__(self, x):
-        return x in self.globalDict
-
-    def __iter__(self):
-        return self.globalDict.__iter__()
-
-    def valueChanged(self, key):
-        return self.globalDict[key].valueChanged
-
-
-class GlobalVariableUi(Form, Base):
+class GlobalVariablesUi(Form, Base):
     def __init__(self, config, parent=None):
         Form.__init__(self)
         Base.__init__(self, parent)
         self.config = config
         self.configName = 'GlobalVariables'
-        storedGlobals = self.config.get(self.configName, dict())
-        if storedGlobals.__class__==list: #port over globals stored as a list
-            storedGlobals = {g.name:g for g in storedGlobals}
+        try:
+            storedGlobals = self.config.get(self.configName, dict())
+            if storedGlobals.__class__==list: #port over globals stored as a list
+                storedGlobals = {g.name:g for g in storedGlobals}
+        except:
+            storedGlobals = dict()
         self._globalDict_ = storedGlobals
         self.globalDict = GlobalVariablesLookup(self._globalDict_)
 
@@ -239,7 +150,7 @@ class GlobalVariableUi(Form, Base):
             newGlobalDict.update(self._globalDict_)
             self._globalDict_ = newGlobalDict
         self.model.endResetModel()
-        
+
     def onAddVariable(self):
         name = str(self.newNameEdit.text())
         categories = str(self.categoriesListComboBox.currentText())
@@ -252,7 +163,7 @@ class GlobalVariableUi(Form, Base):
 
     def saveConfig(self):
         self.config[self.configName] = self._globalDict_
-        self.config[self.configName+".guiState"] = saveGuiState( self )
+        self.config[self.configName+".guiState"] = saveGuiState(self)
         try:
             self.config[self.configName+'.treeState'] = self.view.treeState()
         except Exception as e:
@@ -260,7 +171,7 @@ class GlobalVariableUi(Form, Base):
 
     def update(self, updlist):
         self.model.update(updlist)
-        
+
 
 if __name__=="__main__":
     import sys
@@ -272,4 +183,3 @@ if __name__=="__main__":
     MainWindow.setCentralWidget(ui)
     MainWindow.show()
     sys.exit(app.exec_())
-        

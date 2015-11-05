@@ -101,7 +101,7 @@ class AnalysisControl(ControlForm, ControlBase ):
         ControlBase.__init__(self,parent)
         self.config = config
         self.configname = 'AnalysisControl.'+parentname
-        self.globalDict = globalDict.variables
+        self.globalDict = globalDict
         self.evaluationNames = evaluationNames
         # History and Dictionary
         try:

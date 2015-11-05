@@ -18,6 +18,7 @@ from uiModules.CategoryTree import CategoryTreeModel, nodeTypes
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 from modules.enum import enum
 from modules.PyqtUtility import textSize
+from GlobalVariable import GlobalVariable
 
 api2 = sip.getapi("QVariant") == 2
 
@@ -53,10 +54,10 @@ class GridDelegate(QtGui.QStyledItemDelegate, GridDelegateMixin):
 class GlobalVariablesModel(CategoryTreeModel):
     valueChanged = QtCore.pyqtSignal(object)
     expression = Expression.Expression()
-    def __init__(self, config, variables, parent=None):
-        super(GlobalVariablesModel, self).__init__(variables, parent)
+    def __init__(self, config, _globalDict_, parent=None):
+        super(GlobalVariablesModel, self).__init__(_globalDict_.values(), parent)
         self.config = config
-        self.variables = variables
+        self._globalDict_ = _globalDict_
         self.columnNames = ['name', 'value']
         self.numColumns = len(self.columnNames)
         self.column = enum(*self.columnNames)
@@ -83,7 +84,7 @@ class GlobalVariablesModel(CategoryTreeModel):
         self.connectAllVariableSignals()
 
     def connectAllVariableSignals(self):
-        for item in self.variables:
+        for item in self._globalDict_.values():
             try:
                 item.valueChanged.connect(self.onValueChanged, QtCore.Qt.UniqueConnection)
             except:
@@ -100,54 +101,42 @@ class GlobalVariablesModel(CategoryTreeModel):
         logger = logging.getLogger(__name__)
         node = self.nodeFromIndex(index)
         var = node.content
-        try:
-            strvalue = str(value if api2 else str(value.toString())).strip()
-            if isIdentifier(strvalue):
-                listind = self.variables.keyindex(var.name)
-                self.variables.updateKey(listind, strvalue)
-                return True
-            else:
-                logger.warning("'{0}' is not a valid identifier".format(strvalue))
-                return False
-        except Exception:
-            logger.exception("No match for {0}".format(str(value.toString())))
+        newName = str(value if api2 else str(value.toString())).strip()
+        if isIdentifier(newName):
+            del self._globalDict_[var.name]
+            var.name = newName
+            self._globalDict_[newName] = var
+            return True
+        else:
+            logger.warning("'{0}' is not a valid identifier".format(newName))
             return False
 
     def setValue(self, index, value):
-        node = self.nodeFromIndex(index)
-        var = node.content
-        name = var.name
-        old = self.variables.map[name]
-        if not old.isIdenticalTo(value):
-            self.variables.map[name] = value
+        name = self.nodeFromIndex(index).content.name
+        oldValue = self._globalDict_[name].value
+        if not oldValue.isIdenticalTo(value):
+            self._globalDict_[name].value = value
 
-    def getVariables(self):
-        return self.variables.map
- 
-    def getVariableValue(self, name):
-        return self.variables.map[name]
-    
     def addVariable(self, name, categories):
         if name=="":
             name = 'NewGlobalVariable'
-        if name not in self.variables.map and isIdentifier(name):
-            self.variables.map[name] = magnitude.mg(0, '')
-            self.variables.map.valueChanged(name).connect(partial(self.onValueChanged, name))
-            var = self.variables.varFromName(name)
-            var.categories = categories
-            node = self.addNode(var)
-            var.nodeID = node.id #store ID to tree node in global variable itself for fast lookup
-        return len(self.variables) - 1
+        if name not in self._globalDict_ and isIdentifier(name):
+            newGlobal = GlobalVariable(name, magnitude.mg(0, ''))
+            newGlobal.categories = categories
+            newGlobal.valueChanged.connect( partial(self.onValueChanged, name) )
+            node = self.addNode(newGlobal)
+            newGlobal.nodeID = node.id #store ID to tree node in global variable itself for fast lookup
+            self._globalDict_[name] = newGlobal
+        return len(self._globalDict_) - 1
 
     def removeNode(self, node):
         if node.nodeType==nodeTypes.data:
             parent = node.parent
             var = node.content
             super(GlobalVariablesModel, self).removeNode(node)
-            self.variables.map.pop(var.name)
+            del self._globalDict_[var.name]
             if parent.children==[]:
                 self.removeNode(parent)
-            return var.name
         elif node.nodeType==nodeTypes.category and node.children==[]: #deleting whole categories of global variables with one keystroke is a bad idea
             super(GlobalVariablesModel, self).removeNode(node)
 
@@ -156,17 +145,18 @@ class GlobalVariablesModel(CategoryTreeModel):
         #update global variable to reflect category change
         var = node.content
         var.nodeID = node.id
+        oldCategories = var.categories
         var.categories = categories
-        return node, categories, oldDeleted
+        return node, categories, oldCategories, oldDeleted
 
     def update(self, updlist):
         for destination, name, value in updlist:
             value = MagnitudeUtilit.mg(value)
-            if destination=='Global' and name in self.variables.map:
-                old = self.variables.map[name]
-                if value.dimension() != old.dimension() or value != old:
-                    self.variables.map[name] = value
-                    var = self.variables.varFromName(name)
+            if destination=='Global' and name in self._globalDict_:
+                oldValue = self._globalDict_[name].value
+                if value.dimension() != oldValue.dimension() or value != oldValue:
+                    var = self._globalDict_[name]
+                    var.value = value
                     node = self.nodeFromContent(var)
                     ind = self.indexFromNode(node, col=self.column.value)
                     self.dataChanged.emit(ind, ind)
