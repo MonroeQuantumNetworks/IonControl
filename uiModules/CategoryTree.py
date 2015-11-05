@@ -211,8 +211,10 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
                 self.beginRemoveRows(parentIndex, row, row)
                 del parent.children[row]
                 del self.nodeDict[nodeID]
+                deletedID = copy(node.id)
                 del node
                 self.endRemoveRows()
+                return deletedID
 
     def makeCategoryNodes(self, categories):
         """Recursively creates tree nodes from the provided list of categories"""
@@ -285,16 +287,18 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
         self.addRow(newParent, node)
         self.nodeDict[newID] = node
         #delete old category node if necessary
-        if deleteOldIfEmpty:
-            oldDeleted = self.removeAllEmptyParents(oldParent)
-        return node, categories, oldDeleted
+        oldDeleted, deletedCategoryNodeIDs = self.removeAllEmptyParents(oldParent) if deleteOldIfEmpty else False, []
+        return node, oldDeleted, deletedCategoryNodeIDs
 
     def removeAllEmptyParents(self, oldParent):
         if oldParent.children==[] and oldParent != self.root:
-            self.removeNode(oldParent)
-            self.removeAllEmptyParents(oldParent.parent)
-            return True
-        return False
+            deletedID = self.removeNode(oldParent)
+            allDeletedCategoryNodeIDs = [deletedID]
+            oldDeleted, deletedCategoryNodeIDs = self.removeAllEmptyParents(oldParent.parent)
+            if oldDeleted:
+                allDeletedCategoryNodeIDs.extend(deletedCategoryNodeIDs)
+            return True, allDeletedCategoryNodeIDs
+        return False, []
 
     def clear(self):
         """clear the tree content"""

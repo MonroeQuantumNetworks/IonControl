@@ -63,20 +63,19 @@ class GlobalVariablesUi(Form, Base):
         self.exportXmlButton.clicked.connect( self.onExportXml )
         self.collapseAllButton.clicked.connect( self.view.collapseAll )
         self.expandAllButton.clicked.connect( self.view.expandAll )
+        self.model.globalRemoved.connect( self.refreshCategories )
 
-        # Context Menu
+        #Categorize Context Menu
         self.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
         categorizeAction = QtGui.QAction("Categorize", self)
         self.categorizeMenu = QtGui.QMenu(self)
         categorizeAction.setMenu(self.categorizeMenu)
         self.addAction(categorizeAction)
-        newCategoryAction = QtGui.QAction("New category", self)
-        self.categorizeMenu.addAction(newCategoryAction)
-        newCategoryAction.triggered.connect(self.onNewCategory)
-        noCategoryAction = QtGui.QAction("No category", self)
-        noCategoryAction.triggered.connect(partial(self.onCategorize, None))
-        self.categorizeMenu.addAction(noCategoryAction)
+        self.categoriesListModel = QtGui.QStringListModel()
+        self.categoriesListComboBox.setModel(self.categoriesListModel)
+        self.refreshCategories()
 
+        #background color context menu
         backgroundColorAction = QtGui.QAction("Background Color", self)
         backgroundColorMenu = QtGui.QMenu(self)
         backgroundColorAction.setMenu(backgroundColorMenu)
@@ -88,10 +87,16 @@ class GlobalVariablesUi(Form, Base):
         removeBackgroundColorAction.triggered.connect(self.view.onRemoveBackgroundColor)
         backgroundColorMenu.addAction(removeBackgroundColorAction)
 
-        #categories
+    def refreshCategories(self):
+        self.categorizeMenu.clear()
+        newCategoryAction = QtGui.QAction("New category", self)
+        self.categorizeMenu.addAction(newCategoryAction)
+        newCategoryAction.triggered.connect(self.onNewCategory)
+        noCategoryAction = QtGui.QAction("No category", self)
+        noCategoryAction.triggered.connect(partial(self.onCategorize, None))
+        self.categorizeMenu.addAction(noCategoryAction)
         self.categoriesList = ['']
-        self.categoriesListModel = QtGui.QStringListModel()
-        self.categoriesListComboBox.setModel(self.categoriesListModel)
+        self.categoriesListModel.setStringList(self.categoriesList)
         for var in self._globalDict_.values():
             categories = copy(var.categories)
             if categories:
@@ -122,6 +127,7 @@ class GlobalVariablesUi(Form, Base):
         for node in nodes:
             self.model.changeCategory(node, categories)
             self.view.expandToNode(node)
+        self.refreshCategories()
 
     def onExportXml(self, element=None, writeToFile=True):
         root = element if element is not None else ElementTree.Element('GlobalVariables')

@@ -53,6 +53,7 @@ class GridDelegate(QtGui.QStyledItemDelegate, GridDelegateMixin):
 
 class GlobalVariablesModel(CategoryTreeModel):
     valueChanged = QtCore.pyqtSignal(object)
+    globalRemoved = QtCore.pyqtSignal()
     expression = Expression.Expression()
     def __init__(self, config, _globalDict_, parent=None):
         super(GlobalVariablesModel, self).__init__(_globalDict_.values(), parent)
@@ -133,20 +134,23 @@ class GlobalVariablesModel(CategoryTreeModel):
         if node.nodeType==nodeTypes.data:
             parent = node.parent
             var = node.content
-            super(GlobalVariablesModel, self).removeNode(node)
+            deletedID = super(GlobalVariablesModel, self).removeNode(node)
             del self._globalDict_[var.name]
             self.removeAllEmptyParents(parent)
+            self.globalRemoved.emit()
         elif node.nodeType==nodeTypes.category and node.children==[]: #deleting whole categories of global variables with one keystroke is a bad idea
-            super(GlobalVariablesModel, self).removeNode(node)
+            deletedID = super(GlobalVariablesModel, self).removeNode(node)
+        else:
+            deletedID = None
+        return deletedID
 
     def changeCategory(self, node, categories=None, deleteOldIfEmpty=True):
-        node, categories, oldDeleted = super(GlobalVariablesModel, self).changeCategory(node, categories, deleteOldIfEmpty)
+        node, oldDeleted, deletedCategoryNodeIDs = super(GlobalVariablesModel, self).changeCategory(node, categories, deleteOldIfEmpty)
         #update global variable to reflect category change
         var = node.content
         var.nodeID = node.id
-        oldCategories = var.categories
         var.categories = categories
-        return node, categories, oldCategories, oldDeleted
+        return node, oldDeleted, deletedCategoryNodeIDs
 
     def update(self, updlist):
         for destination, name, value in updlist:
