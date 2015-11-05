@@ -38,7 +38,7 @@ lightblue = (0,191,255,255)
 purple = (144,0,255,255)
 darkpink = (255,0,157,255)
 
-blank = QtGui.QColor(0,0,0,0)
+blank = None
 penWidth = 2
 solid = QtCore.Qt.SolidLine
 dashed = QtCore.Qt.DashLine

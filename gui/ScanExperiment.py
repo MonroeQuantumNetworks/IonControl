@@ -56,6 +56,7 @@ import pytz
 from PyQt4.QtGui import QApplication
 from ProjectConfig.Project import getProject
 from copy import copy
+from modules import InkscapeConversion
 
 uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\ScanExperiment.ui')
 ScanExperimentForm, ScanExperimentBase = PyQt4.uic.loadUiType(uipath)
@@ -777,8 +778,19 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 del painter
         
         with SceneToPrint(widget, 1, 1):
-            exporter = SVGExporter(widget._graphicsView.scene()) 
-            exporter.export(fileName = DataDirectory.DataDirectory().sequencefile(target+".svg")[0])
+            exporter = SVGExporter(widget._graphicsView.scene())
+            emfFilename = DataDirectory.DataDirectory().sequencefile(target+".svg")[0]
+            exporter.export(fileName = emfFilename)
+            if preferences.exportEmf:
+                if os.path.exists(preferences.inkscapeExecutable):
+                    InkscapeConversion.convertSvgEmf(preferences.inkscapeExecutable, emfFilename)
+                else:
+                    logging.getLogger(__name__).error("Inkscape executable not found at '{0}'".format(preferences.inkscapeExecutable))
+            if preferences.exportPdf:
+                if os.path.exists(preferences.inkscapeExecutable):
+                    InkscapeConversion.convertSvgPdf(preferences.inkscapeExecutable, emfFilename)
+                else:
+                    logging.getLogger(__name__).error("Inkscape executable not found at '{0}'".format(preferences.inkscapeExecutable))
         # create an exporter instance, as an argument give it
         # the item you wish to export
         with SceneToPrint(widget, preferences.gridLinewidth, preferences.curveLinewidth):
