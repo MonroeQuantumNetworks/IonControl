@@ -201,6 +201,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
             self.tabDict[name] = widget
             widget.ClearStatusMessage.connect( self.statusbar.clearMessage)
             widget.StatusMessage.connect( self.statusbar.showMessage)
+            widget.stashSizeChanged.connect(self.onStashSizeChanged)
                     
         self.scanExperiment = self.tabDict["Scan"]
                     
@@ -353,6 +354,8 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
 
         self.actionStart.triggered.connect(self.onStart)
         self.actionStop.triggered.connect(self.onStop)
+        self.actionStash.triggered.connect(self.onStash)
+        self.actionResume.triggered.connect(self.onResume)
         self.actionAbort.triggered.connect(self.onAbort)
         self.actionExit.triggered.connect(self.onClose)
         self.actionContinue.triggered.connect(self.onContinue)
@@ -377,6 +380,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         if 'MainWindow.State' in self.config:
             self.parent.restoreState(self.config['MainWindow.State'])
         self.initMenu()
+        self.actionResume.setEnabled(False)
         if 'MainWindow.pos' in self.config:
             self.move(self.config['MainWindow.pos'])
         if 'MainWindow.size' in self.config:
@@ -521,7 +525,18 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
             
     def onStart(self):
         self.currentTab.onStart()
-    
+
+    def onStash(self):
+        if hasattr(self.currentTab, 'onStash'):
+            self.currentTab.onStash()
+
+    def onStashSizeChanged(self, size):
+        self.actionResume.setEnabled(size>0)
+
+    def onResume(self):
+        if hasattr(self.currentTab, 'onResume'):
+            self.currentTab.onResume()
+
     def onPause(self):
         self.currentTab.onPause()
     
@@ -559,6 +574,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
             if hasattr( self.currentTab, 'stateChanged' ):
                 self.currentTab.stateChanged.connect( self.todoList.onStateChanged )
             self.initMenu()
+            self.actionResume.setEnabled(self.currentTab.stashSize())
         
     def initMenu(self):
         """setup print and view menus"""

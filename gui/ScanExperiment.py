@@ -17,6 +17,8 @@ from datetime import datetime, timedelta
 import functools
 import logging
 import time
+
+from modules.firstNotNone import firstNotNone
 from trace import Traceui
 from trace import pens
 import os.path
@@ -65,6 +67,25 @@ ExpectedLoopkup = { 'd': 0, 'u' : 1, '1':0.5, '-1':0.5, 'i':0.5, '-i':0.5 }
 
 FifoDepth = 1020
 
+
+class ScanExperimentContext(object):
+    """This class encapsulates all variables, settings and data of the scan.
+    It is used in order to implement the ability to stash and resumea ScanExperiment"""
+    def __init__(self):
+        self.plottedTraceList = list()
+        self.currentIndex = 0
+        self.histogramCurveList = list()
+        self.currentTimestampTrace = None
+        self.histogramList = list()
+        self.histogramTrace = None
+        self.histogramBuffer = defaultdict( list )
+        self.scan = None
+        self.otherDataFile = None
+        self.evaluation = None
+        self.scanMethod = None
+        self.startTime = None
+        self.rawDataFile = None
+
 class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     StatusMessage = QtCore.pyqtSignal( str )
     ClearStatusMessage = QtCore.pyqtSignal()
@@ -72,7 +93,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     plotsChanged = QtCore.pyqtSignal()
     ppStartSignal = QtCore.pyqtSignal()
     ppStopSignal = QtCore.pyqtSignal()
-    OpStates = enum.enum('idle','running','paused','starting','stopping', 'interrupted')
+    OpStates = enum.enum('idle', 'running', 'paused', 'starting', 'stopping', 'interrupted', 'stashing', 'resuming')
     experimentName = 'Scan Sequence'
     statusChanged = QtCore.pyqtSignal( object )
     scanConfigurationListChanged = None
@@ -80,39 +101,29 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     analysisConfigurationChanged = None
     evaluatedDataSignal = QtCore.pyqtSignal( dict ) #key is the eval name, val is (x, y)
     allDataSignal = QtCore.pyqtSignal( dict ) #key is the eval name, val is (xlist, ylist)
+    stashSizeChanged = QtCore.pyqtSignal(object) # indicates that the size of the stash has changed
     def __init__(self, settings, pulserHardware, globalVariablesUi, experimentName, toolBar=None, parent=None, measurementLog=None, callWhenDoneAdjusting=None):
         MainWindowWidget.MainWindowWidget.__init__(self,toolBar=toolBar,parent=parent)
         ScanExperimentForm.__init__(self)
         self.deviceSettings = settings
         self.pulserHardware = pulserHardware
-        self.plottedTraceList = list()
-        self.currentIndex = 0
+        self.context = ScanExperimentContext()
         self.activated = False
-        self.histogramCurveList = list()
-        self.timestampCurve = None
-        self.currentTimestampTrace = None
         self.experimentName = experimentName
-        self.globalVariables = dict()
-        self.histogramList = list()
-        self.histogramTrace = None
         self.interruptReason = ""
-        self.scan = None
-        self.otherDataFile = None
         self.enableParameter = True
         self.enableExternalParameter = False
-        self.histogramBuffer = defaultdict( list )
         self.globalVariables = globalVariablesUi.variables
         self.globalVariablesChanged = globalVariablesUi.valueChanged
         self.globalVariablesUi = globalVariablesUi  
         self.scanTargetDict = dict()     
         self.measurementLog = measurementLog 
         self.callWhenDoneAdjusting = callWhenDoneAdjusting
-        self.rawDataFile = None
-        self.dataFinalized = False
         self.accumulatedTimingViolations = set()
         self.project = getProject()
         self.timestampsEnabled = self.project.isEnabled('software', 'Timestamps')
         self.unsavedTraceCount = 0
+        self.stash = list()
 
     def setupUi(self,MainWindow,config):
         logger = logging.getLogger(__name__)
@@ -259,7 +270,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.pulseProgramUi.importXml(element, mode=mode)
         
     def reAnalyze(self, plottedTrace):
-        self.analysisControlWidget.analyze( dict( ( (evaluation.name,plottedTrace) for evaluation, plottedTrace in zip(self.evaluation.evalList, self.plottedTraceList) ) ) )
+        self.analysisControlWidget.analyze( dict( ( (evaluation.name,plottedTrace) for evaluation, plottedTrace in zip(self.context.evaluation.evalList, self.context.plottedTraceList) ) ) )
         
     def printTargets(self):
         return self.plotDict.keys()
@@ -297,32 +308,32 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         pass
     
     def setTimeLabel(self):
-        elapsed = time.time()-self.startTime
-        expected = elapsed / ((self.currentIndex)/float(max(len(self.scan.list),1))) if self.currentIndex>0 else 0
+        elapsed = time.time()-self.context.startTime
+        expected = elapsed / ((self.context.currentIndex)/float(max(len(self.scan.list),1))) if self.context.currentIndex>0 else 0
         self.scanControlWidget.timeLabel.setText( "{0} / {1}".format(timedelta(seconds=round(elapsed)),
                                                  timedelta(seconds=round(expected)))) 
  
     def onStart(self):
         self.accumulatedTimingViolations = set()
         self.pulseProgramUi.setTimingViolations( [] )
-        self.scan = self.scanControlWidget.getScan()
-        self.evaluation = self.evaluationControlWidget.getEvaluation()
-        self.displayUi.setNames( [evaluation.name for evaluation in self.evaluation.evalList ])
-        self.scanMethod = ScanMethodsDict[self.scan.scanTarget](self)
+        self.context.scan = self.scanControlWidget.getScan()
+        self.context.evaluation = self.evaluationControlWidget.getEvaluation()
+        self.displayUi.setNames( [evaluation.name for evaluation in self.context.evaluation.evalList ])
+        self.context.scanMethod = ScanMethodsDict[self.context.scan.scanTarget](self)
         self.progressUi.setStarting()
         self.ppStartSignal.emit()
         if self.callWhenDoneAdjusting is None:
             self.startScan()
         else:
             self.callWhenDoneAdjusting(self.startScan)
-        if self.scan.saveRawData and self.scan.rawFilename:
-            self.rawDataFile = open(DataDirectory.DataDirectory().sequencefile(self.scan.rawFilename)[0],'w')
-        self.dataFinalized = False
+        if self.context.scan.saveRawData and self.context.scan.rawFilename:
+            self.context.rawDataFile = open(DataDirectory.DataDirectory().sequencefile(self.context.scan.rawFilename)[0],'w')
+        self.context.dataFinalized = False
 
     def startScan(self):
         logger = logging.getLogger(__name__)
         if self.progressUi.state in [self.OpStates.idle, self.OpStates.starting, self.OpStates.stopping, self.OpStates.running, self.OpStates.paused, self.OpStates.interrupted]:
-            self.startTime = time.time()
+            self.context.startTime = time.time()
             self.pulserHardware.ppStop()
             
             override = dict()
@@ -331,23 +342,23 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             AWGEnabled = self.project.isEnabled('software', 'AWG')
             if AWGEnabled:
                 AWGdevice = self.scanTargetDict["AWG"]["Duration"].device
-                if AWGdevice.parent.parameters.enabled and self.scan.scanMode == 0: # 0 = Parameter Scan
+                if AWGdevice.parent.parameters.enabled and self.context.scan.scanMode == 0: # 0 = Parameter Scan
                     logging.getLogger(__name__).info("AWG active!")
                     (setScanParam, scanParam) = AWGdevice.scanParam()
                     # don't scan over scanParam if not a duration scan. instead override scanParam if necessary and program the AWG
-                    if not (self.scan.scanMode == 0 and self.scan.scanTarget == "AWG" and self.scan.scanParameter == "Duration"):
+                    if not (self.context.scan.scanMode == 0 and self.context.scan.scanTarget == "AWG" and self.context.scan.scanParameter == "Duration"):
                         if setScanParam:
                             override = {scanParam: AWGdevice._waveform.vars['Duration']['value']}
                             scanParam = None
                         AWGdevice.program(False)
             
-            PulseProgramBinary = self.pulseProgramUi.getPulseProgramBinary(override=override) # also overwrites the current variable values
-            if self.scan.scanMode == 0:
-                self.generator = GeneratorList[self.scan.scanMode](self.scan, scanParam=scanParam)
+            self.context.PulseProgramBinary = self.pulseProgramUi.getPulseProgramBinary(override=override) # also overwrites the current variable values
+            if self.context.scan.scanMode == 0:
+                self.context.generator = GeneratorList[self.context.scan.scanMode](self.context.scan, scanParam=scanParam)
             else:
-                self.generator = GeneratorList[self.scan.scanMode](self.scan)
+                self.context.generator = GeneratorList[self.context.scan.scanMode](self.context.scan)
             
-            (mycode, data) = self.generator.prepare(self.pulseProgramUi, self.scanMethod.maxUpdatesToWrite )
+            (mycode, data) = self.context.generator.prepare(self.pulseProgramUi, self.context.scanMethod.maxUpdatesToWrite )
             if self.pulseProgramUi.writeRam and self.pulseProgramUi.ramData:
                 data = self.pulseProgramUi.ramData #Overwrites anything set above by the gate sequence ui
             if data:
@@ -359,27 +370,27 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                     logger.info("original: {0}".format(data) if len(data)<202 else "original {0} ... {1}".format(data[0:100], data[-100:]) )
                     logger.info("received: {0}".format(datacopy) if len(datacopy)<202 else "received {0} ... {1}".format(datacopy[0:100], datacopy[-100:]) )
                     raise ScanException("Ram write unsuccessful datalength {0} checked length {1}".format(len(data),len(datacopy)))
-                if self.scan.gateSequenceSettings.debug:
+                if self.context.scan.gateSequenceSettings.debug:
                     with open("debug.bin",'w') as f:
                         f.write( ' '.join(map(str,data)) )
             self.pulserHardware.ppFlushData()
             self.pulserHardware.ppClearWriteFifo()
-            self.pulserHardware.ppUpload(PulseProgramBinary)
+            self.pulserHardware.ppUpload(self.context.PulseProgramBinary)
             self.pulserHardware.ppWriteData(mycode)
             self.displayUi.onClear()
             self.timestampsNewRun = True
-            if self.plottedTraceList and self.traceui.unplotLastTrace:
-                for plottedTrace in self.plottedTraceList:
+            if self.context.plottedTraceList and self.traceui.unplotLastTrace:
+                for plottedTrace in self.context.plottedTraceList:
                     plottedTrace.plot(0) #unplot previous trace
-            if self.plottedTraceList and self.traceui.collapseLastTrace:
-                self.traceui.collapse(self.plottedTraceList[0])
+            if self.context.plottedTraceList and self.traceui.collapseLastTrace:
+                self.traceui.collapse(self.context.plottedTraceList[0])
             self.plottedTraceList = list() #reset plotted trace list
-            self.otherDataFile = None
-            self.histogramBuffer = defaultdict( list )
-            self.scanMethod.startScan()
+            self.context.otherDataFile = None
+            self.context.histogramBuffer = defaultdict( list )
+            self.context.scanMethod.startScan()
 
     def onContinue(self):
-        if self.progressUi.state == self.OpStates.interrupted:
+        if self.progressUi.is_interrupted:
             logging.getLogger(__name__).info("Received ion reappeared signal, will continue.")
             self.onPause()
     
@@ -388,16 +399,49 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         if self.progressUi.state in [self.OpStates.paused,self.OpStates.interrupted]:
             self.pulserHardware.ppFlushData()
             self.pulserHardware.ppClearWriteFifo()
-            self.pulserHardware.ppWriteData(self.generator.restartCode(self.currentIndex))
+            self.pulserHardware.ppWriteData(self.context.generator.restartCode(self.context.currentIndex))
             logger.info( "Starting" )
             self.pulserHardware.ppStart()
-            self.progressUi.resumeRunning(self.currentIndex)
+            self.progressUi.resumeRunning(self.context.currentIndex)
             self.timestampsNewRun = False
             logger.info( "continued" )
-        elif self.progressUi.state == self.OpStates.running:
+        elif self.progressUi.is_running:
             self.pulserHardware.ppStop()
             self.progressUi.setPaused()
-    
+
+    def onStash(self):
+        """Pause the current run and stash all the variables.
+        A stashed run can be interrupted by anythin and resumed"""
+        if self.progressUi.is_running:
+            self.pulserHardware.ppInterrupt()
+            self.progressUi.setStashing()
+
+    def stashSize(self):
+        return len(self.stash)
+
+    def onStashBottomHalf(self):
+        self.context.progressData = self.progressUi.getData()
+        self.stash.append(self.context)
+        self.progressUi.setIdle()
+        self.stashSizeChanged.emit(len(self.stash))
+
+    def onResume(self, index=None):
+        """Resume the stashed run given by index"""
+        logger = logging.getLogger(__name__)
+        if self.progressUi.is_idle:
+            index = firstNotNone(index, len(self.stash) - 1)
+            self.context = self.stash.pop(index)
+            self.pulserHardware.ppFlushData()
+            self.pulserHardware.ppClearWriteFifo()
+            self.pulserHardware.ppWriteData(self.context.generator.restartCode(self.context.currentIndex))
+            logger.info( "Starting" )
+            self.pulserHardware.ppStart()
+            self.progressUi.setData(self.context.progressData)
+            self.progressUi.resumeRunning(self.context.currentIndex)
+            self.timestampsNewRun = False
+            logger.info( "continued" )
+            self.stashSizeChanged.emit(len(self.stash))
+
     def onInterrupt(self, reason):
         self.pulserHardware.ppStop()
         self.progressUi.setInterrupted(reason)       
@@ -410,11 +454,11 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.NeedsDDSRewrite.emit()
             QApplication.processEvents()
             try:
-                if self.scan:
+                if self.context.scan:
                     self.finalizeData(reason=reason)
             except Exception as e:
                 logging.getLogger(__name__).warning("Analysis failed: {0}".format(str(e)))
-            self.scanMethod.onStop()
+            self.context.scanMethod.onStop()
             self.ppStopSignal.emit()
 
     def traceFilename(self, pattern):
@@ -431,12 +475,12 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         queuesize is the size of waiting messages, dont't do expensive unnecessary stuff if queue is deep
         """
         logger = logging.getLogger(__name__)
-        if self.progressUi.state == self.OpStates.running:
-            if data.other and self.scan.gateSequenceSettings.debug:
-                if self.otherDataFile is None:
+        if self.progressUi.is_running:
+            if data.other and self.context.scan.gateSequenceSettings.debug:
+                if self.context.otherDataFile is None:
                     dumpFilename, _ = DataDirectory.DataDirectory().sequencefile("other_data.bin")
-                    self.otherDataFile = open( dumpFilename, "wb" )
-                self.otherDataFile.write( self.pulserHardware.wordListToBytearray(data.other))
+                    self.context.otherDataFile = open( dumpFilename, "wb" )
+                self.context.otherDataFile.write( self.pulserHardware.wordListToBytearray(data.other))
             if data.overrun:
                 logger.warning( "Read Pipe Overrun" )
                 self.onInterrupt("Read Pipe Overrun")
@@ -447,45 +491,48 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                     self.pulseProgramUi.setTimingViolations( [self.pulseProgramUi.lineOfInstruction(l) for l in self.accumulatedTimingViolations])
                     lineInPP = self.pulseProgramUi.lineOfInstruction(data.timingViolations[0])
                     logger.warning( "PP Timing violation at address {0}".format(lineInPP))
-            if data.final and data.exitcode not in [0,0xffff]:
-                self.onInterrupt( self.pulseProgramUi.exitcode(data.exitcode) )
+            if data.final:
+                if data.exitcode == 0x100000000000:  # interrupt
+                    self.onStashBottomHalf()
+                elif data.exitcode not in [0,0xffff]:
+                    self.onInterrupt( self.pulseProgramUi.exitcode(data.exitcode) )
             else:
-                logger.info( "onData {0} {1} {2}".format( self.currentIndex, dict((i,len(data.count[i])) for i in sorted(data.count.keys())), data.scanvalue ) )
-                x = self.generator.xValue(self.currentIndex, data)
-                self.scanMethod.onData( data, queuesize, x )
-                if self.rawDataFile is not None:
-                    self.rawDataFile.write( data.dataString() )
-                    self.rawDataFile.write( '\n' )
-                    self.rawDataFile.flush()
+                logger.info( "onData {0} {1} {2}".format( self.context.currentIndex, dict((i,len(data.count[i])) for i in sorted(data.count.keys())), data.scanvalue ) )
+                x = self.context.generator.xValue(self.context.currentIndex, data)
+                self.context.scanMethod.onData( data, queuesize, x )
+                if self.context.rawDataFile is not None:
+                    self.context.rawDataFile.write( data.dataString() )
+                    self.context.rawDataFile.write( '\n' )
+                    self.context.rawDataFile.flush()
         else:
-            logger.info( "pp not running ignoring onData {0} {1} {2}".format( self.currentIndex, dict((i,len(data.count[i])) for i in sorted(data.count.keys())), data.scanvalue ) )
+            logger.info( "pp not running ignoring onData {0} {1} {2}".format( self.context.currentIndex, dict((i,len(data.count[i])) for i in sorted(data.count.keys())), data.scanvalue ) )
 
         
     def dataMiddlePart(self, data, queuesize, x):
         if is_magnitude(x):
-            x = x.ounit(self.scan.xUnit).toval()
+            x = x.ounit(self.context.scan.xUnit).toval()
         logger = logging.getLogger(__name__)
         evaluated = list()
-        expected = self.generator.expected( self.currentIndex )
+        expected = self.context.generator.expected( self.context.currentIndex )
         replacementDict = dict(self.pulseProgramUi.currentContext.parameters.valueView.iteritems()) 
-        for evaluation, algo in zip(self.evaluation.evalList,self.evaluation.evalAlgorithmList):
+        for evaluation, algo in zip(self.context.evaluation.evalList,self.context.evaluation.evalAlgorithmList):
             evaluated.append( algo.evaluate( data, evaluation, expected=expected, ppDict=replacementDict, globalDict=self.globalVariables) ) # returns mean, error, raw
         if len(evaluated)>0:
             self.displayUi.add(  [ e[0] for e in evaluated ] )
             self.updateMainGraph(x, evaluated, data.timeinterval, data.timeTickOffset, queuesize  )
-            self.showHistogram(data, self.evaluation.evalList, self.evaluation.evalAlgorithmList )
+            self.showHistogram(data, self.context.evaluation.evalList, self.context.evaluation.evalAlgorithmList )
         if data.other:
             logger.info( "Other: {0}".format( data.other ) )
-        self.currentIndex += 1
-        if self.evaluation.enableTimestamps and self.timestampsEnabled:
+        self.context.currentIndex += 1
+        if self.context.evaluation.enableTimestamps and self.timestampsEnabled:
             self.showTimestamps(data)
-        self.scanMethod.prepareNextPoint(data)
-        names = [self.evaluation.ev.name for self.evaluation.ev in self.evaluation.evalList]
+        self.context.scanMethod.prepareNextPoint(data)
+        names = [self.context.evaluation.ev.name for self.context.evaluation.ev in self.context.evaluation.evalList]
         results = [(x,res[0]) for res in evaluated]
         self.evaluatedDataSignal.emit(dict(zip(names, results)))
         
     def updateMainGraph(self, x, evaluated, timeinterval, timeTickOffset, queuesize): # evaluated is list of mean, error, raw
-        if not self.plottedTraceList:
+        if not self.context.plottedTraceList:
             traceCollection = TraceCollection(record_timestamps=True)
             traceCollection.recordTimeinterval(timeTickOffset)
             self.plottedTraceList = list()
@@ -502,56 +549,56 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                         bottomColumnName = 'bottom{0}'.format(index)
                         traceCollection.addColumn( topColumnName )
                         traceCollection.addColumn( bottomColumnName )
-                        plottedTrace = PlottedTrace(traceCollection, self.plotDict[self.evaluation.evalList[index].plotname]["view"] if self.evaluation.evalList[index].plotname != 'None' else None,
-                                                    pens.penList, xColumn=self.evaluation.evalList[index].abszisse.columnName,
+                        plottedTrace = PlottedTrace(traceCollection, self.plotDict[self.context.evaluation.evalList[index].plotname]["view"] if self.context.evaluation.evalList[index].plotname != 'None' else None,
+                                                    pens.penList, xColumn=self.context.evaluation.evalList[index].abszisse.columnName,
                                                     yColumn=yColumnName, topColumn=topColumnName, bottomColumn=bottomColumnName, 
-                                                    rawColumn=rawColumnName, name=self.evaluation.evalList[index].name, xAxisUnit = self.scan.xUnit,
-                                                    xAxisLabel = self.scan.scanParameter, windowName=self.evaluation.evalList[index].plotname) 
+                                                    rawColumn=rawColumnName, name=self.context.evaluation.evalList[index].name, xAxisUnit = self.context.scan.xUnit,
+                                                    xAxisLabel = self.context.scan.scanParameter, windowName=self.context.evaluation.evalList[index].plotname)
                     else:                
-                        plottedTrace = PlottedTrace(traceCollection, self.plotDict[self.evaluation.evalList[index].plotname]["view"] if self.evaluation.evalList[index].plotname != 'None' else None,
-                                                    pens.penList, xColumn=self.evaluation.evalList[index].abszisse.columnName, yColumn=yColumnName, rawColumn=rawColumnName, name=self.evaluation.evalList[index].name,
-                                                    xAxisUnit = self.scan.xUnit, xAxisLabel = self.scan.scanParameter, windowName=self.evaluation.evalList[index].plotname)               
-                    xRange = self.generator.xRange() if isinstance(self.scan.start, magnitude.Magnitude) and magnitude.mg(self.scan.xUnit).dimension()==self.scan.start.dimension() else None
+                        plottedTrace = PlottedTrace(traceCollection, self.plotDict[self.context.evaluation.evalList[index].plotname]["view"] if self.context.evaluation.evalList[index].plotname != 'None' else None,
+                                                    pens.penList, xColumn=self.context.evaluation.evalList[index].abszisse.columnName, yColumn=yColumnName, rawColumn=rawColumnName, name=self.context.evaluation.evalList[index].name,
+                                                    xAxisUnit = self.context.scan.xUnit, xAxisLabel = self.context.scan.scanParameter, windowName=self.context.evaluation.evalList[index].plotname)
+                    xRange = self.context.generator.xRange() if isinstance(self.context.scan.start, magnitude.Magnitude) and magnitude.mg(self.context.scan.xUnit).dimension()==self.context.scan.start.dimension() else None
                     if xRange:
                         self.plotDict["Scan Data"]["view"].setXRange( *xRange )
                     else:
                         self.plotDict["Scan Data"]["view"].enableAutoRange(axis=ViewBox.XAxis)     
-                    self.plottedTraceList.append( plottedTrace )
-            self.plottedTraceList[0].traceCollection.name = self.scan.settingsName
-            self.plottedTraceList[0].traceCollection.description["comment"] = ""
-            self.plottedTraceList[0].traceCollection.description["PulseProgram"] = self.pulseProgramUi.description()
-            self.plottedTraceList[0].traceCollection.description["Scan"] = self.scan.description()
-            self.plottedTraceList[0].traceCollection.autoSave = self.scan.autoSave
-            self.plottedTraceList[0].traceCollection.filenamePattern = self.scan.filename
-            if len(self.plottedTraceList) > 1:
-                for plottedTrace in self.plottedTraceList:
-                    plottedTrace.category = plottedTrace.traceCollection.fileleaf if self.scan.autoSave else "UNSAVED_"+plottedTrace.traceCollection.filenamePattern+"_{0}".format(self.unsavedTraceCount)
-            if not self.scan.autoSave: self.unsavedTraceCount+=1
-            self.generator.appendData( self.plottedTraceList, x, evaluated, timeinterval )
-            for index, plottedTrace in reversed(list(enumerate(self.plottedTraceList))):
+                    self.context.plottedTraceList.append( plottedTrace )
+            self.context.plottedTraceList[0].traceCollection.name = self.context.scan.settingsName
+            self.context.plottedTraceList[0].traceCollection.description["comment"] = ""
+            self.context.plottedTraceList[0].traceCollection.description["PulseProgram"] = self.pulseProgramUi.description()
+            self.context.plottedTraceList[0].traceCollection.description["Scan"] = self.context.scan.description()
+            self.context.plottedTraceList[0].traceCollection.autoSave = self.context.scan.autoSave
+            self.context.plottedTraceList[0].traceCollection.filenamePattern = self.context.scan.filename
+            if len(self.context.plottedTraceList) > 1:
+                for plottedTrace in self.context.plottedTraceList:
+                    plottedTrace.category = plottedTrace.traceCollection.fileleaf if self.context.scan.autoSave else "UNSAVED_"+plottedTrace.traceCollection.filenamePattern+"_{0}".format(self.unsavedTraceCount)
+            if not self.context.scan.autoSave: self.unsavedTraceCount+=1
+            self.context.generator.appendData( self.context.plottedTraceList, x, evaluated, timeinterval )
+            for index, plottedTrace in reversed(list(enumerate(self.context.plottedTraceList))):
                 self.traceui.addTrace(plottedTrace, pen=-1)
             if self.traceui.expandNew:
-                self.traceui.expand(self.plottedTraceList[0])
+                self.traceui.expand(self.context.plottedTraceList[0])
             self.traceui.resizeColumnsToContents()
         else:
-            self.generator.appendData(self.plottedTraceList, x, evaluated, timeinterval )
+            self.context.generator.appendData(self.context.plottedTraceList, x, evaluated, timeinterval )
             if queuesize<2:
-                for plottedTrace in self.plottedTraceList:
+                for plottedTrace in self.context.plottedTraceList:
                     plottedTrace.replot()
 
     def finalizeData(self, reason='end of scan'):
-        if not self.dataFinalized:  # is not yet finalized
+        if not self.context.dataFinalized:  # is not yet finalized
             logger = logging.getLogger(__name__)
             logger.info( "finalize Data reason: {0}".format(reason) )
             saveData = reason != 'aborted'
-            if self.otherDataFile is not None:
-                self.otherDataFile.close()
-                self.otherDataFile = None
-            if self.rawDataFile is not None:
-                self.rawDataFile.close()
-                self.rawDataFile = None
+            if self.context.otherDataFile is not None:
+                self.context.otherDataFile.close()
+                self.context.otherDataFile = None
+            if self.context.rawDataFile is not None:
+                self.context.rawDataFile.close()
+                self.context.rawDataFile = None
                 logging.getLogger(__name__).info("Closed raw data file")
-            for trace in ([self.currentTimestampTrace]+[self.plottedTraceList[0].traceCollection] if self.plottedTraceList else[]):
+            for trace in ([self.context.currentTimestampTrace]+[self.context.plottedTraceList[0].traceCollection] if self.context.plottedTraceList else[]):
                 if trace:
                     trace.description["traceFinalized"] = datetime.now(pytz.utc)
                     if trace.autoSave:
@@ -559,46 +606,46 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             if saveData:
                 failedList = self.dataAnalysis()
                 self.registerMeasurement(failedList)
-            if self.scan.histogramSave:
-                self.onSaveHistogram(self.scan.histogramFilename if self.scan.histogramFilename else None)
-            self.dataFinalized = reason
-            allData = {self.p.name:(self.p.x, self.p.y) for self.p in self.plottedTraceList}
+            if self.context.scan.histogramSave:
+                self.onSaveHistogram(self.context.scan.histogramFilename if self.context.scan.histogramFilename else None)
+            self.context.dataFinalized = reason
+            allData = {self.p.name:(self.p.x, self.p.y) for self.p in self.context.plottedTraceList}
             self.allDataSignal.emit(allData)
         
     def dataAnalysis(self):
-        return self.analysisControlWidget.analyze( dict( ( (evaluation.name,plottedTrace) for evaluation, plottedTrace in zip(self.evaluation.evalList, self.plottedTraceList) ) ) )
+        return self.analysisControlWidget.analyze( dict( ( (evaluation.name,plottedTrace) for evaluation, plottedTrace in zip(self.context.evaluation.evalList, self.plottedTraceList) ) ) )
                 
             
     def showTimestamps(self,data):
-        bins = int( (self.evaluation.roiWidth/self.evaluation.binwidth).toval() )
+        bins = int( (self.context.evaluation.roiWidth/self.context.evaluation.binwidth).toval() )
         multiplier = self.pulserHardware.timestep.toval('ms')
-        myrange = (self.evaluation.roiStart.toval('ms')/multiplier,(self.evaluation.roiStart+self.evaluation.roiWidth).toval('ms')/multiplier)
-        y, x = numpy.histogram( data.timestamp[self.evaluation.timestampsChannel], 
+        myrange = (self.context.evaluation.roiStart.toval('ms')/multiplier,(self.context.evaluation.roiStart+self.context.evaluation.roiWidth).toval('ms')/multiplier)
+        y, x = numpy.histogram( data.timestamp[self.context.evaluation.timestampsChannel],
                                 range=myrange,
                                 bins=bins)
         x = x[0:-1] * multiplier
                                 
-        if self.currentTimestampTrace and numpy.array_equal(self.currentTimestampTrace.x,x) and (
-            self.evaluation.integrateTimestamps == self.evaluationControlWidget.integrationMode.IntegrateAll or 
-                (self.evaluation.integrateTimestamps == self.evaluationControlWidget.integrationMode.IntegrateRun and not self.timestampsNewRun) ) :
-            self.currentTimestampTrace.y += y
+        if self.context.currentTimestampTrace and numpy.array_equal(self.context.currentTimestampTrace.x,x) and (
+            self.context.evaluation.integrateTimestamps == self.evaluationControlWidget.integrationMode.IntegrateAll or
+                (self.context.evaluation.integrateTimestamps == self.evaluationControlWidget.integrationMode.IntegrateRun and not self.timestampsNewRun) ) :
+            self.context.currentTimestampTrace.y += y
             self.plottedTimestampTrace.replot()
-            if self.currentTimestampTrace.rawdata:
-                self.currentTimestampTrace.rawdata.addInt(data.timestamp[self.evaluation.timestampsChannel])
+            if self.context.currentTimestampTrace.rawdata:
+                self.context.currentTimestampTrace.rawdata.addInt(data.timestamp[self.context.evaluation.timestampsChannel])
         else:    
-            self.currentTimestampTrace = TraceCollection()
-            if self.evaluation.saveRawData:
-                self.currentTimestampTrace.rawdata = RawData()
-                self.currentTimestampTrace.rawdata.addInt(data.timestamp[self.evaluation.timestampsChannel])
-            self.currentTimestampTrace.x = x
-            self.currentTimestampTrace.y = y
-            self.currentTimestampTrace.name = self.scan.settingsName
-            self.currentTimestampTrace.description["comment"] = ""
-            self.currentTimestampTrace.filenameCallback = functools.partial( self.traceFilename, "Timestamp_"+self.scan.filename )
-            self.plottedTimestampTrace = PlottedTrace(self.currentTimestampTrace,self.plotDict["Timestamps"]["view"],pens.penList, windowName="Timestamps")
+            self.context.currentTimestampTrace = TraceCollection()
+            if self.context.evaluation.saveRawData:
+                self.context.currentTimestampTrace.rawdata = RawData()
+                self.context.currentTimestampTrace.rawdata.addInt(data.timestamp[self.context.evaluation.timestampsChannel])
+            self.context.currentTimestampTrace.x = x
+            self.context.currentTimestampTrace.y = y
+            self.context.currentTimestampTrace.name = self.context.scan.settingsName
+            self.context.currentTimestampTrace.description["comment"] = ""
+            self.context.currentTimestampTrace.filenameCallback = functools.partial( self.traceFilename, "Timestamp_"+self.context.scan.filename )
+            self.plottedTimestampTrace = PlottedTrace(self.context.currentTimestampTrace,self.plotDict["Timestamps"]["view"],pens.penList, windowName="Timestamps")
             self.timestampTraceui.addTrace(self.plottedTimestampTrace,pen=-1)              
             pulseProgramHeader = stringutilit.commentarize( self.pulseProgramUi.documentationString() )
-            scanHeader = stringutilit.commentarize( repr(self.scan) )
+            scanHeader = stringutilit.commentarize( repr(self.context.scan) )
             self.plottedTimestampTrace.trace.header = '\n'.join((pulseProgramHeader, scanHeader)) 
         self.timestampsNewRun = False                       
         
@@ -606,51 +653,51 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         index = 0
         for evaluation, algo in zip(evalList, evalAlgoList):
             if evaluation.showHistogram:
-                y, x, function = algo.histogram( data, evaluation, self.evaluation.histogramBins ) 
-                if self.evaluation.integrateHistogram and len(self.histogramList)>index:
-                    self.histogramList[index] = (self.histogramList[index][0] + y, self.histogramList[index][1], evaluation.name, None )
-                elif len(self.histogramList)>index:
-                    self.histogramList[index] = (y,x,evaluation.name, function )
+                y, x, function = algo.histogram( data, evaluation, self.context.evaluation.histogramBins )
+                if self.context.evaluation.integrateHistogram and len(self.context.histogramList)>index:
+                    self.context.histogramList[index] = (self.context.histogramList[index][0] + y, self.context.histogramList[index][1], evaluation.name, None )
+                elif len(self.context.histogramList)>index:
+                    self.context.histogramList[index] = (y,x,evaluation.name, function )
                 else:
-                    self.histogramList.append( (y,x,evaluation.name, function) )
-                self.histogramBuffer[evaluation.name].append(y)
+                    self.context.histogramList.append( (y,x,evaluation.name, function) )
+                self.context.histogramBuffer[evaluation.name].append(y)
                 index += 1
         numberTraces = index
-        del self.histogramList[numberTraces:]   # remove elements that are not needed any more
-        if not self.histogramTrace:
-            self.histogramTrace = TraceCollection()
-        for index, histogram in enumerate(self.histogramList):
-            if index<len(self.histogramCurveList):
-                self.histogramCurveList[index].x = histogram[1]
-                self.histogramCurveList[index].y = histogram[0]  
-                self.histogramCurveList[index].fitFunction = histogram[3]
-                self.histogramCurveList[index].replot()
+        del self.context.histogramList[numberTraces:]   # remove elements that are not needed any more
+        if not self.context.histogramTrace:
+            self.context.histogramTrace = TraceCollection()
+        for index, histogram in enumerate(self.context.histogramList):
+            if index<len(self.context.histogramCurveList):
+                self.context.histogramCurveList[index].x = histogram[1]
+                self.context.histogramCurveList[index].y = histogram[0]
+                self.context.histogramCurveList[index].fitFunction = histogram[3]
+                self.context.histogramCurveList[index].replot()
             else:
                 yColumnName = 'y{0}'.format(index) 
-                self.histogramTrace.addColumn( yColumnName, ignoreExisting=True )
-                plottedHistogramTrace = PlottedTrace(self.histogramTrace,self.plotDict["Histogram"]["view"],pens.penList,plotType=PlottedTrace.Types.steps, #@UndefinedVariable
+                self.context.histogramTrace.addColumn( yColumnName, ignoreExisting=True )
+                plottedHistogramTrace = PlottedTrace(self.context.histogramTrace,self.plotDict["Histogram"]["view"],pens.penList,plotType=PlottedTrace.Types.steps, #@UndefinedVariable
                                                      yColumn=yColumnName, name="Histogram "+(histogram[2] if histogram[2] else ""), windowName="Histogram" )
-                self.histogramTrace.filenamePattern = "Hist_"+self.scan.filename
+                self.context.histogramTrace.filenamePattern = "Hist_"+self.context.scan.filename
                 plottedHistogramTrace.x = histogram[1]
                 plottedHistogramTrace.y = histogram[0]
-                plottedHistogramTrace.trace.name = self.scan.settingsName
+                plottedHistogramTrace.trace.name = self.context.scan.settingsName
                 plottedHistogramTrace.fitFunction = histogram[3]
-                self.histogramCurveList.append(plottedHistogramTrace)
+                self.context.histogramCurveList.append(plottedHistogramTrace)
                 plottedHistogramTrace.plot()
-        for i in range(numberTraces,len(self.histogramCurveList)):
-            self.histogramCurveList[i].removePlots()
-        del self.histogramCurveList[numberTraces:]
+        for i in range(numberTraces,len(self.context.histogramCurveList)):
+            self.context.histogramCurveList[i].removePlots()
+        del self.context.histogramCurveList[numberTraces:]
 
     def onCopyHistogram(self):
-        for plottedtrace in self.histogramCurveList:
+        for plottedtrace in self.context.histogramCurveList:
             self.traceui.addTrace(plottedtrace,pen=-1)   
-        self.histogramTrace = TraceCollection()
-        self.histogramCurveList = []        
+        self.context.histogramTrace = TraceCollection()
+        self.context.histogramCurveList = []
              
     
     def onSaveHistogram(self, filenameTemplate="Histogram.txt"):
         tName, tExtension = os.path.splitext(filenameTemplate) if filenameTemplate else ("Histogram", ".txt")
-        for name, histogramlist in self.histogramBuffer.iteritems():
+        for name, histogramlist in self.context.histogramBuffer.iteritems():
             filename = DataDirectory.DataDirectory().sequencefile(tName+"_"+name+tExtension)[0]
             with open(filename,'w') as f:
                 for histogram in histogramlist:
@@ -817,11 +864,11 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
 
     def registerMeasurement(self, failedList):
         failedEntry = ", ".join((name for target, name in failedList)) if failedList else None
-        measurement = Measurement(scanType= 'Scan', scanName=self.scan.settingsName, scanParameter=self.scan.scanParameter, scanTarget=self.scan.scanTarget,
-                                  scanPP = self.scan.loadPPName,
-                                  evaluation=self.evaluation.settingsName, 
-                                  startDate=self.plottedTraceList[0].traceCollection.description['traceCreation'] if self.plottedTraceList else datetime.now(pytz.utc),
-                                  duration=None, filename=self.plottedTraceList[0].traceCollection.filename if self.plottedTraceList else "none",
+        measurement = Measurement(scanType= 'Scan', scanName=self.context.scan.settingsName, scanParameter=self.context.scan.scanParameter, scanTarget=self.context.scan.scanTarget,
+                                  scanPP = self.context.scan.loadPPName,
+                                  evaluation=self.context.evaluation.settingsName,
+                                  startDate=self.context.plottedTraceList[0].traceCollection.description['traceCreation'] if self.context.plottedTraceList else datetime.now(pytz.utc),
+                                  duration=None, filename=self.context.plottedTraceList[0].traceCollection.filename if self.context.plottedTraceList else "none",
                                   comment=None, longComment=None, failedAnalysis=failedEntry)
         # add parameters
         space = self.measurementLog.container.getSpace('PulseProgram')
@@ -849,7 +896,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 measurement.results.append( Result(name=fullName, value=pushvar.value, bottom=pushvar.minimum if pushvar.minimum else None,
                                                                                        top=pushvar.maximum if pushvar.maximum else None))   
         # add Plots
-        measurement.plottedTraceList = self.plottedTraceList              
+        measurement.plottedTraceList = self.context.plottedTraceList
         self.measurementLog.container.addMeasurement( measurement )
             
                 

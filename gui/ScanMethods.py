@@ -23,11 +23,11 @@ class InternalScanMethod(object):
     
     def startScan(self):
         logger = logging.getLogger(__name__)
-        self.experiment.progressUi.setRunning( max(len(self.experiment.scan.list),1) if self.experiment.scan.list is not None else 100) 
+        self.experiment.progressUi.setRunning( max(len(self.experiment.context.scan.list),1) if self.experiment.context.scan.list is not None else 100)
         logger.info( "Starting" )
         self.experiment.pulserHardware.ppStart()
-        self.experiment.currentIndex = 0
-        logger.info( "elapsed time {0}".format( time.time()-self.experiment.startTime ) )
+        self.experiment.context.currentIndex = 0
+        logger.info( "elapsed time {0}".format( time.time()-self.experiment.context.startTime ) )
 
     def onStop(self):
         self.experiment.progressUi.setIdle()            
@@ -38,19 +38,19 @@ class InternalScanMethod(object):
     def prepareNextPoint(self, data):
         if data.final:
             self.experiment.finalizeData(reason='end of scan')
-            if self.experiment.scan.list is None:
+            if self.experiment.context.scan.list is None:
                 self.experiment.generator.dataOnFinal(self.experiment, self.experiment.progressUi.state )
-            elif self.experiment.currentIndex >= len(self.experiment.scan.list):    # if all points were taken
-                logging.getLogger(__name__).info( "current index {0} expected {1}".format(self.experiment.currentIndex, len(self.experiment.scan.list) ) )
+            elif self.experiment.context.currentIndex >= len(self.experiment.context.scan.list):    # if all points were taken
+                logging.getLogger(__name__).info( "current index {0} expected {1}".format(self.experiment.context.currentIndex, len(self.experiment.context.scan.list) ) )
                 self.experiment.generator.dataOnFinal(self.experiment, self.experiment.progressUi.state )
             else:
-                logging.getLogger(__name__).error( "current index {0} expected {1}".format(self.experiment.currentIndex, len(self.experiment.scan.list) ) )
+                logging.getLogger(__name__).error( "current index {0} expected {1}".format(self.experiment.context.currentIndex, len(self.experiment.context.scan.list) ) )
                 self.experiment.onInterrupt( self.experiment.pulseProgramUi.exitcode(data.exitcode) )
         else:
-            mycode = self.experiment.generator.dataNextCode(self )
+            mycode = self.experiment.context.generator.dataNextCode(self )
             if mycode:
                 self.experiment.pulserHardware.ppWriteData(mycode)
-            self.experiment.progressUi.onData( self.experiment.currentIndex )  
+            self.experiment.progressUi.onData( self.experiment.context.currentIndex )
    
 class ExternalScanMethod(InternalScanMethod):
     name = 'External'
@@ -63,12 +63,12 @@ class ExternalScanMethod(InternalScanMethod):
         self.parameter = None
     
     def startScan(self):
-        if self.experiment.scan.scanParameter not in self.experiment.scanTargetDict[self.experiment.scan.scanTarget]:
-            message = "{0} Scan Parameter '{1}' is not enabled.".format(self.name,self.experiment.scan.scanParameter)
+        if self.experiment.context.scan.scanParameter not in self.experiment.scanTargetDict[self.experiment.context.scan.scanTarget]:
+            message = "{0} Scan Parameter '{1}' is not enabled.".format(self.name,self.experiment.context.scan.scanParameter)
             logging.getLogger(__name__).warning(message)
             raise ScanNotAvailableException(message) 
-        if self.experiment.scan.scanMode==0:
-            self.parameter = self.experiment.scanTargetDict[self.name][self.experiment.scan.scanParameter]
+        if self.experiment.context.scan.scanMode==0:
+            self.parameter = self.experiment.scanTargetDict[self.name][self.experiment.context.scan.scanParameter]
             self.parameter.saveValue(overwrite=False)
             self.index = 0                 
         self.experiment.progressUi.setStarting()
@@ -76,15 +76,15 @@ class ExternalScanMethod(InternalScanMethod):
 
     def startBottomHalf(self):
         logger = logging.getLogger(__name__)
-        if self.experiment.progressUi.state == self.experiment.OpStates.starting:
-            if self.experiment.scan.scanMode!=0 or self.parameter.setValue( self.experiment.scan.list[self.index]):
+        if self.experiment.progressUi.is_starting:
+            if self.experiment.context.scan.scanMode!=0 or self.parameter.setValue( self.experiment.context.scan.list[self.index]):
                 """We are done adjusting"""
                 self.experiment.pulserHardware.ppStart()
-                self.experiment.currentIndex = 0
-                self.experiment.timestampsNewRun = True
-                logger.info( "elapsed time {0}".format( time.time()-self.experiment.startTime ) )
+                self.experiment.context.currentIndex = 0
+                self.experiment.context.timestampsNewRun = True
+                logger.info( "elapsed time {0}".format( time.time()-self.experiment.context.startTime ) )
                 logger.info( "Status -> Running" )
-                self.experiment.progressUi.setRunning( max(len(self.experiment.scan.list),1) ) 
+                self.experiment.progressUi.setRunning( max(len(self.experiment.context.scan.list),1) )
             else:
                 QtCore.QTimer.singleShot(100,self.startBottomHalf)
 
@@ -94,8 +94,8 @@ class ExternalScanMethod(InternalScanMethod):
                   
     def stopBottomHalf(self):
         logger = logging.getLogger(__name__)
-        if self.experiment.progressUi.state==self.experiment.OpStates.stopping:
-            if self.experiment.scan.scanMode==0 and self.parameter and not self.parameter.restoreValue():
+        if self.experiment.progressUi.is_stopping:
+            if self.experiment.context.scan.scanMode==0 and self.parameter and not self.parameter.restoreValue():
                 QtCore.QTimer.singleShot(100,self.stopBottomHalf)
             else:
                 self.experiment.progressUi.setIdle()
@@ -103,35 +103,35 @@ class ExternalScanMethod(InternalScanMethod):
              
     def onData(self, data, queuesize, x ):
         if not self.parameter.useExternalValue:
-            x = self.experiment.generator.xValue(self.index, data)
+            x = self.experiment.context.generator.xValue(self.index, data)
             self.experiment.dataMiddlePart(data, queuesize, x)
         else:
             self.parameter.asyncCurrentExternalValue( partial( self.experiment.dataMiddlePart, data, queuesize) )
             
     def prepareNextPoint(self, data):
         self.index += 1
-        if self.experiment.progressUi.state == self.experiment.OpStates.running:
+        if self.experiment.progressUi.is_running:
             if data.final and data.exitcode not in [0,0xffff]:
                 self.experiment.onInterrupt( self.experiment.pulseProgramUi.exitcode(data.exitcode) )
-            elif self.index < len(self.experiment.scan.list):
-                mycode = self.experiment.generator.dataNextCode(self )
+            elif self.index < len(self.experiment.context.scan.list):
+                mycode = self.experiment.context.generator.dataNextCode(self )
                 if mycode:
                     self.experiment.pulserHardware.ppWriteData(mycode)
                 self.dataBottomHalf()
                 self.experiment.progressUi.onData( self.index )  
             else:
                 self.experiment.finalizeData(reason='end of scan')
-                self.experiment.generator.dataOnFinal(self.experiment, self.experiment.progressUi.state )
+                self.experiment.context.generator.dataOnFinal(self.experiment, self.experiment.progressUi.state )
                 logging.getLogger(__name__).info("Scan Completed")               
 
         
     def dataBottomHalf(self):
         logger = logging.getLogger(__name__)
-        if self.experiment.progressUi.state == self.experiment.OpStates.running:
-            if self.experiment.scan.scanMode!=0 or self.parameter.setValue( self.experiment.scan.list[self.index]):
+        if self.experiment.progressUi.is_running:
+            if self.experiment.context.scan.scanMode!=0 or self.parameter.setValue( self.experiment.context.scan.list[self.index]):
                 """We are done adjusting"""
                 self.experiment.pulserHardware.ppStart()
-                logger.info( "{0} Value: {1}".format(self.name, self.experiment.scan.list[self.index]) )
+                logger.info( "{0} Value: {1}".format(self.name, self.experiment.context.scan.list[self.index]) )
             else:
                 QtCore.QTimer.singleShot(100,self.dataBottomHalf)
    

@@ -55,6 +55,9 @@
    <addaction name="actionContinue"/>
    <addaction name="actionClear"/>
    <addaction name="separator"/>
+   <addaction name="actionStash"/>
+   <addaction name="actionResume"/>
+   <addaction name="separator"/>
    <addaction name="actionDedicatedCounters"/>
    <addaction name="actionPulses"/>
    <addaction name="actionVoltageControl"/>
@@ -96,6 +99,9 @@
     <addaction name="actionStart"/>
     <addaction name="actionStop"/>
     <addaction name="actionPause"/>
+    <addaction name="separator"/>
+    <addaction name="actionStash"/>
+    <addaction name="actionResume"/>
    </widget>
    <widget class="QMenu" name="menuView">
     <property name="title">
@@ -640,6 +646,30 @@
   <action name="actionSave_Settings">
    <property name="text">
     <string>Save Settings</string>
+   </property>
+  </action>
+  <action name="actionStash">
+   <property name="icon">
+    <iconset resource="Experiment.qrc">
+     <normaloff>:/openicon/icons/media-playback-pause-3.png</normaloff>:/openicon/icons/media-playback-pause-3.png</iconset>
+   </property>
+   <property name="text">
+    <string>Stash</string>
+   </property>
+   <property name="toolTip">
+    <string>Stash the currently running scan</string>
+   </property>
+  </action>
+  <action name="actionResume">
+   <property name="icon">
+    <iconset resource="Experiment.qrc">
+     <normaloff>:/openicon/icons/media-playback-start-3.png</normaloff>:/openicon/icons/media-playback-start-3.png</iconset>
+   </property>
+   <property name="text">
+    <string>Resume</string>
+   </property>
+   <property name="toolTip">
+    <string>Resume stashed scan</string>
    </property>
   </action>
  </widget>
