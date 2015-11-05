@@ -86,9 +86,9 @@ class APTRotation(ExternalParameterBase):
     className = "APT Rotation"
     _outputChannels = { None: "" }
 
-    def __init__(self, name, config, instrument="COM3"):
+    def __init__(self, name, config, globalDict, instrument="COM3"):
         logger = logging.getLogger(__name__)
-        ExternalParameterBase.__init__(self, name, config)
+        ExternalParameterBase.__init__(self, name, config, globalDict)
         logger.info("trying to open '{0}'".format(instrument))
         self.instrument = APTInstrument()
         self.instrument.open(instrument)

@@ -175,10 +175,10 @@ if visaEnabled:
             return v
 
         def getValue(self, channel):
-            if channel=='Frequency':
+            if channel=='Freq':
                 answer = self.synthesizer.query(":FREQ:CW?")
                 return magnitude.mg( float(answer), "Hz" )
-            elif channel=='Power':
+            elif channel=='Power_dBm':
                 answer = self.synthesizer.query(":POWER?")
                 return magnitude.mg( float(answer), "" )
 
