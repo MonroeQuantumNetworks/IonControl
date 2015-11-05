@@ -78,14 +78,17 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
                            (QtCore.Qt.DisplayRole, 0):
                                lambda node: str(node.content) #default, normally overwritten
                            }
-        self.backgroundFunction = lambda node: self.dependencyBgColor if getattr(node.content,'hasDependency',None) else getattr(node, 'bgColor', None)
+        self.dependencyBgFunction = lambda node: self.dependencyBgColor if getattr(node.content,'hasDependency',None) else getattr(node, 'bgColor', None)
         self.toolTipFunction = lambda node: getattr(node.content,'string','') if getattr(node.content,'hasDependency',None) else None
-        self.dataAllColLookup = { #data lookup that applies to all columns
-            QtCore.Qt.FontRole:
-                  lambda node: self.fontLookup.get(getattr(node, 'isBold', False))
+        self.dataAllColLookup = {   #data lookup that applies to all columns
+            QtCore.Qt.FontRole: lambda node: self.fontLookup.get(getattr(node, 'isBold', False)),
+            QtCore.Qt.BackgroundRole: lambda node: getattr(node, 'bgColor', None)
             }
         self.categoryDataLookup = {(QtCore.Qt.DisplayRole, 0): lambda node: node.content}
-        self.categoryDataAllColLookup = {QtCore.Qt.FontRole: lambda node: self.fontLookup.get(getattr(node, 'isBold', False))}
+        self.categoryDataAllColLookup = {
+            QtCore.Qt.FontRole: lambda node: self.fontLookup.get(getattr(node, 'isBold', False)),
+            QtCore.Qt.BackgroundRole: lambda node: getattr(node, 'bgColor', None)
+        }
         self.setDataLookup = {} #overwrite to set data. key: (role, col). val: function that takes (index, value)
         self.categorySetDataLookup = {} #overwrite to set data. key: (role, col). val: function that takes (index, value)
         self.flagsLookup = {0: QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable} #default, normally overwritten
@@ -338,7 +341,7 @@ class CategoryTreeView(QtGui.QTreeView):
     def __init__(self, parent=None):
         super(CategoryTreeView, self).__init__(parent)
         self.filter = KeyListFilter( [QtCore.Qt.Key_PageUp, QtCore.Qt.Key_PageDown, QtCore.Qt.Key_Delete],
-                                     [QtCore.Qt.Key_B, QtCore.Qt.Key_Up, QtCore.Qt.Key_Down] )
+                                     [QtCore.Qt.Key_B, QtCore.Qt.Key_Up, QtCore.Qt.Key_Down, QtCore.Qt.Key_W, QtCore.Qt.Key_R] )
         self.filter.keyPressed.connect(self.onKey)
         self.filter.controlKeyPressed.connect(self.onControl)
         self.installEventFilter(self.filter)
@@ -357,6 +360,10 @@ class CategoryTreeView(QtGui.QTreeView):
             self.collapseAll()
         elif key==QtCore.Qt.Key_Down:
             self.expandAll()
+        elif key==QtCore.Qt.Key_W:
+            self.onSetBackgroundColor()
+        elif key==QtCore.Qt.Key_R:
+            self.onRemoveBackgroundColor()
 
     def onBold(self):
         indexList = self.selectedRowIndexes()
@@ -465,19 +472,22 @@ class CategoryTreeView(QtGui.QTreeView):
                     node.isBold=True
 
     def onSetBackgroundColor(self):
-        nodes = self.selectedNodes()
-        model = self.model()
-
+        color = QtGui.QColorDialog.getColor()
+        if not color.isValid():
+            color = None
+        self.setBackgroundColor(color)
 
     def onRemoveBackgroundColor(self):
+        self.setBackgroundColor(None)
+
+    def setBackgroundColor(self, color):
         nodes = self.selectedNodes()
         model = self.model()
         for node in nodes:
-            node.bgColor = None
+            node.bgColor = color
             leftIndex = model.indexFromNode(node, 0)
             rightIndex = model.indexFromNode(node, model.numColumns-1)
             model.dataChanged.emit(leftIndex, rightIndex)
-
 
 if __name__ == "__main__":
     import sys

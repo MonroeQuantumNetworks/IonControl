@@ -184,10 +184,10 @@ class GlobalVariableUi(Form, Base ):
         backgroundColorAction.setMenu(backgroundColorMenu)
         self.addAction(backgroundColorAction)
         setBackgroundColorAction = QtGui.QAction("Set Background Color", self)
-        setBackgroundColorAction.triggered.connect(self.onSetBackgroundColor)
+        setBackgroundColorAction.triggered.connect(self.view.onSetBackgroundColor)
         backgroundColorMenu.addAction(setBackgroundColorAction)
         removeBackgroundColorAction = QtGui.QAction("Remove Background Color", self)
-        removeBackgroundColorAction.triggered.connect(self.onRemoveBackgroundColor)
+        removeBackgroundColorAction.triggered.connect(self.view.onRemoveBackgroundColor)
         backgroundColorMenu.addAction(removeBackgroundColorAction)
 
         #categories

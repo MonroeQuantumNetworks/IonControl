@@ -85,7 +85,7 @@ class TraceModel(CategoryTreeModel):
             (QtCore.Qt.EditRole, self.column.comment): self.comment
         })
         self.categoryDataAllColLookup.update({
-            QtCore.Qt.BackgroundRole: lambda node: None if self.isCategorySaved(node) else unsavedBG,
+            QtCore.Qt.BackgroundRole: lambda node: node.bgColor if self.isCategorySaved(node) else unsavedBG,
         })
         self.dataLookup.update({
             (QtCore.Qt.DisplayRole,self.column.name): lambda node: node.content.name,
@@ -99,7 +99,7 @@ class TraceModel(CategoryTreeModel):
             (QtCore.Qt.DisplayRole,self.column.filename): lambda node: getattr(node.content.traceCollection, 'fileleaf', None)
             })
         self.dataAllColLookup.update({
-            QtCore.Qt.BackgroundRole: lambda node: None if node.content.traceCollection.saved else unsavedBG
+            QtCore.Qt.BackgroundRole: lambda node: node.bgColor if node.content.traceCollection.saved else unsavedBG
         })
         self.setDataLookup.update({
             (QtCore.Qt.CheckStateRole,self.column.name): self.checkboxChange,

@@ -59,7 +59,7 @@ class PulserParameterModel(CategoryTreeModel):
             (QtCore.Qt.DisplayRole, 0): lambda node: node.content.name,
             (QtCore.Qt.DisplayRole, 1): lambda node: str(node.content.value),
             (QtCore.Qt.EditRole, 1): lambda node: node.content.string,
-            (QtCore.Qt.BackgroundRole,1): self.backgroundFunction,
+            (QtCore.Qt.BackgroundRole,1): self.dependencyBgFunction,
             (QtCore.Qt.ToolTipRole,1): self.toolTipFunction
             })
         self.setDataLookup.update({

@@ -45,7 +45,7 @@ class ExternalParameterControlModel(CategoryTreeModel):
             (QtCore.Qt.EditRole,1): lambda node: firstNotNone( node.content.string, str(node.content.targetValue) ),
             (QtCore.Qt.UserRole,1): lambda node: node.content.dimension,
             (QtCore.Qt.DisplayRole,2): lambda node: str(node.content.lastExternalValue),
-            (QtCore.Qt.BackgroundRole,1): self.backgroundFunction,
+            (QtCore.Qt.BackgroundRole,1): self.dependencyBgFunction,
             (QtCore.Qt.ToolTipRole,1): self.toolTipFunction
             })
         self.setDataLookup.update({
