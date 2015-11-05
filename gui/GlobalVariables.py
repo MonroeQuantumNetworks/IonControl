@@ -18,7 +18,7 @@ from externalParameter.persistence import DBPersist
 from externalParameter.decimation import StaticDecimation
 from modules import magnitude
 from modules.magnitude import is_magnitude
-from collections import deque
+from collections import deque, MutableMapping
 from modules.ListWithKey import ListWithKey, ListWithKeyLookup
 from functools import partial
 import time
@@ -28,6 +28,10 @@ from copy import copy
 
 uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\GlobalVariables.ui')
 Form, Base = PyQt4.uic.loadUiType(uipath)
+
+class GlobalVariablesException(Exception):
+    pass
+
 
 class GlobalVariable(QtCore.QObject):
     valueChanged = QtCore.pyqtSignal(object, object, object)
@@ -82,72 +86,55 @@ class GlobalVariable(QtCore.QObject):
         self.persistence.persist(self.persistSpace, self.name, time, value, minval, maxval, unit)
 
 
-class GlobalVariablesLookup(ListWithKeyLookup):
-    def __init__(self, listWithKey):
-        super(GlobalVariablesLookup, self).__init__(listWithKey)
+class GlobalVariablesLookup(MutableMapping):
+    def __init__(self, globalDict):
+        self.globalDict = globalDict
 
-    def __getitem__(self, item):
-        return super(GlobalVariablesLookup, self).__getitem__(item).value
+    def __getitem__(self, key):
+        return self.globalDict[key].value
 
     def __setitem__(self, key, value):
-        if key in self.listWithKey.lookup:
-            super(GlobalVariablesLookup, self).__getitem__(key).value = value
-        else:
-            super(GlobalVariablesLookup, self).__setitem__(key, GlobalVariable(key, value))
+        self.globalDict[key].value = value
+
+    def __delitem__(self, key):
+        raise GlobalVariablesException("Cannot delete globals via the GlobalVariablesLookup class")
+
+    def __len__(self):
+        return len(self.globalDict)
+
+    def __contains__(self, x):
+        return x in self.globalDict
+
+    def __iter__(self):
+        return self.globalDict.__iter__()
 
     def valueChanged(self, key):
-        return super(GlobalVariablesLookup, self).__getitem__(key).valueChanged
+        return self.globalDict[key].valueChanged
 
 
-class GlobalVariables(ListWithKey):
-
-    def __init__(self, iterable=[]):
-        data = list(iterable)
-        if not data or isinstance(data[0], GlobalVariable):
-            super(GlobalVariables, self).__init__(data, key=lambda x: x.name, setkey=GlobalVariable.rename)
-        else:  # we have old data that needs to be ported
-            super(GlobalVariables, self).__init__((GlobalVariable(name, value) for name, value in data), key=lambda x: x.name, setkey=GlobalVariable.rename)
-        self.map = GlobalVariablesLookup(self)
-            
-    def exportXml(self, element):
-        xmlEncodeDictionary(self.map, element, "Variable")
-    
-    @staticmethod
-    def fromXmlElement( element ):
-        newglobals = GlobalVariables()
-        newglobals.map.update(xmlParseDictionary(element, "Variable"))
-        return newglobals
-
-    def varFromName(self, name):
-        return self[self.lookup[name]]
-
-    def keyindex(self, key):
-        return self.lookup[key]
-
-class GlobalVariableUi(Form, Base ):
+class GlobalVariableUi(Form, Base):
     def __init__(self, config, parent=None):
         Form.__init__(self)
         Base.__init__(self, parent)
         self.config = config
         self.configName = 'GlobalVariables'
-        self._variables_ = GlobalVariables(self.config.get(self.configName, []))
-        self._map = self._variables_.map
+        storedGlobals = self.config.get(self.configName, dict())
+        if storedGlobals.__class__==list: #port over globals stored as a list
+            storedGlobals = {g.name:g for g in storedGlobals}
+        self._globalDict_ = storedGlobals
+        self.globalDict = GlobalVariablesLookup(self._globalDict_)
 
     @property
     def valueChanged(self):
         return self.model.valueChanged
 
-    @property
-    def variables(self):
-        return self._map
-    
     def keys(self):
-        return self._map.keys()
+        return self.globalDict.keys()
 
     def setupUi(self, parent):
         Form.setupUi(self,parent)
-        self.model = GlobalVariablesModel(self.config, self._variables_)
-        self.view.setModel( self.model )
+        self.model = GlobalVariablesModel(self.config, self._globalDict_)
+        self.view.setModel(self.model)
         self.nameDelegate = GridDelegate()
         self.valueDelegate = MagnitudeSpinBoxGridDelegate()
         self.view.setItemDelegateForColumn(self.model.column.name, self.nameDelegate)
@@ -194,7 +181,7 @@ class GlobalVariableUi(Form, Base ):
         self.categoriesList = ['']
         self.categoriesListModel = QtGui.QStringListModel()
         self.categoriesListComboBox.setModel(self.categoriesListModel)
-        for var in self._variables_:
+        for var in self._globalDict_.values():
             categories = copy(var.categories)
             if categories:
                 categories = [categories] if categories.__class__!=list else categories # make a list of one if it's not a list
@@ -225,31 +212,32 @@ class GlobalVariableUi(Form, Base ):
 
     def onExportXml(self, element=None, writeToFile=True):
         root = element if element is not None else ElementTree.Element('GlobalVariables')
-        self._variables_.exportXml(root)
+        xmlEncodeDictionary(self.globalDict, root, "Variable")
         if writeToFile:
             filename = DataDirectory.DataDirectory().sequencefile("GlobalVariables.xml")[0]
             with open(filename,'w') as f:
                 f.write(prettify(root))
         return root
-            
+
     def onImportXml(self, filename=None, mode="Add"):
         filename = filename if filename is not None else QtGui.QFileDialog.getOpenFileName(self, 'Import XML file', filer="*.xml" )
         tree = ElementTree.parse(filename)
         element = tree.getroot()
         self.importXml(element, mode=mode)
-            
+
     def importXml(self, element, mode="Add"):   # modes: replace, update, Add
-        newGlobalDict = GlobalVariables.fromXmlElement(element)
+        newGlobalDict = dict()
+        dictFromXML = xmlParseDictionary(element, "Variable")
+        for name, value in dictFromXML.iteritems():
+            newGlobalDict[name] = GlobalVariable(name, value)
         self.model.beginResetModel()
         if mode == "Replace":
-            self._map.clear()
-            self._map.update(newGlobalDict.map)
+            self._globalDict_ = newGlobalDict
         elif mode == "Update":
-            self._map.update(newGlobalDict.map)
+            self._globalDict_.update(newGlobalDict)
         elif mode == "Add":
-            newGlobalDict.map.update(self._map)
-            self._map.clear()
-            self._map.update(newGlobalDict.map)
+            newGlobalDict.update(self._globalDict_)
+            self._globalDict_ = newGlobalDict
         self.model.endResetModel()
         
     def onAddVariable(self):
@@ -258,13 +246,12 @@ class GlobalVariableUi(Form, Base ):
         categories = categories.strip('.')
         self.model.addVariable(name, categories.split('.'))
         self.newNameEdit.setText("")
-        self.view.resizeColumnToContents(self.model.column.name)
         self.addCategories(categories)
         blankInd = self.categoriesListComboBox.findText('', QtCore.Qt.MatchExactly)
         self.categoriesListComboBox.setCurrentIndex(blankInd)
 
     def saveConfig(self):
-        self.config[self.configName] = list(self._variables_)
+        self.config[self.configName] = self._globalDict_
         self.config[self.configName+".guiState"] = saveGuiState( self )
         try:
             self.config[self.configName+'.treeState'] = self.view.treeState()
