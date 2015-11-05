@@ -57,12 +57,12 @@ class GlobalVariable(QtCore.QObject):
         self.persistence.rename(self.persistSpace, oldname, newname)
 
     def __getstate__(self):
-        return self.name, self._value, self.categories, self.history
+        return self._name, self._value, self.categories, self.history
 
     def __setstate__(self, state):
         super(GlobalVariable, self).__init__()
         self.decimation = StaticDecimation(magnitude.mg(10, 's'))
-        self.name, self._value, self.categories, self.history = state
+        self._name, self._value, self.categories, self.history = state
 
     def persistCallback(self, data):
         time, value, minval, maxval = data

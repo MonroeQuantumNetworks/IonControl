@@ -117,7 +117,7 @@ class GlobalVariablesModel(CategoryTreeModel):
         if not oldValue.isIdenticalTo(value):
             self._globalDict_[name].value = value
 
-    def addVariable(self, name, categories):
+    def addVariable(self, name, categories=None):
         if name=="":
             name = 'NewGlobalVariable'
         if name not in self._globalDict_ and isIdentifier(name):
