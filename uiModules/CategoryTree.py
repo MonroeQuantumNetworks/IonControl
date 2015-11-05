@@ -434,42 +434,39 @@ class CategoryTreeView(QtGui.QTreeView):
     def treeState(self):
         """Returns tree state for saving config"""
         columnWidths = self.header().saveState()
-        expandedNodeKeys = []
-        boldNodeKeys = []
-        idTree = {}
+        nodeStates = {}
         for key, node in self.model().nodeDict.iteritems():
-            index = self.model().indexFromNode(node)
-            if self.isExpanded(index):
-                expandedNodeKeys.append(key)
-            if getattr(node, 'isBold', False):
-                boldNodeKeys.append(key)
-            if self.model().allowReordering: #Only save this if the model is has reordering enabled
-                idTree[node.id] = [child.id for child in node.children]
-        return columnWidths, expandedNodeKeys, boldNodeKeys, idTree
+            nodeStates[node.id] = [( child.id,
+                                     getattr(child, 'isBold', False),
+                                     self.isExpanded(self.model().indexFromNode(child)),
+                                     getattr(child, 'bgColor', None) )
+                                   for child in node.children]
+        return columnWidths, nodeStates
 
     def restoreTreeState(self, state):
-        """load in a tree state from the given column widths, expanded nodes, bold nodes, and idTree"""
-        columnWidths, expandedNodeKeys, boldNodeKeys, idTree = state
-        if self.model().allowReordering and idTree:
-            self.model().beginResetModel()
-            for id, childList in idTree.iteritems():
-                node=self.model().nodeFromId(id)
-                if node:
-                    node.children.sort(key=lambda node: indexWithDefault(childList, node.id))
-            self.model().endResetModel()
-        if columnWidths:
-            self.header().restoreState(columnWidths)
-        if expandedNodeKeys:
-            for key in expandedNodeKeys:
-                if key in self.model().nodeDict:
-                    node = self.model().nodeDict[key]
-                    index = self.model().indexFromNode(node)
-                    self.expand(index)
-        if boldNodeKeys:
-            for key in boldNodeKeys:
-                if key in self.model().nodeDict:
-                    node = self.model().nodeDict[key]
-                    node.isBold=True
+        """load in a tree state from the given column widths and state"""
+        if state:
+            columnWidths, nodeStates = state
+            if columnWidths: self.header().restoreState(columnWidths)
+            if nodeStates:
+                if self.model().allowReordering:
+                    self.model().beginResetModel()
+                    for parentID, childDataList in nodeStates.iteritems():
+                            parentNode=self.model().nodeFromId(parentID)
+                            if parentNode:
+                                childIDList = [childData[0] for childData in childDataList]
+                                parentNode.children.sort(key=lambda childNode: indexWithDefault(childIDList, childNode.id))
+                    self.model().endResetModel()
+                for nodeDataList in nodeStates.values():
+                    for nodeData in nodeDataList:
+                        nodeID, isBold, expanded, bgColor = nodeData
+                        if nodeID in self.model().nodeDict:
+                            node = self.model().nodeDict[nodeID]
+                            node.isBold = isBold
+                            node.bgColor = bgColor
+                            if expanded:
+                                index = self.model().indexFromNode(node)
+                                self.expand(index)
 
     def onSetBackgroundColor(self):
         color = QtGui.QColorDialog.getColor()

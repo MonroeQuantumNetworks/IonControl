@@ -176,7 +176,7 @@ class ControlUi(Form, Base):
         self.setupParameters(outputChannels)
         restoreGuiState(self, self.config.get(self.configName+'.guiState'))
         try:
-            self.categoryTreeView.restoreTreeState( self.config.get(self.configName+'.treeState',tuple([None]*4)) )
+            self.categoryTreeView.restoreTreeState( self.config.get(self.configName+'.treeState', None) )
         except Exception as e:
             logging.getLogger(__name__).error("unable to restore tree state in {0}: {1}".format(self.configName, e))
         self.categoryTreeView.selectionModel().currentChanged.connect( self.onActiveChannelChanged )

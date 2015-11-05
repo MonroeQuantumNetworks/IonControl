@@ -154,7 +154,7 @@ class GlobalVariableUi(Form, Base ):
         self.view.setItemDelegateForColumn(self.model.column.value, self.valueDelegate)
         restoreGuiState( self, self.config.get(self.configName+".guiState") )
         try:
-            self.view.restoreTreeState(self.config.get(self.configName+'.treeState',tuple([None]*4)))
+            self.view.restoreTreeState( self.config.get(self.configName+'.treeState', None) )
         except Exception as e:
             logging.getLogger(__name__).error("unable to restore tree state in {0}: {1}".format(self.configName, e))
 
