@@ -98,6 +98,22 @@ class GlobalVariablesModel(CategoryTreeModel):
     def onValueChanged(self, name, value, origin):
         self.valueChanged.emit(name)
 
+    def sort(self, column, order):
+        if column==self.column.name:
+            self.beginResetModel()
+            self.sortChildren(self.root)
+            self.endResetModel()
+
+    def sortChildren(self, node):
+        node.children.sort(key=self.nodeSortKey)
+        for child in node.children:
+            self.sortChildren(child)
+
+    @staticmethod
+    def nodeSortKey(node):
+        nodeName = getattr(node.content, 'name', node.content)
+        return nodeName if node.children==[] else '0_'+nodeName
+
     def setName(self, index, value):
         logger = logging.getLogger(__name__)
         node = self.nodeFromIndex(index)

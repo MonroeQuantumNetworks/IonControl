@@ -87,6 +87,11 @@ class GlobalVariablesUi(Form, Base):
         removeBackgroundColorAction.triggered.connect(self.view.onRemoveBackgroundColor)
         backgroundColorMenu.addAction(removeBackgroundColorAction)
 
+        #sort context action
+        sortAction = QtGui.QAction("Sort", self)
+        self.addAction(sortAction)
+        sortAction.triggered.connect(partial(self.view.sortByColumn, self.model.column.name, QtCore.Qt.DescendingOrder))
+
     def refreshCategories(self):
         self.categorizeMenu.clear()
         newCategoryAction = QtGui.QAction("New category", self)
