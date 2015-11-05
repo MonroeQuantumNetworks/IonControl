@@ -120,6 +120,7 @@ class GlobalVariablesUi(Form, Base):
         nodes = self.view.selectedNodes()
         for node in nodes:
             self.model.changeCategory(node, categories)
+            self.view.expandToNode(node)
 
     def onExportXml(self, element=None, writeToFile=True):
         root = element if element is not None else ElementTree.Element('GlobalVariables')
@@ -155,7 +156,9 @@ class GlobalVariablesUi(Form, Base):
         name = str(self.newNameEdit.text())
         categories = str(self.categoriesListComboBox.currentText())
         categories = categories.strip('.')
-        self.model.addVariable(name, categories.split('.'))
+        node = self.model.addVariable(name, categories.split('.'))
+        if node:
+            self.view.expandToNode(node)
         self.newNameEdit.setText("")
         self.addCategories(categories)
         blankInd = self.categoriesListComboBox.findText('', QtCore.Qt.MatchExactly)

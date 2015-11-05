@@ -486,6 +486,17 @@ class CategoryTreeView(QtGui.QTreeView):
             rightIndex = model.indexFromNode(node, model.numColumns-1)
             model.dataChanged.emit(leftIndex, rightIndex)
 
+    def expandToNode(self, node):
+        """Expand all parents above specified node"""
+        model = self.model()
+        parentNode = node.parent
+        if parentNode != model.root:
+            parentIndex = model.indexFromNode(parentNode)
+            self.expand(parentIndex)
+            self.expandToNode(parentNode)
+
+
+
 if __name__ == "__main__":
     import sys
     from functools import partial
