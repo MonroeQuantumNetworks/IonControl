@@ -44,7 +44,7 @@ class ExternalParameterControlModel(CategoryTreeModel):
             (QtCore.Qt.DisplayRole,1): lambda node: str(node.content.targetValue),
             (QtCore.Qt.EditRole,1): lambda node: firstNotNone( node.content.string, str(node.content.targetValue) ),
             (QtCore.Qt.UserRole,1): lambda node: node.content.dimension,
-            (QtCore.Qt.DisplayRole,2): lambda node: str(node.content.lastExternalValue),
+            (QtCore.Qt.DisplayRole,2): lambda node: str(node.content.value),
             (QtCore.Qt.BackgroundRole,1): self.dependencyBgFunction,
             (QtCore.Qt.ToolTipRole,1): self.toolTipFunction
             })
@@ -59,26 +59,33 @@ class ExternalParameterControlModel(CategoryTreeModel):
         self.doneAdjusting = Observable()
         self.numColumns = 3
         self.allowReordering = True
+        self.signalConnections = list()
 
     def setParameterList(self, outputChannelDict):
         self.beginResetModel()
         self.parameterList = outputChannelDict.values()
+        # first disconnect all old signals, they may point to the wrong index
+        for inst, valueSlot, targetValueSlot in self.signalConnections:
+            inst.valueChanged.disconnect(valueSlot)
+            inst.targetChanged.disconnect(targetValueSlot)
+        del self.signalConnections[:]   # clear the list
+        # now we can add new connections
         for listIndex,inst in enumerate(self.parameterList):
             inst.multipleChannels = len(inst.device._outputChannels)>1
             inst.categories = inst.device.name if inst.multipleChannels else None
             inst.displayName = inst.channelName if inst.multipleChannels else inst.device.name
-            inst.targetValue = deepcopy(inst.value)
-            inst.lastExternalValue = deepcopy(inst.externalValue)
             inst.toolTip = None
-            inst.valueChanged.connect(functools.partial(self.showValue, listIndex))
-            inst.targetChanged.connect(functools.partial(self.onTargetChanged, listIndex))
+            valueSlot = functools.partial(self.showValue, listIndex)
+            targetValueSlot = functools.partial(self.onTargetChanged, listIndex)
+            inst.valueChanged.connect(valueSlot)
+            inst.targetChanged.connect(targetValueSlot)
+            self.signalConnections.append((inst, valueSlot, targetValueSlot))
         self.clear()
         self.endResetModel()
         self.addNodeList(self.parameterList)
 
     def showValue(self, listIndex, value, tooltip=None):
         inst=self.parameterList[listIndex]
-        inst.lastExternalValue = value
         inst.toolTip = tooltip
         id=inst.name if inst.multipleChannels else inst.device.name
         node = self.nodeDict[id]
@@ -99,11 +106,10 @@ class ExternalParameterControlModel(CategoryTreeModel):
     def _setValue(self, inst, value):
         logger = logging.getLogger(__name__)
         logger.debug( "setValue {0}".format(value))
-        if inst.targetValue is None or value != inst.targetValue:
-            inst.targetValue = value
-            self.adjustingDevices += 1
-            logger.debug("Increased adjusting instruments to {0}".format(self.adjustingDevices))
-            self.setValueFollowup(inst)
+        inst.targetValue = value
+        self.adjustingDevices += 1
+        logger.debug("Increased adjusting instruments to {0}".format(self.adjustingDevices))
+        self.setValueFollowup(inst)
         return True
  
     def setStrValue(self, index, strValue):

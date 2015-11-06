@@ -148,7 +148,7 @@ class PowerWaveplate(ExternalParameterBase):
         self.settings.__dict__.setdefault('angle_at_max' , magnitude.mg(45))       # if True go to the target value in one jump
         self.settings.__dict__.setdefault('power_limit' , magnitude.mg(1,'W'))       # if True go to the target value in one jump
         self.settings.__dict__.setdefault('min_angle_limit' , magnitude.mg(0))
-        self.settings.__dict__.setdefault('max_angle_limit' , magnitude.mg(0))
+        self.settings.__dict__.setdefault('max_angle_limit' , magnitude.mg(360))
         self.settings.__dict__.setdefault('belowMargin' , magnitude.mg(0,'mW'))       # if True go to the target value in one jump
 
     def power(self, angle):
@@ -168,12 +168,10 @@ class PowerWaveplate(ExternalParameterBase):
         setangle =self.angle(v)
         if setangle is not None and self.settings.min_angle_limit <= setangle <= self.settings.max_angle_limit:
             self.instrument.position = setangle.toval()
-            self.settings.value[channel] = v
-        
+
     def getValue(self, channel):
-        self.settings.value[channel] = self.power( magnitude.mg(self.instrument.position) ) #set voltage
-        return self.settings.value[channel]
-        
+        return self.power(magnitude.mg(self.instrument.position))  # set voltage
+
     def paramDef(self):
         superior = ExternalParameterBase.paramDef(self)
         superior.append({'name': 'min_power', 'type': 'magnitude', 'value': self.settings.min_power})
