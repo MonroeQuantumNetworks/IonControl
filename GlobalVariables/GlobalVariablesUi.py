@@ -150,18 +150,24 @@ class GlobalVariablesUi(Form, Base):
         self.importXml(element, mode=mode)
 
     def importXml(self, element, mode="Add"):   # modes: replace, update, Add
-        newGlobalDict = dict()
-        dictFromXML = xmlParseDictionary(element, "Variable")
-        for name, value in dictFromXML.iteritems():
-            newGlobalDict[name] = GlobalVariable(name, value)
+        newGlobalDict = xmlParseDictionary(element, "Variable")
         self.model.beginResetModel()
-        if mode == "Replace":
-            self._globalDict_ = newGlobalDict
-        elif mode == "Update":
-            self._globalDict_.update(newGlobalDict)
-        elif mode == "Add":
-            newGlobalDict.update(self._globalDict_)
-            self._globalDict_ = newGlobalDict
+
+        #add new globals, applicable to all modes
+        for name, value in newGlobalDict.iteritems():
+            if name not in self._globalDict_:
+                self._globalDict_[name] = GlobalVariable(name, value)
+            if mode=="Replace" or mode=="Update": #update existing globals
+                self._globalDict_[name].value = value
+
+        #clear out globals that don't appear in file
+        if mode=="Replace":
+            for name in self._globalDict_:
+                if name not in newGlobalDict:
+                    del self._globalDict_[name]
+
+        self.model.clear()
+        self.model.addNodeList(self._globalDict_.values())
         self.model.endResetModel()
 
     def onAddVariable(self):
