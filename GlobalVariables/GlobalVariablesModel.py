@@ -142,9 +142,14 @@ class GlobalVariablesModel(CategoryTreeModel):
             newGlobal.categories = categories
             newGlobal.valueChanged.connect( partial(self.onValueChanged, name) )
             node = self.addNode(newGlobal)
-            newGlobal.nodeID = node.id #store ID to tree node in global variable itself for fast lookup
             self._globalDict_[name] = newGlobal
             return node
+
+    def addNode(self, content, name=None):
+        """make sure nodeID property of global variable is set whenever a node is added"""
+        node = super(GlobalVariablesModel, self).addNode(content, name)
+        node.content.nodeID = node.id #store ID to tree node in global variable itself for fast lookup
+        return node
 
     def removeNode(self, node):
         if node.nodeType==nodeTypes.data:
