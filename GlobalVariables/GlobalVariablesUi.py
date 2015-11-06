@@ -156,12 +156,16 @@ class GlobalVariablesUi(Form, Base):
             newGlobalDict[name] = GlobalVariable(name, value)
         self.model.beginResetModel()
         if mode == "Replace":
-            self._globalDict_ = newGlobalDict
+            self._globalDict_.clear()
+            self._globalDict_.update(newGlobalDict)
         elif mode == "Update":
             self._globalDict_.update(newGlobalDict)
         elif mode == "Add":
             newGlobalDict.update(self._globalDict_)
-            self._globalDict_ = newGlobalDict
+            self._globalDict_.clear()
+            self._globalDict_.update(newGlobalDict)
+        self.model.clear()
+        self.model.addNodeList(self._globalDict_.values())
         self.model.endResetModel()
 
     def onAddVariable(self):

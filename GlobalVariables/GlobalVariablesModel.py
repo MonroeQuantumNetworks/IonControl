@@ -85,11 +85,22 @@ class GlobalVariablesModel(CategoryTreeModel):
         self.connectAllVariableSignals()
 
     def connectAllVariableSignals(self):
-        for item in self._globalDict_.values():
+        for var in self._globalDict_.values():
             try:
-                item.valueChanged.connect(self.onValueChanged, QtCore.Qt.UniqueConnection)
+                var.valueChanged.connect(self.onValueChanged, QtCore.Qt.UniqueConnection)
             except:
                 pass
+
+    def disconnectAllVariableSignals(self):
+        for var in self._globalDict_.values():
+            try:
+                var.valueChanged.disconnect(self.onValueChanged)
+            except:
+                pass
+
+    def beginResetModel(self):
+        self.disconnectAllVariableSignals()
+        super(GlobalVariablesModel, self).beginResetModel()
 
     def endResetModel(self):
         super(GlobalVariablesModel, self).endResetModel()
@@ -134,11 +145,11 @@ class GlobalVariablesModel(CategoryTreeModel):
         if not oldValue.isIdenticalTo(value):
             self._globalDict_[name].value = value
 
-    def addVariable(self, name, categories=None):
+    def addVariable(self, name, categories=None, value=magnitude.mg(0, '')):
         if name=="":
             name = 'NewGlobalVariable'
         if name not in self._globalDict_ and isIdentifier(name):
-            newGlobal = GlobalVariable(name, magnitude.mg(0, ''))
+            newGlobal = GlobalVariable(name, value)
             newGlobal.categories = categories
             newGlobal.valueChanged.connect( partial(self.onValueChanged, name) )
             node = self.addNode(newGlobal)
