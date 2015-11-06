@@ -53,8 +53,8 @@ class HistogramFitFunction:
 class FitHistogramEvaluation(EvaluationBase):
     name = "FitHistogram"
     tooltip = "Fit measured histograms to data"
-    def __init__(self,settings=None):
-        EvaluationBase.__init__(self,settings)
+    def __init__(self, globalDict=dict(), settings=None):
+        EvaluationBase.__init__(self, globalDict, settings)
         self.epsfcn=0.0
         self.fitFunction = HistogramFitFunction()
         self.loadReferenceData()
@@ -188,8 +188,8 @@ class TwoIonFidelityEvaluation(EvaluationBase):
     name = "TwoIonFidelity"
     tooltip = "Obove threshold is bright"
     ExpectedLookup = { '424': [0.25, 0.5, 0.25], '202': [0.5, 0.0, 0.5], '001': [0.0, 0.0, 1.0], '100': [1.0, 0.0, 0.0] }
-    def __init__(self,settings=None):
-        EvaluationBase.__init__(self,settings)
+    def __init__(self, globalDict=dict(), settings=None):
+        EvaluationBase.__init__(self, globalDict, settings)
         
     def setDefault(self):
         self.settings.setdefault('Path',r'')

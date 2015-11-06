@@ -314,7 +314,7 @@ class EvaluationControl(ControlForm, ControlBase ):
         self.evalTableView.resizeColumnsToContents()
 
     def addEvaluation(self, evaluation):
-        algo =  EvaluationAlgorithms[evaluation.evaluation]()
+        algo =  EvaluationAlgorithms[evaluation.evaluation](globalDict=self.globalDict)
         algo.subscribe( self.checkSettingsSavable )   # track changes of the algorithms settings so the save status is displayed correctly
         algo.setSettings( evaluation.settings, evaluation.name )
         self.evalAlgorithmList.append(algo)      
