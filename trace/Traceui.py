@@ -311,12 +311,18 @@ class Traceui(TraceuiForm, TraceuiBase):
         traceCollection.name = traceCollection.fileleaf
         traceCollection.saved = True
         traceCollection.loadTrace(filename)
+        for node in self.model.traceDict.values():
+            dataNode=self.model.getFirstDataNode(node)
+            existingTraceCollection=dataNode.content.traceCollection
+            if existingTraceCollection.fileleaf==traceCollection.fileleaf and str(existingTraceCollection.traceCreation)==str(traceCollection.traceCreation):
+                return #If the filename and creation dates are the same, you're trying to open an existing trace.
         plottedTraceList = list()
+        category = None if len(traceCollection.tracePlottingList)==1 else self.getUniqueCategory(filename)
         for plotting in traceCollection.tracePlottingList:
             windowName = plotting.windowName if plotting.windowName in self.graphicsViewDict else self.graphicsViewDict.keys()[0]
             name = plotting.name
             plottedTrace = PlottedTrace(traceCollection, self.graphicsViewDict[windowName]['view'], pens.penList, -1, tracePlotting=plotting, windowName=windowName, name=name)
-            plottedTrace.category = traceCollection.fileleaf
+            plottedTrace.category = category
             plottedTraceList.append(plottedTrace)
             self.addTrace(plottedTrace,-1)
         if self.expandNew:
@@ -329,30 +335,37 @@ class Traceui(TraceuiForm, TraceuiBase):
         self.config[self.configname+".settings"] = self.settings
         
     def onShowOnlyLast(self):
-        pass
-        
-#if __name__ == '__main__':
-#    import sys
-#    import pyqtgraph as pg
-#    from CoordinatePlotWidget import CoordinatePlotWidget
-#    pg.setConfigOption('background', 'w') #set background to white
-#    pg.setConfigOption('foreground', 'k') #set foreground to black
-#    app = QtGui.QApplication(sys.argv)
-#    penicons = pens.penicons().penicons()
-#    plot = CoordinatePlotWidget()
-#    ui = Traceui(penicons, {}, '', plot, lastDir = ' ')
-#    ui.setupUi(ui)
-#    addPlotButton = QtGui.QPushButton()
-#    addAvgPlotButton = QtGui.QPushButton()
-#    trace = Trace.Trace()
-#    plottedTrace = PlottedTrace(trace, plot, pens.penList)
-#    addPlotButton.clicked.connect(ui.addTrace(plottedTrace, pens.penList[0]))
-#    window = QtGui.QWidget()
-#    layout = QtGui.QVBoxLayout()
-#    layout.addWidget(ui)
-#    layout.addWidget(addPlotButton)
-#    layout.addWidget(addAvgPlotButton)
-#    layout.addWidget(plot)
-#    window.setLayout(layout)
-#    window.show()
-#    sys.exit(app.exec_())
+        for node in self.model.root.children:
+            index = self.model.indexFromNode(node)
+            functionCall = self.model.categoryCheckboxChange if node.nodeType==nodeTypes.category else self.model.checkboxChange
+            value=QtCore.Qt.Checked if node is self.model.root.children[-1] else QtCore.Qt.Unchecked
+            if index.data(QtCore.Qt.CheckStateRole) != value:
+                functionCall(index, value)
+
+    def getUniqueCategory(self, filename):
+        return self.model.getUniqueCategory(filename)
+
+# if __name__ == '__main__':
+#     import sys
+#     import pyqtgraph as pg
+#     from uiModules.CoordinatePlotWidget import CoordinatePlotWidget
+#     import pens
+#     pg.setConfigOption('background', 'w') #set background to white
+#     pg.setConfigOption('foreground', 'k') #set foreground to black
+#     app = QtGui.QApplication(sys.argv)
+#     penicons = pens.penicons().penicons()
+#     window = QtGui.QWidget()
+#     layout = QtGui.QVBoxLayout()
+#     window.setLayout(layout)
+#     addPlotButton = QtGui.QPushButton()
+#     layout.addWidget(addPlotButton)
+#     ui = Traceui(penicons, {}, '', {}, lastDir = ' ')
+#     ui.setupUi(ui)
+#     layout.addWidget(ui)
+#     plot = CoordinatePlotWidget(ui)
+#     layout.addWidget(plot)
+#     traceCollection = TraceCollection.TraceCollection()
+#     plottedTrace = PlottedTrace(traceCollection, plot, pens.penList)
+#     addPlotButton.clicked.connect(ui.addTrace(plottedTrace, pens.penList[0]))
+#     window.show()
+#     sys.exit(app.exec_())

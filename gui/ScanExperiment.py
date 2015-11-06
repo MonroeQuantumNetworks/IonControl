@@ -522,9 +522,14 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.plottedTraceList[0].traceCollection.description["Scan"] = self.scan.description()
             self.plottedTraceList[0].traceCollection.autoSave = self.scan.autoSave
             self.plottedTraceList[0].traceCollection.filenamePattern = self.scan.filename
-            if len(self.plottedTraceList) > 1:
-                for plottedTrace in self.plottedTraceList:
-                    plottedTrace.category = plottedTrace.traceCollection.fileleaf if self.scan.autoSave else "UNSAVED_"+plottedTrace.traceCollection.filenamePattern+"_{0}".format(self.unsavedTraceCount)
+            if len(self.plottedTraceList)==1:
+                category = None
+            elif self.scan.autoSave:
+                category = self.traceui.getUniqueCategory(self.plottedTraceList[0].traceCollection.filename)
+            else:
+                category = "UNSAVED_"+self.plottedTraceList[0].traceCollection.filenamePattern+"_{0}".format(self.unsavedTraceCount)
+            for plottedTrace in self.plottedTraceList:
+                plottedTrace.category = category
             if not self.scan.autoSave: self.unsavedTraceCount+=1
             self.generator.appendData( self.plottedTraceList, x, evaluated, timeinterval )
             for index, plottedTrace in reversed(list(enumerate(self.plottedTraceList))):
