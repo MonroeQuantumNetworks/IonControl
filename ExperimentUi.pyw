@@ -10,6 +10,8 @@ import webbrowser
 
 from PyQt4 import QtCore, QtGui
 import PyQt4.uic
+
+from OptionalSoftwareFeatures.MemoryProfiler import MemoryProfiler
 from ProjectConfig.Project import Project, ProjectInfoUi
 import sys
 import logging
@@ -133,6 +135,9 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
 
         self.parent = parent
         self.tabDict = SequenceDict()
+
+        if self.project.isEnabled('software', 'Memory Profiler'):
+            self.memoryProfiler = MemoryProfiler(self)
 
         #determine if AWG software is enabled and import class if it is
         self.AWGEnabled = self.project.isEnabled('software', 'AWG')
