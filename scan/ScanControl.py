@@ -167,7 +167,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         ScanControlBase.__init__(self,parent)
         self.config = config
         self.configname = 'ScanControl.'+parentname
-        self.globalDict = globalVariablesUi.variables
+        self.globalDict = globalVariablesUi.globalDict
         # History and Dictionary
         try:
             self.settingsDict = self.config.get(self.configname+'.dict',dict())
@@ -197,11 +197,11 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.removeButton.clicked.connect( self.onRemove )
         self.reloadButton.clicked.connect( self.onReload )
 
-        self.tableModel = ScanSegmentTableModel(self.checkSettingsSavable, self.globalVariablesUi.variables )
+        self.tableModel = ScanSegmentTableModel(self.checkSettingsSavable, self.globalDict )
         self.tableView.setModel( self.tableModel )
         self.addSegmentButton.clicked.connect( self.onAddScanSegment )
         self.removeSegmentButton.clicked.connect( self.onRemoveScanSegment )
-        self.magnitudeDelegate = MagnitudeSpinBoxDelegate(self.globalVariablesUi.variables)
+        self.magnitudeDelegate = MagnitudeSpinBoxDelegate(self.globalDict)
         self.tableView.setItemDelegate( self.magnitudeDelegate )
         self.tableView.resizeRowsToContents()
                
@@ -237,7 +237,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.autoSaveAction.triggered.connect( self.onAutoSave )
         self.addAction( self.autoSaveAction )
 
-        self.settings.evaluate(self.globalVariablesUi.variables)
+        self.settings.evaluate(self.globalDict)
         self.globalVariablesUi.valueChanged.connect( self.evaluate )
         self.comboBoxScanTarget.currentIndexChanged[QtCore.QString].connect( self.onChangeScanTarget )
         self.currentScanChanged.emit( self.settingsName )

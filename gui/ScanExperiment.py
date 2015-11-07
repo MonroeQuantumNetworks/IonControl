@@ -172,7 +172,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.timestampTraceui.setupUi(self.timestampTraceui)
             self.timestampTraceuiDock = self.setupAsDockWidget(self.timestampTraceui, "Timestamp traces", QtCore.Qt.LeftDockWidgetArea)
         # new fit widget
-        self.fitWidget = FitUi(self.traceui,self.config,self.experimentName, globalDict = self.globalVariablesUi.variables )
+        self.fitWidget = FitUi(self.traceui,self.config,self.experimentName, globalDict = self.globalVariablesUi.globalDict )
         self.fitWidget.setupUi(self.fitWidget)
         self.globalVariablesUi.valueChanged.connect( self.fitWidget.evaluate )
         self.fitWidgetDock = self.setupAsDockWidget(self.fitWidget, "Fit", QtCore.Qt.LeftDockWidgetArea,
@@ -195,7 +195,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.scanControlDock = self.setupAsDockWidget(self.scanControlWidget, "Scan Control", QtCore.Qt.RightDockWidgetArea)
         self.scanConfigurationListChanged = self.scanControlWidget.scanConfigurationListChanged
         # EvaluationControl
-        self.evaluationControlWidget = EvaluationControl(config, self.globalVariablesUi, self.experimentName, self.plotDict.keys(),
+        self.evaluationControlWidget = EvaluationControl(config, self.globalVariablesUi.globalDict, self.experimentName, self.plotDict.keys(),
                                                          analysisNames=self.fitWidget.analysisNames(),
                                                          counterNames=self.pulserHardware.pulserConfiguration().counterBits if self.pulserHardware.pulserConfiguration() else None )
         self.evaluationControlWidget.currentEvaluationChanged.connect( self.progressUi.setEvaluationLabel )
@@ -204,7 +204,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.evaluationControlDock = self.setupAsDockWidget( self.evaluationControlWidget, "Evaluation Control", QtCore.Qt.RightDockWidgetArea, stackAbove=self.scanControlDock)
         self.evaluationConfigurationChanged = self.evaluationControlWidget.evaluationConfigurationChanged
         # Analysis Control
-        self.analysisControlWidget = AnalysisControl(config, self.globalVariablesUi, self.experimentName, self.evaluationControlWidget.evaluationNames )
+        self.analysisControlWidget = AnalysisControl(config, self.globalVariablesUi.globalDict, self.experimentName, self.evaluationControlWidget.evaluationNames )
         self.analysisControlWidget.currentAnalysisChanged.connect( self.progressUi.setAnalysisLabel )
         self.analysisControlWidget.setupUi(self.analysisControlWidget)
         self.analysisControlDock = self.setupAsDockWidget( self.analysisControlWidget, "Analysis Control", QtCore.Qt.RightDockWidgetArea, stackAbove=self.evaluationControlDock)
@@ -563,6 +563,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                         self.plotDict["Scan Data"]["view"].setXRange( *xRange )
                     else:
                         self.plotDict["Scan Data"]["view"].enableAutoRange(axis=ViewBox.XAxis)     
+<<<<<<< HEAD
                     self.context.plottedTraceList.append( plottedTrace )
             self.context.plottedTraceList[0].traceCollection.name = self.context.scan.settingsName
             self.context.plottedTraceList[0].traceCollection.description["comment"] = ""
@@ -576,6 +577,26 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             if not self.context.scan.autoSave: self.unsavedTraceCount+=1
             self.context.generator.appendData( self.context.plottedTraceList, x, evaluated, timeinterval )
             for index, plottedTrace in reversed(list(enumerate(self.context.plottedTraceList))):
+=======
+                    self.plottedTraceList.append( plottedTrace )
+            self.plottedTraceList[0].traceCollection.name = self.scan.settingsName
+            self.plottedTraceList[0].traceCollection.description["comment"] = ""
+            self.plottedTraceList[0].traceCollection.description["PulseProgram"] = self.pulseProgramUi.description()
+            self.plottedTraceList[0].traceCollection.description["Scan"] = self.scan.description()
+            self.plottedTraceList[0].traceCollection.autoSave = self.scan.autoSave
+            self.plottedTraceList[0].traceCollection.filenamePattern = self.scan.filename
+            if len(self.plottedTraceList)==1:
+                category = None
+            elif self.scan.autoSave:
+                category = self.traceui.getUniqueCategory(self.plottedTraceList[0].traceCollection.filename)
+            else:
+                category = "UNSAVED_"+self.plottedTraceList[0].traceCollection.filenamePattern+"_{0}".format(self.unsavedTraceCount)
+            for plottedTrace in self.plottedTraceList:
+                plottedTrace.category = category
+            if not self.scan.autoSave: self.unsavedTraceCount+=1
+            self.generator.appendData( self.plottedTraceList, x, evaluated, timeinterval )
+            for index, plottedTrace in reversed(list(enumerate(self.plottedTraceList))):
+>>>>>>> develop
                 self.traceui.addTrace(plottedTrace, pen=-1)
             if self.traceui.expandNew:
                 self.traceui.expand(self.context.plottedTraceList[0])

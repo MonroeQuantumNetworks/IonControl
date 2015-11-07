@@ -3,6 +3,7 @@ Created on Apr 13, 2015
 
 @author: pmaunz
 '''
+from modules.firstNotNone import firstNotNone
 from uiModules.MagnitudeSpinBox import MagnitudeSpinBox
 from PyQt4 import QtGui, QtCore
 
@@ -23,9 +24,15 @@ class ExpressionSpinBox(MagnitudeSpinBox):
 
     def focusOutEvent(self, event):
         super(ExpressionSpinBox, self).focusOutEvent(event)
+        if self.lineEdit().isModified():
+            cursorPosition = self.lineEdit().cursorPosition()
+            self.expressionValue.string = self.text()
+            self.expressionValue.value = super(ExpressionSpinBox, self).value()
+            self.lineEdit().setCursorPosition(cursorPosition)
+            self.expressionChanged.emit( self.expressionValue )
         if self.expressionValue:
             self.setValue( self.expressionValue.value )
-            self.updateStyleSheet()
+            self.updateStyleSheet(False)
 
     def setExpression(self, expressionValue):
         if self.expressionValue:
@@ -35,16 +42,17 @@ class ExpressionSpinBox(MagnitudeSpinBox):
         self.expressionValue.valueChanged.connect(self.dependentUpdate)
         self.updateStyleSheet()
         
-    def updateStyleSheet(self):
-        self.setStyleSheet("ExpressionSpinBox { background-color: #bfffbf; }") if self.expressionValue.hasDependency and not self.hasFocus() else self.lineEdit().setStyleSheet("")
-        
+    def updateStyleSheet(self, hasFocus=None):
+        hasFocus = firstNotNone(hasFocus, self.hasFocus())
+        self.setStyleSheet("ExpressionSpinBox { background-color: #bfffbf; }") if self.expressionValue.hasDependency and not hasFocus else self.setStyleSheet("")
+
     def onEditingFinished(self):
-        if self.hasFocus():
-            cursorPosition = self.lineEdit().cursorPosition()
-            self.expressionValue.string = self.text()
-            self.expressionValue.value = self.value()     
-            self.lineEdit().setCursorPosition(cursorPosition)      
-        self.expressionChanged.emit( self.expressionValue )
+        # if self.hasFocus():
+        #     cursorPosition = self.lineEdit().cursorPosition()
+        #     self.expressionValue.string = self.text()
+        #     self.expressionValue.value = super(ExpressionSpinBox, self).value()
+        #     self.lineEdit().setCursorPosition(cursorPosition)
+        #     self.expressionChanged.emit( self.expressionValue )
         self.updateStyleSheet()
 
     def onStepBy(self, newvalue ):
@@ -57,4 +65,6 @@ class ExpressionSpinBox(MagnitudeSpinBox):
     def dependentUpdate(self, name, value, string, origin):
         self.setValue( self.expressionValue.value )
         self.expressionChanged.emit( self.expressionValue )
-        
+
+    def value(self):
+        return self.expressionValue

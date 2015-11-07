@@ -39,7 +39,7 @@ class ListWithKey(MutableSequence):
 
     def __delitem__(self, index):
         elem = self.list.pop(index)
-        self.lookup.pop(self.key(elem))
+        self.rebuildLookup()
 
     def __len__(self):
         return self.list.__len__()

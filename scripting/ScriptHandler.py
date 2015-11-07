@@ -136,7 +136,19 @@ class ScriptHandler:
             message = "Global variable {0} set to {1} {2}".format(name, value, unit)
             error = False
         return (error, message)
-    
+
+    @QtCore.pyqtSlot(str, object, object)
+    @scriptCommand
+    def onGenericCall(self, funcname, args, kwargs):
+        try:
+            getattr(self, funcname)(*args, **kwargs)
+        except Exception as e:
+            return True, str(e)
+        return False, "{0}{1} executed".format(funcname, args)
+
+    def getGlobal(self, name):
+        return self.globalVariablesUi.globalDict[name]
+
     @QtCore.pyqtSlot()
     @scriptCommand
     def onStartScan(self):
@@ -432,6 +444,13 @@ class ScriptHandler:
             self.script.analysisReady = True
             self.script.analysisWait.wakeAll()
 
+    @QtCore.pyqtSlot(object)
+    def onGenericResult(self, genericResult):
+        with QtCore.QMutexLocker(self.script.mutex):
+            self.script.genericResult = genericResult
+            self.script.genericResult = True
+            self.script.genericWait.wakeAll()
+
     @QtCore.pyqtSlot(dict)
     def onData(self, data):
         with QtCore.QMutexLocker(self.script.mutex):
@@ -502,7 +521,7 @@ class ScriptHandler:
                                   longComment=None,
                                   failedAnalysis=None)
         space = self.scanExperiment.measurementLog.container.getSpace('GlobalVariables')
-        for name, value in self.experimentUi.globalVariablesUi.variables.iteritems():
+        for name, value in self.experimentUi.globalVariablesUi.globalDict.iteritems():
             measurement.parameters.append( Parameter(name=name, value=value, space=space) )
         measurement.plottedTraceList = [plottedTrace]
         self.scanExperiment.measurementLog.container.addMeasurement(measurement)

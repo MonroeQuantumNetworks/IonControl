@@ -3,7 +3,7 @@ Created on Dec 22, 2014
 
 @author: pmaunz
 '''
-
+import logging
 
 from modules.Expression import Expression
 from modules.magnitude import mg
@@ -50,6 +50,10 @@ class ExpressionValue(QtCore.QObject):
     
     @value.setter
     def value(self, v):
+        if isinstance(v, ExpressionValue):
+            raise ExpressionValueException('cannot assign ExpressionValue value to ExpressionValue')
+            logging.getLogger(__name__).error('cannot assign ExpressionValue value to ExpressionValue')
+            v = mg(0)
         self._value = v
         self.valueChanged.emit(self.name, self._value, self._string, 'value')
         
@@ -96,3 +100,6 @@ class ExpressionValue(QtCore.QObject):
 
     def __hash__(self):
         return hash(self._value)
+
+    def __str__(self):
+        return str(self._value)

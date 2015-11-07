@@ -46,16 +46,27 @@ class PrintPreferences(object):
                 {'name': 'inkscape executable', 'object': self, 'field': 'inkscapeExecutable', 'type': 'str', 'value': self.inkscapeExecutable}]
 
 
+class GuiPreferences(object):
+    def __init__(self):
+        self.useCondensedGlobalTree = False
+
+    def paramDef(self):
+        return [ {'name': 'use condensed global tree', 'object': self, 'field': 'useCondensedGlobalTree', 'type': 'bool', 'value': self.useCondensedGlobalTree} ]
+
+
 class Preferences(object):
     def __init__(self):
         self.printPreferences = PrintPreferences()
+        self.guiPreferences = GuiPreferences()
         # persistence database
         
     def __setstate__(self, state):
         self.printPreferences = state.get('printPreferences', PrintPreferences())
-               
+        self.guiPreferences = state.get('guiPreferences', GuiPreferences())
+
     def paramDef(self):
-        return [{'name': 'Print Preferences', 'type': 'group', 'children': self.printPreferences.paramDef() } ]
+        return [{'name': 'Print Preferences', 'type': 'group', 'children': self.printPreferences.paramDef()},
+                {'name': 'Display Preferences (take effect on restart)', 'type': 'group', 'children': self.guiPreferences.paramDef()}]
         
 
 Form, Base = uic.loadUiType(r'ui\Preferences.ui')

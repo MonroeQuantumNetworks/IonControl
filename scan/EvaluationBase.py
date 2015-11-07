@@ -28,11 +28,12 @@ class EvaluationMeta(type):
 class EvaluationBase(Observable):
     __metaclass__ = EvaluationMeta
     hasChannel = True
-    def __init__(self,settings =  None):
+    def __init__(self, globalDict, settings= None):
         Observable.__init__(self)
         self.settings = settings if settings else dict()
+        self.globalDict = globalDict
         self.setDefault()
-        self._parameter = Parameter.create(name='params', type='group',children=self.children())     
+        self._parameter = Parameter.create(name='params', type='group',children=self.children())
         try:
             self._parameter.sigTreeStateChanged.connect(self.update, QtCore.Qt.UniqueConnection)
         except TypeError:

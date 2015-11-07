@@ -6,6 +6,8 @@ Created on Fri Dec 28 18:40:30 2012
 """
 import logging
 import os.path
+
+from trace.BlockAutoRange import BlockAutoRangeList
 from trace.TraceCollection import TraceCollection
 from trace import pens
 
@@ -22,6 +24,7 @@ from uiModules.ComboBoxDelegate import ComboBoxDelegate
 from uiModules.KeyboardFilter import KeyListFilter
 from functools import partial
 from dateutil.tz import tzlocal
+from modules.doProfile import doprofile
 
 uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\Traceui.ui')
 TraceuiForm, TraceuiBase = PyQt4.uic.loadUiType(uipath)
@@ -89,7 +92,7 @@ class Traceui(TraceuiForm, TraceuiBase):
         self.plotButton.clicked.connect(partial(self.onClearOrPlot, 'plot'))
         self.pushButtonApplyStyle.clicked.connect(self.onApplyStyle)
         self.saveButton.clicked.connect(self.onSave)
-        self.removeButton.clicked.connect(self.traceView.onDelete)
+        self.removeButton.clicked.connect(self.onDelete) #  (self.traceView.onDelete)
         self.openFileButton.clicked.connect(self.onOpenFile)
         self.comboBoxStyle.currentIndexChanged[int].connect(self.setPlotStyle)
         self.traceView.clicked.connect(self.onViewClicked)
@@ -123,6 +126,11 @@ class Traceui(TraceuiForm, TraceuiBase):
         self.addAction( self.expandNewAction )
         self.measurementLogButton.setVisible(self.hasMeasurementLog)
 
+    @doprofile
+    def onDelete(self, _):
+        with BlockAutoRangeList([gv['widget'] for gv in self.graphicsViewDict.itervalues()]):
+            self.traceView.onDelete()
+
     def onMeasurementLog(self):
         """Execute when open measurement log is clicked. Emit signal containing list of trace creation keys selected."""
         selectedTopNodes = self.traceView.selectedTopNodes()
@@ -140,23 +148,24 @@ class Traceui(TraceuiForm, TraceuiBase):
         rightCol=self.model.column.pen
         selectedNodes = self.traceView.selectedNodes()
         uniqueSelectedNodes = [node for node in selectedNodes if node.parent not in selectedNodes]
-        for node in uniqueSelectedNodes:
-            dataNodes = self.model.getDataNodes(node)
-            for dataNode in dataNodes:
-                plottedTrace = dataNode.content
-                changed=False
-                if changeType=='clear' and plottedTrace.curvePen!=0:
-                    plottedTrace.plot(0)
-                    changed=True
-                elif changeType=='plot' and plottedTrace.curvePen==0:
-                    plottedTrace.plot(-1,self.settings.plotstyle)
-                    changed=True
-                if changed:
-                    self.model.traceModelDataChanged.emit(str(plottedTrace.traceCollection.traceCreation), 'isPlotted', '')
-                    leftInd = self.model.indexFromNode(dataNode, col=leftCol)
-                    rightInd = self.model.indexFromNode(dataNode, col=rightCol)
-                    self.model.dataChanged.emit(leftInd, rightInd)
-                    self.model.emitParentDataChanged(dataNode, leftCol, rightCol)
+        with BlockAutoRangeList([gv['widget'] for gv in self.graphicsViewDict.itervalues()]):
+            for node in uniqueSelectedNodes:
+                dataNodes = self.model.getDataNodes(node)
+                for dataNode in dataNodes:
+                    plottedTrace = dataNode.content
+                    changed=False
+                    if changeType=='clear' and plottedTrace.curvePen!=0:
+                        plottedTrace.plot(0)
+                        changed=True
+                    elif changeType=='plot' and plottedTrace.curvePen==0:
+                        plottedTrace.plot(-1,self.settings.plotstyle)
+                        changed=True
+                    if changed:
+                        self.model.traceModelDataChanged.emit(str(plottedTrace.traceCollection.traceCreation), 'isPlotted', '')
+                        leftInd = self.model.indexFromNode(dataNode, col=leftCol)
+                        rightInd = self.model.indexFromNode(dataNode, col=rightCol)
+                        self.model.dataChanged.emit(leftInd, rightInd)
+                        self.model.emitParentDataChanged(dataNode, leftCol, rightCol)
 
     def onApplyStyle(self):
         """Execute when apply style button is clicked. Changed style of selected traces."""
@@ -299,8 +308,9 @@ class Traceui(TraceuiForm, TraceuiBase):
     def onOpenFile(self):
         """Execute when the open button is clicked. Open an existing trace file from disk."""
         fnames = QtGui.QFileDialog.getOpenFileNames(self, 'Open files', self.settings.lastDir)
-        for fname in fnames:
-            self.openFile(fname)
+        with BlockAutoRangeList([gv['widget'] for gv in self.graphicsViewDict.itervalues()]):
+            for fname in fnames:
+                self.openFile(fname)
 
     def openFile(self, filename):
         filename = str(filename)
@@ -311,12 +321,18 @@ class Traceui(TraceuiForm, TraceuiBase):
         traceCollection.name = traceCollection.fileleaf
         traceCollection.saved = True
         traceCollection.loadTrace(filename)
+        for node in self.model.traceDict.values():
+            dataNode=self.model.getFirstDataNode(node)
+            existingTraceCollection=dataNode.content.traceCollection
+            if existingTraceCollection.fileleaf==traceCollection.fileleaf and str(existingTraceCollection.traceCreation)==str(traceCollection.traceCreation):
+                return #If the filename and creation dates are the same, you're trying to open an existing trace.
         plottedTraceList = list()
+        category = None if len(traceCollection.tracePlottingList)==1 else self.getUniqueCategory(filename)
         for plotting in traceCollection.tracePlottingList:
             windowName = plotting.windowName if plotting.windowName in self.graphicsViewDict else self.graphicsViewDict.keys()[0]
             name = plotting.name
             plottedTrace = PlottedTrace(traceCollection, self.graphicsViewDict[windowName]['view'], pens.penList, -1, tracePlotting=plotting, windowName=windowName, name=name)
-            plottedTrace.category = traceCollection.fileleaf
+            plottedTrace.category = category
             plottedTraceList.append(plottedTrace)
             self.addTrace(plottedTrace,-1)
         if self.expandNew:
@@ -329,30 +345,37 @@ class Traceui(TraceuiForm, TraceuiBase):
         self.config[self.configname+".settings"] = self.settings
         
     def onShowOnlyLast(self):
-        pass
-        
-#if __name__ == '__main__':
-#    import sys
-#    import pyqtgraph as pg
-#    from CoordinatePlotWidget import CoordinatePlotWidget
-#    pg.setConfigOption('background', 'w') #set background to white
-#    pg.setConfigOption('foreground', 'k') #set foreground to black
-#    app = QtGui.QApplication(sys.argv)
-#    penicons = pens.penicons().penicons()
-#    plot = CoordinatePlotWidget()
-#    ui = Traceui(penicons, {}, '', plot, lastDir = ' ')
-#    ui.setupUi(ui)
-#    addPlotButton = QtGui.QPushButton()
-#    addAvgPlotButton = QtGui.QPushButton()
-#    trace = Trace.Trace()
-#    plottedTrace = PlottedTrace(trace, plot, pens.penList)
-#    addPlotButton.clicked.connect(ui.addTrace(plottedTrace, pens.penList[0]))
-#    window = QtGui.QWidget()
-#    layout = QtGui.QVBoxLayout()
-#    layout.addWidget(ui)
-#    layout.addWidget(addPlotButton)
-#    layout.addWidget(addAvgPlotButton)
-#    layout.addWidget(plot)
-#    window.setLayout(layout)
-#    window.show()
-#    sys.exit(app.exec_())
+        for node in self.model.root.children:
+            index = self.model.indexFromNode(node)
+            functionCall = self.model.categoryCheckboxChange if node.nodeType==nodeTypes.category else self.model.checkboxChange
+            value=QtCore.Qt.Checked if node is self.model.root.children[-1] else QtCore.Qt.Unchecked
+            if index.data(QtCore.Qt.CheckStateRole) != value:
+                functionCall(index, value)
+
+    def getUniqueCategory(self, filename):
+        return self.model.getUniqueCategory(filename)
+
+# if __name__ == '__main__':
+#     import sys
+#     import pyqtgraph as pg
+#     from uiModules.CoordinatePlotWidget import CoordinatePlotWidget
+#     import pens
+#     pg.setConfigOption('background', 'w') #set background to white
+#     pg.setConfigOption('foreground', 'k') #set foreground to black
+#     app = QtGui.QApplication(sys.argv)
+#     penicons = pens.penicons().penicons()
+#     window = QtGui.QWidget()
+#     layout = QtGui.QVBoxLayout()
+#     window.setLayout(layout)
+#     addPlotButton = QtGui.QPushButton()
+#     layout.addWidget(addPlotButton)
+#     ui = Traceui(penicons, {}, '', {}, lastDir = ' ')
+#     ui.setupUi(ui)
+#     layout.addWidget(ui)
+#     plot = CoordinatePlotWidget(ui)
+#     layout.addWidget(plot)
+#     traceCollection = TraceCollection.TraceCollection()
+#     plottedTrace = PlottedTrace(traceCollection, plot, pens.penList)
+#     addPlotButton.clicked.connect(ui.addTrace(plottedTrace, pens.penList[0]))
+#     window.show()
+#     sys.exit(app.exec_())

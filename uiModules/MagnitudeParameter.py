@@ -2,6 +2,7 @@ from pyqtgraph.parametertree.Parameter import Parameter
 from pyqtgraph.parametertree.parameterTypes import WidgetParameterItem, registerParameterType
 from PyQt4 import QtGui
 from MagnitudeSpinBox import MagnitudeSpinBox
+from ExpressionSpinBox import ExpressionSpinBox
 from pyqtgraph.python2_3 import asUnicode
 
 
@@ -18,32 +19,42 @@ class MagnitudeWidgetParameterItem(WidgetParameterItem):
 
 class MagnitudeParameter(Parameter):
     itemClass = MagnitudeWidgetParameterItem
-    
+
     def __init__(self, *args, **kargs):
         self.dimension = kargs.get('dimension')
         Parameter.__init__(self, *args, **kargs)
 
-class PasswordParameterItem(WidgetParameterItem):
+class ExpressionWidgetParameterItem(WidgetParameterItem):
     def __init__(self, param, depth):
+        self.dimension = param.dimension
         WidgetParameterItem.__init__(self, param, depth)
+        self.hideWidget = False
 
     def makeWidget(self):
-        w = QtGui.QLineEdit()
-        w.sigChanged = w.editingFinished
-        w.value = lambda: asUnicode(w.text())
-        w.setValue = lambda v: w.setText(asUnicode(v))
-        w.sigChanging = w.textChanged
-        w.setEchoMode( QtGui.QLineEdit.Password )
+        v = self.param.opts['value']
+        w = ExpressionSpinBox(globalDict=v.globalDict)
+        w.setExpression(v)
+        w.sigChanged = w.expressionChanged
+        #w.valueChanged.connect(self.widgetValueChanged)
+        w.dimension = self.dimension
         return w
 
-class PasswordParameter(Parameter):
-    itemClass = PasswordParameterItem
-    
+class ExpressionParameter(Parameter):
+    itemClass = ExpressionWidgetParameterItem
+
     def __init__(self, *args, **kargs):
+        self.dimension = kargs.get('dimension')
         Parameter.__init__(self, *args, **kargs)
 
+    def setValue(self, value, blockSignal=None):
+        super(ExpressionParameter, self).setValue(value, blockSignal)
+        if blockSignal is None:
+            self.sigValueChanged.emit(self, value)
+
+
+
 registerParameterType('magnitude', MagnitudeParameter, override=True)   
-registerParameterType('password', PasswordParameter, override=True)   
+registerParameterType('expression', ExpressionParameter, override=True)
 
 if __name__=="__main__":
     pass

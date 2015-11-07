@@ -212,14 +212,16 @@ class SlowAdjustOutputChannel(OutputChannel):
         it should return False. The user should call repeatedly until the intended value is reached
         and True is returned.
         """
-        self.settings.targetValue = targetValue
-        newvalue, arrived = nextValue(self.settings.value, targetValue, self.settings.stepsize, self.settings.jump)
-        reportvalue, arrived = self.encpasulate_value(self.device.setValue(self.channelName, newvalue), second=arrived)
-        self.settings.value = reportvalue
-        self.valueChanged.emit(self.settings.value)
-        if arrived:
-            self.persist(self.name, self.settings.value)
-        return arrived
+        if targetValue is not None:
+            self.settings.targetValue = targetValue
+            newvalue, arrived = nextValue(self.settings.value, targetValue, self.settings.stepsize, self.settings.jump)
+            reportvalue, arrived = self.encpasulate_value(self.device.setValue(self.channelName, newvalue), second=arrived)
+            self.settings.value = reportvalue
+            self.valueChanged.emit(self.settings.value)
+            if arrived:
+                self.persist(self.name, self.settings.value)
+            return arrived
+        return True
 
     def onExpressionUpdate(self, name, value, string, origin):
         if origin == 'recalculate':

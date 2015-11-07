@@ -322,6 +322,15 @@ class CoordinatePlotWidget(pg.GraphicsLayoutWidget):
         else:
             self.mousePointList = [self.mousePoint]
 
+    def autoRangeEnabled(self):
+        return self._graphicsView.vb.autoRangeEnabled()
+
+    def enableAutoRange(self, axes=None, enable=True, x=None, y=None):
+        self._graphicsView.vb.enableAutoRange(axes, enable, x, y)
+
+    def autoRange(self, padding=None, items=None, item=None):
+        self._graphicsView.vb.autoRange(padding, items, item)
+
 if __name__ == '__main__':
     icons_dir = '.\\..\\ui\\icons\\'
     range_icon_file = icons_dir + 'unity-range'

@@ -381,7 +381,7 @@ class AutoLoad(UiForm,UiBase):
         self.statemachine.initialize( 'Idle' )
         
         # Settings
-        self.globalsAdjustTableModel = TodoListSettingsTableModel( self.settings.globalsAdjustList, self.globalVariablesUi.variables )
+        self.globalsAdjustTableModel = TodoListSettingsTableModel( self.settings.globalsAdjustList, self.globalVariablesUi.globalDict )
         self.globalsAdjustTableModel.edited.connect( self.autoSave )
         self.globalsAdjustTableView.setModel( self.globalsAdjustTableModel )
         self.comboBoxDelegate = ComboBoxDelegate()
@@ -646,7 +646,7 @@ class AutoLoad(UiForm,UiBase):
             self.voltageControl.shuttleTo( self.voltageNodeBeforeLoading )
         
     def adjustToLoading(self):
-        self.globalAdjustRevertList = [('Global', key, self.globalVariablesUi.variables[key]) for key in self.settings.globalsAdjustList]
+        self.globalAdjustRevertList = [('Global', key, self.globalVariablesUi.globalDict[key]) for key in self.settings.globalsAdjustList]
         self.globalVariablesUi.update( ( ('Global', k, v) for k,v in self.settings.globalsAdjustList.iteritems() ))   
         self.externalInstrumentObservable( lambda: self.statemachine.processEvent('doneAdjusting') )
         if self.settings.loadingVoltageNode:

@@ -7,12 +7,15 @@ algorithms are expected to defined the fileds as stated in MeanEvaluation
 
 """
 import math
+
 import numpy
-from modules.enum import enum 
-from modules.Expression import Expression
+
+from EvaluationBase import EvaluationBase, EvaluationException
+from gui.ExpressionValue import ExpressionValue
 from modules import MagnitudeUtilit
 from modules import magnitude
-from EvaluationBase import EvaluationBase, EvaluationException
+from modules.Expression import Expression
+from modules.enum import enum
 
 
 class MeanEvaluation(EvaluationBase):
@@ -23,8 +26,8 @@ class MeanEvaluation(EvaluationBase):
     tooltip = "Mean of observed counts" 
     errorBarType = enum('shotnoise','statistical','min max')
     expression = Expression()
-    def __init__(self,settings=None):
-        EvaluationBase.__init__(self,settings)
+    def __init__(self, globalDict=dict(), settings=None):
+        EvaluationBase.__init__(self, globalDict, settings)
         self.errorBarTypeLookup = [ self.evaluateShotnoise, self.evaluateStatistical, self.evaluateMinMax ]
         
     def setDefault(self):
@@ -75,8 +78,8 @@ class NumberEvaluation(EvaluationBase):
     name = 'Number'
     tooltip = "Number of results" 
     sourceType = enum('Counter','Result')
-    def __init__(self,settings=None):
-        EvaluationBase.__init__(self,settings)
+    def __init__(self, globalDict=dict(), settings=None):
+        EvaluationBase.__init__(self, globalDict, settings)
         
     def setDefault(self):
         pass
@@ -97,19 +100,25 @@ class FeedbackEvaluation(EvaluationBase):
     name = 'Feedback'
     tooltip = "Slow feedback on external parameter" 
     sourceType = enum('Counter','Result')
-    def __init__(self,settings=None):
-        EvaluationBase.__init__(self,settings)
+    def __init__(self, globalDict=dict(), settings=None):
+        EvaluationBase.__init__(self, globalDict, settings)
         self.integrator = None
         self.lastUpdate = None
         
     def setDefault(self):
-        self.settings.setdefault('SetPoint',0.)
+        self.settings.setdefault('SetPoint',ExpressionValue(name='SetPoint'))
         self.settings.setdefault('P', magnitude.mg(0,''))
         self.settings.setdefault('I', magnitude.mg(0,''))
         self.settings.setdefault('AveragingTime', magnitude.mg(10,'s'))
         self.settings.setdefault('GlobalVariable', "")
         self.settings.setdefault('Reset', False)
-    
+        if not isinstance(self.settings['SetPoint'], ExpressionValue):
+            self.settings['SetPoint'] = ExpressionValue(name='SetPoint')
+        self.settings['SetPoint'].globalDict = self.globalDict
+
+    def __setstate__(self, state):
+        self.__dict__ = state
+
     def evaluateMinMax(self, countarray):
         mean = numpy.mean( countarray )
         return mean, (mean-numpy.min(countarray), numpy.max(countarray)-mean), numpy.sum(countarray)
@@ -125,7 +134,7 @@ class FeedbackEvaluation(EvaluationBase):
             self.integrator = globalDict[globalName]
             self.settings['Reset'] = False
         mean, (_, _), raw =  self.evaluateMinMax(countarray)
-        errorval = self.settings['SetPoint'] - mean
+        errorval = self.settings['SetPoint'].value - mean
         pOut = self.settings['P'] * errorval
         self.integrator = self.integrator + errorval * self.settings['I'] 
         totalOut = pOut + self.integrator
@@ -133,12 +142,18 @@ class FeedbackEvaluation(EvaluationBase):
         return MagnitudeUtilit.value(totalOut), (None, None), raw
     
     def children(self):
-        return [{'name':'SetPoint',        'type': 'float',     'value': self.settings['SetPoint'],        'tip': "Set point of PI loop"                                          },
-                {'name':'P',               'type': 'magnitude', 'value': self.settings['P'],               'tip': "Proportional gain"                                             },
-                {'name':'I',               'type': 'magnitude', 'value': self.settings['I'],               'tip': "Integral gain"                                                 },
-                {'name':'AveragingTime',   'type': 'magnitude', 'value': self.settings['AveragingTime'],   'tip': "Time spent accumulating data before updating the servo output" },
-                {'name':'GlobalVariable',  'type': 'str',       'value': self.settings['GlobalVariable'],  'tip': "Name of variable to which servo output value should be pushed" },
-                {'name':'Reset',  'type': 'bool',       'value': self.settings['Reset'],  'tip': "Reset integrator" }]     
+        if not isinstance(self.settings['SetPoint'], ExpressionValue):
+            self.settings['SetPoint'] = ExpressionValue(name='SetPoint')
+        self.settings['SetPoint'].globalDict = self.globalDict
+        return [{'name': 'SetPoint', 'type': 'expression', 'value': self.settings['SetPoint'],
+                 'tip': "Set point of PI loop"},
+                {'name': 'P', 'type': 'magnitude', 'value': self.settings['P'], 'tip': "Proportional gain"},
+                {'name': 'I', 'type': 'magnitude', 'value': self.settings['I'], 'tip': "Integral gain"},
+                {'name': 'AveragingTime', 'type': 'magnitude', 'value': self.settings['AveragingTime'],
+                 'tip': "Time spent accumulating data before updating the servo output"},
+                {'name': 'GlobalVariable', 'type': 'list', 'values': self.globalDict.keys(), 'value': self.settings['GlobalVariable'],
+                 'tip': "Name of variable to which servo output value should be pushed"},
+                {'name': 'Reset', 'type': 'bool', 'value': self.settings['Reset'], 'tip': "Reset integrator"}]
  
 
 class ThresholdEvaluation(EvaluationBase):
@@ -149,8 +164,8 @@ class ThresholdEvaluation(EvaluationBase):
     """
     name = "Threshold"
     tooltip = "Obove threshold is bright"
-    def __init__(self,settings=None):
-        EvaluationBase.__init__(self,settings)
+    def __init__(self, globalDict=dict(), settings=None):
+        EvaluationBase.__init__(self, globalDict, settings)
         
     def setDefault(self):
         self.settings.setdefault('threshold',1)
@@ -189,8 +204,8 @@ class RangeEvaluation(EvaluationBase):
     """
     name = "Count Range"
     tooltip = ""
-    def __init__(self,settings=None):
-        EvaluationBase.__init__(self,settings)
+    def __init__(self, globalDict=dict(), settings=None):
+        EvaluationBase.__init__(self, globalDict, settings)
         
     def setDefault(self):
         self.settings.setdefault('min',0)
@@ -232,8 +247,8 @@ class DoubleRangeEvaluation(EvaluationBase):
     """
     name = "Double Count Range"
     tooltip = ""
-    def __init__(self,settings=None):
-        EvaluationBase.__init__(self,settings)
+    def __init__(self, globalDict=dict(), settings=None):
+        EvaluationBase.__init__(self, globalDict, settings)
         
     def setDefault(self):
         self.settings.setdefault('min_1',0)
@@ -284,8 +299,8 @@ class FidelityEvaluation(EvaluationBase):
     name = "Fidelity"
     tooltip = "Obove threshold is bright"
     ExpectedLookup = { 'd': 0, 'u' : 1, '1':0.5, '-1':0.5, 'i':0.5, '-i':0.5 }
-    def __init__(self,settings=None):
-        EvaluationBase.__init__(self,settings)
+    def __init__(self, globalDict=dict(), settings=None):
+        EvaluationBase.__init__(self, globalDict, settings)
         
     def setDefault(self):
         self.settings.setdefault('threshold',1)
@@ -332,8 +347,8 @@ class ParityEvaluation(EvaluationBase):
     name = "Parity"
     tooltip = "Two ion parity evaluation"
     hasChannel = False
-    def __init__(self,settings=None):
-        EvaluationBase.__init__(self,settings)
+    def __init__(self, globalDict=dict(), settings=None):
+        EvaluationBase.__init__(self, globalDict, settings)
         
     def setDefault(self):
         self.settings.setdefault('Ion_1','')
@@ -380,8 +395,8 @@ class TwoIonEvaluation(EvaluationBase):
     name = "TwoIon"
     tooltip = "Two ion parity evaluation"
     hasChannel = False
-    def __init__(self,settings=None):
-        EvaluationBase.__init__(self,settings)
+    def __init__(self, globalDict=dict(), settings=None):
+        EvaluationBase.__init__(self, globalDict, settings)
         
     def setDefault(self):
         self.settings.setdefault('Ion_1','')
