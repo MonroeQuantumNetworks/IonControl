@@ -17,11 +17,13 @@ import logging
 import os
 from copy import copy
 
+from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
+
 uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\GlobalVariables.ui')
 Form, Base = PyQt4.uic.loadUiType(uipath)
 
 class GlobalVariablesUi(Form, Base):
-    def __init__(self, config, parent=None):
+    def __init__(self, config, preferences, parent=None):
         Form.__init__(self)
         Base.__init__(self, parent)
         self.config = config
@@ -34,6 +36,7 @@ class GlobalVariablesUi(Form, Base):
             storedGlobals = dict()
         self._globalDict_ = storedGlobals
         self.globalDict = GlobalVariablesLookup(self._globalDict_)
+        self.guiPreferences = preferences.guiPreferences
 
     @property
     def valueChanged(self):
@@ -46,8 +49,8 @@ class GlobalVariablesUi(Form, Base):
         Form.setupUi(self,parent)
         self.model = GlobalVariablesModel(self.config, self._globalDict_)
         self.view.setModel(self.model)
-        self.nameDelegate = GridDelegate()
-        self.valueDelegate = MagnitudeSpinBoxGridDelegate()
+        self.nameDelegate = QtGui.QStyledItemDelegate() if self.guiPreferences.useCondensedGlobalTree else GridDelegate()
+        self.valueDelegate = MagnitudeSpinBoxDelegate() if self.guiPreferences.useCondensedGlobalTree else MagnitudeSpinBoxGridDelegate()
         self.view.setItemDelegateForColumn(self.model.column.name, self.nameDelegate)
         self.view.setItemDelegateForColumn(self.model.column.value, self.valueDelegate)
         restoreGuiState( self, self.config.get(self.configName+".guiState") )

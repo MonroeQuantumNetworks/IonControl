@@ -174,8 +174,15 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.pulseProgramDialog = PulseProgramUi.PulseProgramSetUi(self.config,  self.channelNameData )
         self.pulseProgramDialog.setupUi(self.pulseProgramDialog)
 
+        self.preferencesUi = PreferencesUi(config, self)
+        self.preferencesUi.setupUi(self.preferencesUi)
+        self.preferencesUiDock = QtGui.QDockWidget("Print Preferences")
+        self.preferencesUiDock.setWidget(self.preferencesUi)
+        self.preferencesUiDock.setObjectName("_preferencesUi")
+        self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.preferencesUiDock)
+
         # Global Variables
-        self.globalVariablesUi = GlobalVariablesUi(self.config)
+        self.globalVariablesUi = GlobalVariablesUi(self.config, self.preferencesUi.preferences())
         self.globalVariablesUi.setupUi(self.globalVariablesUi)
         self.globalVariablesDock = QtGui.QDockWidget("Global Variables")
         self.globalVariablesDock.setObjectName("Global Variables")
@@ -215,13 +222,6 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.triggerUi.setupUi(self.triggerUi)
         self.pulser.ppActiveChanged.connect( self.triggerUi.setDisabled )
         self.triggerDockWidget.setWidget( self.triggerUi )
-
-        self.preferencesUi = PreferencesUi(config, self)
-        self.preferencesUi.setupUi(self.preferencesUi)
-        self.preferencesUiDock = QtGui.QDockWidget("Print Preferences")
-        self.preferencesUiDock.setWidget(self.preferencesUi)
-        self.preferencesUiDock.setObjectName("_preferencesUi")
-        self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.preferencesUiDock)
 
         if self.AWGEnabled:
             self.AWGUi = AWGUi(self.pulser, self.config, self.globalVariablesUi.globalDict)
