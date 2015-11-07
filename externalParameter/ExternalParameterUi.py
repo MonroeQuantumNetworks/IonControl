@@ -45,7 +45,7 @@ class ExternalParameterControlModel(CategoryTreeModel):
             (QtCore.Qt.EditRole,1): lambda node: firstNotNone( node.content.string, str(node.content.targetValue) ),
             (QtCore.Qt.UserRole,1): lambda node: node.content.dimension,
             (QtCore.Qt.DisplayRole,2): lambda node: str(node.content.value),
-            (QtCore.Qt.BackgroundRole,1): self.backgroundFunction,
+            (QtCore.Qt.BackgroundRole,1): self.dependencyBgFunction,
             (QtCore.Qt.ToolTipRole,1): self.toolTipFunction
             })
         self.setDataLookup.update({
@@ -182,7 +182,7 @@ class ControlUi(Form, Base):
         self.setupParameters(outputChannels)
         restoreGuiState(self, self.config.get(self.configName+'.guiState'))
         try:
-            self.categoryTreeView.restoreTreeState( self.config.get(self.configName+'.treeState',tuple([None]*4)) )
+            self.categoryTreeView.restoreTreeState( self.config.get(self.configName+'.treeState', None) )
         except Exception as e:
             logging.getLogger(__name__).error("unable to restore tree state in {0}: {1}".format(self.configName, e))
         self.categoryTreeView.selectionModel().currentChanged.connect( self.onActiveChannelChanged )

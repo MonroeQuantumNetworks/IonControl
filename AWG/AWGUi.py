@@ -11,7 +11,7 @@ from sympy.parsing.sympy_parser import parse_expr
 
 from AWG.AWGDevices import ChaseDA12000, AWGDeviceList
 from AWG.AWGTableModel import AWGTableModel
-from externalParameter.ExternalParameterSelection import Settings
+from externalParameter.InstrumentSettings import InstrumentSettings
 from externalParameter.persistence import DBPersist
 from modules.Expression import Expression
 from modules.firstNotNone import firstNotNone
@@ -29,7 +29,7 @@ class AWGWaveform(object):
     expression = Expression()
     def __init__(self):
         self.__equation = "t"
-        self.__points = 64;
+        self.__points = 64
         self.stack = []
         self.vars = dict()
        
@@ -190,12 +190,12 @@ class AWGUi(AWGForm, AWGBase):
         logger = logging.getLogger(__name__)
         if devicestr != None: self.parameters.device = str(devicestr) # in case devicestr is a QString, e.g. from the event listener
         try:
-            self.device = (device(None, Settings(), self.waveform, parent=self) \
+            self.device = (device(None, InstrumentSettings(), self.globalDict, self.waveform, parent=self) \
                            for device in AWGDeviceList if device.className == self.parameters.device).next()
         except StopIteration:
             logger.warn("Could not find awg with string \"%s\", reverting to dummy AWG!", self.parameters.device)
             self.parameters.device = 'Dummy AWG'
-            self.device = AWGDeviceList[self.parameters.device](None, Settings(), self.waveform, parent=self)
+            self.device = AWGDeviceList[self.parameters.device](None, InstrumentSettings(), self.globalDict, self.waveform, parent=self)
     
     def checkSettingsSavable(self, savable=None):
         if not isinstance(savable, bool):
@@ -215,7 +215,7 @@ class AWGUi(AWGForm, AWGBase):
         self.saveButton.setEnabled( savable )
     
     def outputChannels(self):  
-        return dict(self.device.outputChannels())
+        return dict(self.device.outputChannels)
     
     def setWaveform(self, waveform):
         self.waveform = waveform

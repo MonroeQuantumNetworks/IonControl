@@ -31,9 +31,6 @@
         <iconset resource="Experiment.qrc">
          <normaloff>:/other/icons/collapse-all.png</normaloff>:/other/icons/collapse-all.png</iconset>
        </property>
-       <property name="shortcut">
-        <string>Ctrl+Up</string>
-       </property>
        <property name="autoRaise">
         <bool>true</bool>
        </property>
@@ -50,9 +47,6 @@
        <property name="icon">
         <iconset resource="Experiment.qrc">
          <normaloff>:/other/icons/expand-all.png</normaloff>:/other/icons/expand-all.png</iconset>
-       </property>
-       <property name="shortcut">
-        <string>Ctrl+Down</string>
        </property>
        <property name="autoRaise">
         <bool>true</bool>

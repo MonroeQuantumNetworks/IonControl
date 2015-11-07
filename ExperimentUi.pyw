@@ -10,6 +10,8 @@ import webbrowser
 
 from PyQt4 import QtCore, QtGui
 import PyQt4.uic
+
+from OptionalSoftwareFeatures.MemoryProfiler import MemoryProfiler
 from ProjectConfig.Project import Project, ProjectInfoUi
 import sys
 import logging
@@ -18,7 +20,7 @@ from modules.XmlUtilit import prettify
 from modules.SequenceDict import SequenceDict
 from functools import partial
 import xml.etree.ElementTree as ElementTree
-from gui import GlobalVariables
+from GlobalVariables.GlobalVariablesUi import GlobalVariablesUi
 from gui import ScanExperiment
 from dedicatedCounters.DedicatedCounters import DedicatedCounters
 from externalParameter import ExternalParameterSelection
@@ -134,6 +136,9 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.parent = parent
         self.tabDict = SequenceDict()
 
+        if self.project.isEnabled('software', 'Memory Profiler'):
+            self.memoryProfiler = MemoryProfiler(self)
+
         #determine if AWG software is enabled and import class if it is
         self.AWGEnabled = self.project.isEnabled('software', 'AWG')
         if self.AWGEnabled:
@@ -174,8 +179,15 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.pulseProgramDialog = PulseProgramUi.PulseProgramSetUi(self.config,  self.channelNameData )
         self.pulseProgramDialog.setupUi(self.pulseProgramDialog)
 
+        self.preferencesUi = PreferencesUi(config, self)
+        self.preferencesUi.setupUi(self.preferencesUi)
+        self.preferencesUiDock = QtGui.QDockWidget("Print Preferences")
+        self.preferencesUiDock.setWidget(self.preferencesUi)
+        self.preferencesUiDock.setObjectName("_preferencesUi")
+        self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.preferencesUiDock)
+
         # Global Variables
-        self.globalVariablesUi = GlobalVariables.GlobalVariableUi(self.config)
+        self.globalVariablesUi = GlobalVariablesUi(self.config, self.preferencesUi.preferences())
         self.globalVariablesUi.setupUi(self.globalVariablesUi)
         self.globalVariablesDock = QtGui.QDockWidget("Global Variables")
         self.globalVariablesDock.setObjectName("Global Variables")
@@ -216,15 +228,8 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.pulser.ppActiveChanged.connect( self.triggerUi.setDisabled )
         self.triggerDockWidget.setWidget( self.triggerUi )
 
-        self.preferencesUi = PreferencesUi(config, self)
-        self.preferencesUi.setupUi(self.preferencesUi)
-        self.preferencesUiDock = QtGui.QDockWidget("Print Preferences")
-        self.preferencesUiDock.setWidget(self.preferencesUi)
-        self.preferencesUiDock.setObjectName("_preferencesUi")
-        self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.preferencesUiDock)
-
         if self.AWGEnabled:
-            self.AWGUi = AWGUi(self.pulser, self.config, self.globalVariablesUi.variables)
+            self.AWGUi = AWGUi(self.pulser, self.config, self.globalVariablesUi.globalDict)
             self.AWGUi.setupUi(self.AWGUi)
             self.AWGUiDock = QtGui.QDockWidget("AWG")
             self.AWGUiDock.setWidget(self.AWGUi)
@@ -234,7 +239,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
             self.scanExperiment.updateScanTarget( 'AWG', self.AWGUi.outputChannels() )
             self.globalVariablesUi.valueChanged.connect( self.AWGUi.evaluate )
 
-        self.pulserParameterUi = PulserParameterUi(self.pulser, self.config, self.globalVariablesUi.variables)
+        self.pulserParameterUi = PulserParameterUi(self.pulser, self.config, self.globalVariablesUi.globalDict)
         self.pulserParameterUi.setupUi()
         self.pulserParameterUiDock = QtGui.QDockWidget("Pulser Parameters")
         self.pulserParameterUiDock.setWidget(self.pulserParameterUi)
@@ -242,14 +247,14 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.pulserParameterUiDock)
         self.tabDict['Scan'].NeedsDDSRewrite.connect( self.pulserParameterUi.onWriteAll )
 
-        self.DDSUi = DDSUi.DDSUi(self.config, self.pulser, self.globalVariablesUi.variables )
+        self.DDSUi = DDSUi.DDSUi(self.config, self.pulser, self.globalVariablesUi.globalDict )
         self.DDSUi.setupUi(self.DDSUi)
         self.DDSDockWidget.setWidget( self.DDSUi )
         self.globalVariablesUi.valueChanged.connect( self.DDSUi.evaluate )
         self.pulser.ppActiveChanged.connect( self.DDSUi.setDisabled )
         self.tabDict['Scan'].NeedsDDSRewrite.connect( self.DDSUi.onWriteAll )
         
-        self.DACUi = DACUi(self.config, self.pulser, self.globalVariablesUi.variables )
+        self.DACUi = DACUi(self.config, self.pulser, self.globalVariablesUi.globalDict )
         self.DACUi.setupUi(self.DACUi)
         self.DACDockWidget = QtGui.QDockWidget("DAC")
         self.DACDockWidget.setObjectName("_DAC_")
@@ -286,14 +291,14 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.triggerDockWidget.hide()
         self.preferencesUiDock.hide()
 
-        self.ExternalParametersSelectionUi = ExternalParameterSelection.SelectionUi(self.config, self.globalVariablesUi.variables, classdict=InstrumentDict)
+        self.ExternalParametersSelectionUi = ExternalParameterSelection.SelectionUi(self.config, self.globalVariablesUi.globalDict, classdict=InstrumentDict)
         self.ExternalParametersSelectionUi.setupUi( self.ExternalParametersSelectionUi )
         self.ExternalParameterSelectionDock = QtGui.QDockWidget("Params Selection")
         self.ExternalParameterSelectionDock.setObjectName("_ExternalParameterSelectionDock")
         self.ExternalParameterSelectionDock.setWidget(self.ExternalParametersSelectionUi)
         self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.ExternalParameterSelectionDock)
 
-        self.ExternalParametersUi = ExternalParameterUi.ControlUi(self.config, self.globalVariablesUi.variables)
+        self.ExternalParametersUi = ExternalParameterUi.ControlUi(self.config, self.globalVariablesUi.globalDict)
         self.ExternalParametersUi.setupUi(self.ExternalParametersSelectionUi.outputChannels())
 
         self.ExternalParameterDock = QtGui.QDockWidget("Params Control")
@@ -395,7 +400,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
 
         if self.voltagesEnabled:
             try:
-                self.voltageControlWindow = VoltageControl(self.config, self.globalVariablesUi.variables, self.dac)
+                self.voltageControlWindow = VoltageControl(self.config, self.globalVariablesUi.globalDict, self.dac)
                 self.voltageControlWindow.setupUi(self.voltageControlWindow)
                 self.voltageControlWindow.globalAdjustUi.outputChannelsChanged.connect( partial(self.scanExperiment.updateScanTarget, 'Voltage') )
                 #self.voltageControlWindow.localAdjustUi.outputChannelsChanged.connect( partial(self.scanExperiment.updateScanTarget, 'Voltage Local Adjust') )

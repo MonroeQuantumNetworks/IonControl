@@ -36,10 +36,10 @@ GlobalVariables
    :members:
    :undoc-members:
 
-GlobalVariableTableModel
+GlobalVariablesModel
 ------------------------
 
-.. automodule:: gui.GlobalVariableTableModel
+.. automodule:: gui.GlobalVariablesModel
    :members:
    :undoc-members:
 

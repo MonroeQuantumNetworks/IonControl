@@ -32,8 +32,8 @@ class AWGDevice(ExternalParameterBase):
     enabled = False
     
     # parent should be the AWGUi, which we read whether or not to modify the internal scan as well
-    def __init__(self,name,config,waveform,parent=None):
-        ExternalParameterBase.__init__(self,name,config)
+    def __init__(self, name, config, globalDict, waveform, parent=None):
+        ExternalParameterBase.__init__(self, name, config, globalDict)
         self.open()
         self.setWaveform(waveform)
         self.parent = parent
@@ -45,9 +45,7 @@ class AWGDevice(ExternalParameterBase):
         vardict = {k: "" if (not isinstance(v['value'], Magnitude)) or v['value'].dimensionless() else \
                       str(v['value']).split(" ")[1] for (k, v) in self._waveform.vars.iteritems()}
         self._outputChannels = vardict
-        for (k, v) in vardict.iteritems():
-            self.settings.value[k] = self._waveform.vars[k]['value']
-    
+
     def fullName(self, channel):
         return "{0}".format(channel)
     
@@ -55,33 +53,13 @@ class AWGDevice(ExternalParameterBase):
         return (self.parent.parameters.setScanParam, str(self.parent.parameters.scanParam))
 
     def setDefaults(self):
-        ExternalParameterBase.setDefaults(self)
-        self.settings.__dict__.setdefault('stepsize' , magnitude.mg(1,''))
-                
-    def _setValue(self, channel, v, continuous):
+        self.initializeChannelsToExternals()
+
+    def setValue(self, channel, v, continuous):
         self._waveform.vars[channel]['value'] = v
         self.program(continuous)
-        
-    def setValue(self, channel, value, continuous=False):
-        """
-        This function returns True if the value is reached. Otherwise
-        it should return False. The user should call repeatedly until the intended value is reached
-        and True is returned.
-        """
-        self._setValue(channel, value, continuous)
-        
-        #self.setWaveform(self._waveform)
-        
-        return True
-        
-    def paramDef(self):
-        """
-        return the parameter definition used by pyqtgraph parametertree to show the gui
-        """
-        superior = ExternalParameterBase.paramDef(self)
-        superior.append({'name': 'stepsize', 'type': 'magnitude', 'value': self.settings.stepsize})
-        return superior
-        
+        return v
+
     def isEnabled(self):
         return self.parent.parameters.enabled
     

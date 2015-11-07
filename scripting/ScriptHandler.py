@@ -502,7 +502,7 @@ class ScriptHandler:
                                   longComment=None,
                                   failedAnalysis=None)
         space = self.scanExperiment.measurementLog.container.getSpace('GlobalVariables')
-        for name, value in self.experimentUi.globalVariablesUi.variables.iteritems():
+        for name, value in self.experimentUi.globalVariablesUi.globalDict.iteritems():
             measurement.parameters.append( Parameter(name=name, value=value, space=space) )
         measurement.plottedTraceList = [plottedTrace]
         self.scanExperiment.measurementLog.container.addMeasurement(measurement)

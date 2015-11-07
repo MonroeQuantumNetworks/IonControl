@@ -14,6 +14,7 @@ import sip
 from modules.enum import enum
 from PlottedTrace import PlottedTrace
 from uiModules.CategoryTree import CategoryTreeModel, nodeTypes
+import os
 
 api2 = sip.getapi("QVariant")==2
 
@@ -85,7 +86,7 @@ class TraceModel(CategoryTreeModel):
             (QtCore.Qt.EditRole, self.column.comment): self.comment
         })
         self.categoryDataAllColLookup.update({
-            QtCore.Qt.BackgroundRole: lambda node: None if self.isCategorySaved(node) else unsavedBG,
+            QtCore.Qt.BackgroundRole: lambda node: node.bgColor if self.isCategorySaved(node) else unsavedBG,
         })
         self.dataLookup.update({
             (QtCore.Qt.DisplayRole,self.column.name): lambda node: node.content.name,
@@ -99,7 +100,7 @@ class TraceModel(CategoryTreeModel):
             (QtCore.Qt.DisplayRole,self.column.filename): lambda node: getattr(node.content.traceCollection, 'fileleaf', None)
             })
         self.dataAllColLookup.update({
-            QtCore.Qt.BackgroundRole: lambda node: None if node.content.traceCollection.saved else unsavedBG
+            QtCore.Qt.BackgroundRole: lambda node: node.bgColor if node.content.traceCollection.saved else unsavedBG
         })
         self.setDataLookup.update({
             (QtCore.Qt.CheckStateRole,self.column.name): self.checkboxChange,
@@ -307,7 +308,7 @@ class TraceModel(CategoryTreeModel):
         categoryNode = dataNode.parent
         if categoryNode != self.root:
             self.nodeDict.pop(categoryNode.id)
-            newName = dataNode.content.traceCollection.fileleaf #new name is the base filename
+            newName = self.getUniqueCategory(dataNode.content.traceCollection.filename) #get a unique new category for trace collection
             categoryNode.content = newName
             categoryNode.id = newName
             self.nodeDict[newName] = categoryNode
@@ -340,3 +341,23 @@ class TraceModel(CategoryTreeModel):
                 self.dataChanged.emit(topLeftInd,bottomRightInd)
                 parentInd = self.indexFromNode(node.parent, col=self.column.name)
                 self.dataChanged.emit(parentInd, parentInd)
+
+    def getUniqueCategory(self, filename):
+        """Get a valid category for the trace filename"""
+        pathparts = os.path.realpath(filename).split('\\')
+        pathparts.reverse()
+        category = None
+        for pathpart in pathparts: #loop through parts of the directory
+            category = pathpart if not category else pathpart+'\\'+category
+            if category not in self.existingCategories():
+                return category
+        return filename #This should never happen
+
+    def existingCategories(self):
+        """list of categories in traces currently shown"""
+        categories = []
+        for node in self.traceDict.values():
+            dataNode=self.getFirstDataNode(node)
+            trace = dataNode.content
+            categories.append(trace.category)
+        return categories

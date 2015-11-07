@@ -216,7 +216,7 @@ class TodoList(Form, Base):
         self.autoSaveAction.triggered.connect( self.onAutoSaveChanged )
         self.addAction( self.autoSaveAction )
         # Settings
-        self.settingTableModel = TodoListSettingsTableModel( SequenceDict(), self.globalVariablesUi.variables )
+        self.settingTableModel = TodoListSettingsTableModel( SequenceDict(), self.globalVariablesUi.globalDict )
         self.settingTableView.setModel( self.settingTableModel )
         self.settingTableModel.edited.connect( self.checkSettingsSavable )
         self.comboBoxDelegate = ComboBoxDelegate()
@@ -480,7 +480,7 @@ class TodoList(Form, Base):
         _, currentwidget = self.currentScan()
         self.loadLine( entry )
         # set the global variables
-        self.revertGlobalsList = [('Global', key, self.globalVariablesUi.variables[key]) for key in entry.settings.iterkeys()]
+        self.revertGlobalsList = [('Global', key, self.globalVariablesUi.globalDict[key]) for key in entry.settings.iterkeys()]
         self.globalVariablesUi.update( ( ('Global', k, v) for k,v in entry.settings.iteritems() ))   
         # start
         currentwidget.onStart()
