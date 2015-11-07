@@ -196,24 +196,27 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
         self.nodeDict[nodeID] = node
         return node
 
-    def removeNode(self, node):
-        """Remove the specified node from the tree"""
+    def removeNode(self, node, useModelReset=False):
+        """Remove the specified node from the tree
+        if useModelReset is True, the calling function will use beginModelReset and endModelReset."""
         if self.allowDeletion and node!=self.root:
             dataNodes = self.getDataNodes(node)
             okToDelete = [getattr(dataNode.content, 'okToDelete', True) for dataNode in dataNodes]
             if all(okToDelete):
                 for childNode in node.children:
-                    self.removeNode(childNode) #recursively delete children
+                    self.removeNode(childNode, useModelReset) #recursively delete children
                 parent = node.parent
                 row = node.row
                 nodeID = node.id
                 parentIndex = self.indexFromNode(parent)
-                self.beginRemoveRows(parentIndex, row, row)
+                if not useModelReset:
+                    self.beginRemoveRows(parentIndex, row, row)
                 del parent.children[row]
                 del self.nodeDict[nodeID]
                 deletedID = copy(node.id)
                 del node
-                self.endRemoveRows()
+                if not useModelReset:
+                    self.endRemoveRows()
                 return deletedID
 
     def makeCategoryNodes(self, categories):
@@ -387,10 +390,15 @@ class CategoryTreeView(QtGui.QTreeView):
         model=self.model()
         if model.allowDeletion:
             selectedNodes = self.selectedNodes()
+            useModelReset = len(selectedNodes)>10
             topNodeList = [node for node in selectedNodes if node.parent not in selectedNodes]
+            if useModelReset:
+                model.beginResetModel()
             for node in topNodeList:
                 if node!=model.root: #don't delete root
-                    model.removeNode(node)
+                    model.removeNode(node, useModelReset)
+            if useModelReset:
+                model.endResetModel()
 
     def onReorder(self, up):
         if self.model().allowReordering:

@@ -278,8 +278,9 @@ class TraceModel(CategoryTreeModel):
                     return dataNode
         return None
 
-    def removeNode(self, node):
-        """Remove the node from the model, unplotting all connected traces"""
+    def removeNode(self, node, useModelReset=False):
+        """Remove the node from the model, unplotting all connected traces
+        if useModelReset is True, the calling function will use beginModelReset and endModelReset."""
         dataNodes = self.getDataNodes(node)
         nodeIsNotData = node not in dataNodes
         okToDelete = [getattr(dataNode.content, 'okToDelete', True) for dataNode in dataNodes]
@@ -290,14 +291,14 @@ class TraceModel(CategoryTreeModel):
                 if trace.curvePen!=0:
                     trace.plot(0)
                 key = str(trace.traceCollection.traceCreation)
-                super(TraceModel, self).removeNode(dataNode)
+                super(TraceModel, self).removeNode(dataNode, useModelReset)
                 if key in self.traceDict and (node.parent is self.root or nodeHasNoSiblings):
                     del self.traceDict[key]
                     self.traceRemoved.emit(key)
                     if dataNode.parent is not self.root and dataNode.parent is not node:
                         super(TraceModel, self).removeNode(dataNode.parent)
             if nodeIsNotData:
-                super(TraceModel, self).removeNode(node)
+                super(TraceModel, self).removeNode(node, useModelReset)
 
     def hasSiblings(self, node):
         """Returns True if node is not the only child of its parent, else False"""
