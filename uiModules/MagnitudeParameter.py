@@ -34,7 +34,7 @@ class ExpressionWidgetParameterItem(WidgetParameterItem):
         v = self.param.opts['value']
         w = ExpressionSpinBox(globalDict=v.globalDict)
         w.setExpression(v)
-        #w.sigChanged = w.expressionChanged
+        w.sigChanged = w.valueChanged
         #w.valueChanged.connect(self.widgetValueChanged)
         w.dimension = self.dimension
         return w
@@ -45,25 +45,6 @@ class ExpressionParameter(Parameter):
     def __init__(self, *args, **kargs):
         self.dimension = kargs.get('dimension')
         Parameter.__init__(self, *args, **kargs)
-
-    def setValue(self, value, blockSignal=None):
-        """
-        Set the value of this Parameter; return the actual value that was set.
-        (this may be different from the value that was requested)
-        """
-        try:
-            if blockSignal is not None:
-                self.sigValueChanged.disconnect(blockSignal)
-            if self.opts['value'].value == value:
-                #self.sigValueChanged.emit(self, value)
-                return value
-            self.opts['value'].value = value
-            self.sigValueChanged.emit(self, value)
-        finally:
-            if blockSignal is not None:
-                self.sigValueChanged.connect(blockSignal)
-
-        return value
 
 
 registerParameterType('magnitude', MagnitudeParameter, override=True)   

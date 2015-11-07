@@ -98,4 +98,4 @@ class ExpressionValue(QtCore.QObject):
         return hash(self._value)
 
     def __str__(self):
-        return str(self.value)
+        return str(self._value)

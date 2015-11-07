@@ -116,6 +116,9 @@ class FeedbackEvaluation(EvaluationBase):
             self.settings['SetPoint'] = ExpressionValue(name='SetPoint')
         self.settings['SetPoint'].globalDict = self.globalDict
 
+    def __setstate__(self, state):
+        self.__dict__ = state
+
     def evaluateMinMax(self, countarray):
         mean = numpy.mean( countarray )
         return mean, (mean-numpy.min(countarray), numpy.max(countarray)-mean), numpy.sum(countarray)
