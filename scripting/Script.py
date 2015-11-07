@@ -59,6 +59,7 @@ class Script(QtCore.QThread):
     createTraceSignal = QtCore.pyqtSignal(list) #arg: trace creation data
     closeTraceSignal = QtCore.pyqtSignal(str) #arg: trace to close
     fitSignal = QtCore.pyqtSignal(str, str) #args: fitName, traceName
+    genericCallSignal = QtCore.pyqtSignal(str, object, object) #args: function name, argument tuple, keyword argument dict
     
     def __init__(self, fullname='', code='', parent=None):
         super(Script,self).__init__(parent)
@@ -74,6 +75,7 @@ class Script(QtCore.QThread):
         self.allDataWait = QtCore.QWaitCondition() #Used to wait for full data set
         self.analysisWait = QtCore.QWaitCondition() #Used to wait for analysis results
         self.guiWait = QtCore.QWaitCondition() #Used to wait for gui to execute command
+        self.genericWait = QtCore.QWaitCondition() #Used for generic function calls
 
         for name in scriptFunctions: #Define global functions corresponding to the scripting functions
             globals()[name] = getattr(self, name)
@@ -94,9 +96,11 @@ class Script(QtCore.QThread):
         self.analysisReady = False
         self.allDataReady = False
         self.dataReady = False
+        self.genericReady = False
         
         #parameters to send information from the gui to the script
         self.analysisResults = dict()
+        self.genericResult = None
         self.data = dict()
         self.allData = dict()
         self.exception = None
@@ -126,7 +130,8 @@ class Script(QtCore.QThread):
         locs = [loc for loc in stack_trace if loc[0] == self.fullname] #Find the locations that match the script name
         self.locationSignal.emit(locs)
 
-    def scriptFunction(waitForGui=True, waitForAnalysis=False, waitForData=False, waitForAllData=False, runIfStopped=False): #@NoSelf
+    def scriptFunction(waitForGui=True, waitForAnalysis=False, waitForData=False, waitForAllData=False,
+                       waitForGenericResult=False, runIfStopped=False): #@NoSelf
         """Decorator for script functions.
         
         This decorator performs all the functions that are common to all the script functions. It checks
@@ -157,6 +162,8 @@ class Script(QtCore.QThread):
                             self.mutex.lock() 
                         if waitForAnalysis and not self.analysisReady:
                             self.analysisWait.wait(self.mutex)
+                        if waitForGenericResult and not self.genericReady:
+                            self.genericWait.wait(self.mutex)
                         if waitForAllData and not self.allDataReady:
                             self.allDataWait.wait(self.mutex)
                         if waitForData and not self.dataReady:
@@ -188,7 +195,14 @@ class Script(QtCore.QThread):
         Raises:
             ScriptException: if there is not a global with the given name. This is to avoid typos leading to unexpected behavior. To add a global, use 'addGlobal'"""
         self.setGlobalSignal.emit(name, value, unit)
-         
+
+    @scriptFunction(waitForGui=False, waitForGenericResult=True)
+    def getGlobal(self, name):
+        """getGlobal(name)
+        get current value of global 'name'"""
+        self.genericCallSignal.emit('getGlobal', (name,), dict())
+        return self.genericResult
+
     @scriptFunction()
     def addGlobal(self, name, value, unit):
         """addGlobal(name, value, unit)

@@ -24,6 +24,7 @@ from uiModules.ComboBoxDelegate import ComboBoxDelegate
 from uiModules.KeyboardFilter import KeyListFilter
 from functools import partial
 from dateutil.tz import tzlocal
+from modules.doProfile import doprofile
 
 uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\Traceui.ui')
 TraceuiForm, TraceuiBase = PyQt4.uic.loadUiType(uipath)
@@ -125,8 +126,9 @@ class Traceui(TraceuiForm, TraceuiBase):
         self.addAction( self.expandNewAction )
         self.measurementLogButton.setVisible(self.hasMeasurementLog)
 
+    @doprofile
     def onDelete(self, _):
-        with BlockAutoRangeList([gv['view'] for gv in self.graphicsViewDict.valueiter()]):
+        with BlockAutoRangeList([gv['widget'] for gv in self.graphicsViewDict.itervalues()]):
             self.traceView.onDelete()
 
     def onMeasurementLog(self):
@@ -146,23 +148,24 @@ class Traceui(TraceuiForm, TraceuiBase):
         rightCol=self.model.column.pen
         selectedNodes = self.traceView.selectedNodes()
         uniqueSelectedNodes = [node for node in selectedNodes if node.parent not in selectedNodes]
-        for node in uniqueSelectedNodes:
-            dataNodes = self.model.getDataNodes(node)
-            for dataNode in dataNodes:
-                plottedTrace = dataNode.content
-                changed=False
-                if changeType=='clear' and plottedTrace.curvePen!=0:
-                    plottedTrace.plot(0)
-                    changed=True
-                elif changeType=='plot' and plottedTrace.curvePen==0:
-                    plottedTrace.plot(-1,self.settings.plotstyle)
-                    changed=True
-                if changed:
-                    self.model.traceModelDataChanged.emit(str(plottedTrace.traceCollection.traceCreation), 'isPlotted', '')
-                    leftInd = self.model.indexFromNode(dataNode, col=leftCol)
-                    rightInd = self.model.indexFromNode(dataNode, col=rightCol)
-                    self.model.dataChanged.emit(leftInd, rightInd)
-                    self.model.emitParentDataChanged(dataNode, leftCol, rightCol)
+        with BlockAutoRangeList([gv['widget'] for gv in self.graphicsViewDict.itervalues()]):
+            for node in uniqueSelectedNodes:
+                dataNodes = self.model.getDataNodes(node)
+                for dataNode in dataNodes:
+                    plottedTrace = dataNode.content
+                    changed=False
+                    if changeType=='clear' and plottedTrace.curvePen!=0:
+                        plottedTrace.plot(0)
+                        changed=True
+                    elif changeType=='plot' and plottedTrace.curvePen==0:
+                        plottedTrace.plot(-1,self.settings.plotstyle)
+                        changed=True
+                    if changed:
+                        self.model.traceModelDataChanged.emit(str(plottedTrace.traceCollection.traceCreation), 'isPlotted', '')
+                        leftInd = self.model.indexFromNode(dataNode, col=leftCol)
+                        rightInd = self.model.indexFromNode(dataNode, col=rightCol)
+                        self.model.dataChanged.emit(leftInd, rightInd)
+                        self.model.emitParentDataChanged(dataNode, leftCol, rightCol)
 
     def onApplyStyle(self):
         """Execute when apply style button is clicked. Changed style of selected traces."""
@@ -305,8 +308,9 @@ class Traceui(TraceuiForm, TraceuiBase):
     def onOpenFile(self):
         """Execute when the open button is clicked. Open an existing trace file from disk."""
         fnames = QtGui.QFileDialog.getOpenFileNames(self, 'Open files', self.settings.lastDir)
-        for fname in fnames:
-            self.openFile(fname)
+        with BlockAutoRangeList([gv['widget'] for gv in self.graphicsViewDict.itervalues()]):
+            for fname in fnames:
+                self.openFile(fname)
 
     def openFile(self, filename):
         filename = str(filename)

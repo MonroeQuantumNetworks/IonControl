@@ -136,7 +136,19 @@ class ScriptHandler:
             message = "Global variable {0} set to {1} {2}".format(name, value, unit)
             error = False
         return (error, message)
-    
+
+    @QtCore.pyqtSlot(str, object, object)
+    @scriptCommand
+    def onGenericCall(self, funcname, args, kwargs):
+        try:
+            getattr(self, funcname)(*args, **kwargs)
+        except Exception as e:
+            return True, str(e)
+        return False, "{0}{1} executed".format(funcname, args)
+
+    def getGlobal(self, name):
+        return self.globalVariablesUi.globalDict[name]
+
     @QtCore.pyqtSlot()
     @scriptCommand
     def onStartScan(self):
@@ -431,6 +443,13 @@ class ScriptHandler:
             self.script.analysisResults = allResults
             self.script.analysisReady = True
             self.script.analysisWait.wakeAll()
+
+    @QtCore.pyqtSlot(object)
+    def onGenericResult(self, genericResult):
+        with QtCore.QMutexLocker(self.script.mutex):
+            self.script.genericResult = genericResult
+            self.script.genericResult = True
+            self.script.genericWait.wakeAll()
 
     @QtCore.pyqtSlot(dict)
     def onData(self, data):
