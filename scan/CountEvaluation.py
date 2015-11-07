@@ -134,7 +134,7 @@ class FeedbackEvaluation(EvaluationBase):
             self.integrator = globalDict[globalName]
             self.settings['Reset'] = False
         mean, (_, _), raw =  self.evaluateMinMax(countarray)
-        errorval = self.settings['SetPoint'] - mean
+        errorval = self.settings['SetPoint'].value - mean
         pOut = self.settings['P'] * errorval
         self.integrator = self.integrator + errorval * self.settings['I'] 
         totalOut = pOut + self.integrator
