@@ -6,6 +6,8 @@ Created on Fri Dec 28 18:40:30 2012
 """
 import logging
 import os.path
+
+from trace.BlockAutoRange import BlockAutoRangeList
 from trace.TraceCollection import TraceCollection
 from trace import pens
 
@@ -89,7 +91,7 @@ class Traceui(TraceuiForm, TraceuiBase):
         self.plotButton.clicked.connect(partial(self.onClearOrPlot, 'plot'))
         self.pushButtonApplyStyle.clicked.connect(self.onApplyStyle)
         self.saveButton.clicked.connect(self.onSave)
-        self.removeButton.clicked.connect(self.traceView.onDelete)
+        self.removeButton.clicked.connect(self.onDelete) #  (self.traceView.onDelete)
         self.openFileButton.clicked.connect(self.onOpenFile)
         self.comboBoxStyle.currentIndexChanged[int].connect(self.setPlotStyle)
         self.traceView.clicked.connect(self.onViewClicked)
@@ -122,6 +124,10 @@ class Traceui(TraceuiForm, TraceuiBase):
         self.expandNewAction.triggered.connect(self.onExpandNew)
         self.addAction( self.expandNewAction )
         self.measurementLogButton.setVisible(self.hasMeasurementLog)
+
+    def onDelete(self, _):
+        with BlockAutoRangeList([gv['view'] for gv in self.graphicsViewDict.valueiter()]):
+            self.traceView.onDelete()
 
     def onMeasurementLog(self):
         """Execute when open measurement log is clicked. Emit signal containing list of trace creation keys selected."""
