@@ -384,7 +384,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                     plottedTrace.plot(0) #unplot previous trace
             if self.context.plottedTraceList and self.traceui.collapseLastTrace:
                 self.traceui.collapse(self.context.plottedTraceList[0])
-            self.plottedTraceList = list() #reset plotted trace list
+            self.context.plottedTraceList = list() #reset plotted trace list
             self.context.otherDataFile = None
             self.context.histogramBuffer = defaultdict( list )
             self.context.scanMethod.startScan()
@@ -494,21 +494,27 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                     logger.warning( "PP Timing violation at address {0}".format(lineInPP))
             if data.final:
                 if data.exitcode == 0x100000000000:  # interrupt
+                    self.processData(data, queuesize)
                     self.onStashBottomHalf()
-                elif data.exitcode not in [0,0xffff]:
-                    self.onInterrupt( self.pulseProgramUi.exitcode(data.exitcode) )
+                elif data.exitcode not in [0, 0xffff]:
+                    self.onInterrupt(self.pulseProgramUi.exitcode(data.exitcode))
+                else:
+                    self.processData(data, queuesize)
             else:
-                logger.info( "onData {0} {1} {2}".format( self.context.currentIndex, dict((i,len(data.count[i])) for i in sorted(data.count.keys())), data.scanvalue ) )
-                x = self.context.generator.xValue(self.context.currentIndex, data)
-                self.context.scanMethod.onData( data, queuesize, x )
-                if self.context.rawDataFile is not None:
-                    self.context.rawDataFile.write( data.dataString() )
-                    self.context.rawDataFile.write( '\n' )
-                    self.context.rawDataFile.flush()
+                self.processData(data, queuesize)
         else:
             logger.info( "pp not running ignoring onData {0} {1} {2}".format( self.context.currentIndex, dict((i,len(data.count[i])) for i in sorted(data.count.keys())), data.scanvalue ) )
 
-        
+    def processData(self, data, queuesize):
+        logger = logging.getLogger(__name__)
+        logger.info( "onData {0} {1} {2}".format( self.context.currentIndex, dict((i,len(data.count[i])) for i in sorted(data.count.keys())), data.scanvalue ) )
+        x = self.context.generator.xValue(self.context.currentIndex, data)
+        self.context.scanMethod.onData( data, queuesize, x )
+        if self.context.rawDataFile is not None:
+            self.context.rawDataFile.write( data.dataString() )
+            self.context.rawDataFile.write( '\n' )
+            self.context.rawDataFile.flush()
+
     def dataMiddlePart(self, data, queuesize, x):
         if is_magnitude(x):
             x = x.ounit(self.context.scan.xUnit).toval()

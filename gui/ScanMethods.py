@@ -39,10 +39,10 @@ class InternalScanMethod(object):
         if data.final:
             self.experiment.finalizeData(reason='end of scan')
             if self.experiment.context.scan.list is None:
-                self.experiment.generator.dataOnFinal(self.experiment, self.experiment.progressUi.state )
+                self.experiment.conetxt.generator.dataOnFinal(self.experiment, self.experiment.progressUi.state )
             elif self.experiment.context.currentIndex >= len(self.experiment.context.scan.list):    # if all points were taken
                 logging.getLogger(__name__).info( "current index {0} expected {1}".format(self.experiment.context.currentIndex, len(self.experiment.context.scan.list) ) )
-                self.experiment.generator.dataOnFinal(self.experiment, self.experiment.progressUi.state )
+                self.experiment.context.generator.dataOnFinal(self.experiment, self.experiment.progressUi.state )
             else:
                 logging.getLogger(__name__).error( "current index {0} expected {1}".format(self.experiment.context.currentIndex, len(self.experiment.context.scan.list) ) )
                 self.experiment.onInterrupt( self.experiment.pulseProgramUi.exitcode(data.exitcode) )
