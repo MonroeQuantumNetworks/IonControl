@@ -322,7 +322,7 @@ class EvaluationControl(ControlForm, ControlBase ):
         evaluation = EvaluationDefinition()
         evaluation.counter = 0
         evaluation.plotname = "Scan Data" #Default to "Scan Data" plot
-        evaluation.evaluation = EvaluationAlgorithms.keys()[0]
+        evaluation.evaluation = 'Mean' if 'Mean' in EvaluationAlgorithms.keys() else EvaluationAlgorithms.keys()[0]
         self.settings.evalList.append( evaluation )
         self.addEvaluation( evaluation )
         assert len(self.settings.evalList)==len(self.evalAlgorithmList), "EvalList and EvalAlgoithmList length mismatch"
