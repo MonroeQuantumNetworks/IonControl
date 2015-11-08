@@ -294,7 +294,7 @@ class PulserHardwareServer(Process, OKBase):
                     elif token & 0xffff000000000000 == 0xfffe000000000000:  # exitparameter
                         self.data.final = True
                         self.data.exitcode = token & 0x0000ffffffffffff
-                        logger.info( "Exitcode {0} received".format(self.data.exitcode) )
+                        logger.info( "Exitcode {0:x} received".format(self.data.exitcode) )
                         self.data.timeTickOffset = self.timeTickOffset
                         self.dataQueue.put( self.data )
                         self.data = Data()
@@ -581,8 +581,7 @@ class PulserHardwareServer(Process, OKBase):
     def ppInterrupt(self):
         """Set a stop flag for the pulse program. The prepare_next_scan_point() function will then exit
         with exitrcode 0xfffe100000000000 to signal an interrupt"""
-        self.xem.SetWireInValue( 0x1f, 0x1 )   # TODO: adapt pulseprogram
-        self.xem.UpdateWireIns()
+        self.xem.ActivateTriggerIn( 0x40, 14 )
 
     def interruptRead(self):
         self.sleepQueue.put(False)

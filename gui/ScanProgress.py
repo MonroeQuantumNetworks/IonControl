@@ -117,6 +117,11 @@ class ScanProgress(Form, Base):
         self.state = self.OpStates.stopping
         self.stateChanged.emit('stopping')
 
+    def setStashing(self):
+        self.statusLabel.setText("Stashing")
+        self.state = self.OpStates.stashing
+        self.stateChanged.emit('stashing')
+
     def setInterrupted(self, reason):
         #self.progressBar.setStyleSheet(StyleSheets.RedProgressBar)
         self.previouslyElapsedTime = time.time()-self.startTime

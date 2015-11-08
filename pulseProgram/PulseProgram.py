@@ -111,6 +111,7 @@ OPS = {'NOP'    : 0x00,
        'PP_MP9910_RAMPDIR': 0x5a,
        'DACOUT': 0x5b,
        'LDACTIVE': 0x5c,
+       'JMPNINTERRUPT': 0x5d,
        'END'    : 0xFF }
 
 class Dimensions:

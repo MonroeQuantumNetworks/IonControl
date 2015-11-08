@@ -295,7 +295,10 @@ def apply_next_scan_point( symboltable, arg=list(), kwarg=dict()):
     """
     if len(arg)!=1:
         raise CompileException( "apply_next_scan_point does not take arguments" )
-    return [  "apply_next_scan_point:  READPIPEINDF",
+    return [  "  JMPNINTERRUPT apply_next_scan_point",
+              "  LDWR INTERRUPT_EXITCODE",
+              "  WAIT", "  WRITEPIPE", "  END",
+              "apply_next_scan_point:  READPIPEINDF",
               "  WRITEPIPEINDF",
               "  READPIPE",
               "  WRITEPIPE",

@@ -113,7 +113,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.interruptReason = ""
         self.enableParameter = True
         self.enableExternalParameter = False
-        self.globalVariables = globalVariablesUi.variables
+        self.globalVariables = globalVariablesUi.globalDict
         self.globalVariablesChanged = globalVariablesUi.valueChanged
         self.globalVariablesUi = globalVariablesUi  
         self.scanTargetDict = dict()     
@@ -424,6 +424,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.stash.append(self.context)
         self.progressUi.setIdle()
         self.stashSizeChanged.emit(len(self.stash))
+        self.context = ScanExperimentContext()
 
     def onResume(self, index=None):
         """Resume the stashed run given by index"""
@@ -475,7 +476,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         queuesize is the size of waiting messages, dont't do expensive unnecessary stuff if queue is deep
         """
         logger = logging.getLogger(__name__)
-        if self.progressUi.is_running:
+        if self.progressUi.is_running or self.progressUi.is_stashing:
             if data.other and self.context.scan.gateSequenceSettings.debug:
                 if self.context.otherDataFile is None:
                     dumpFilename, _ = DataDirectory.DataDirectory().sequencefile("other_data.bin")
@@ -563,7 +564,6 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                         self.plotDict["Scan Data"]["view"].setXRange( *xRange )
                     else:
                         self.plotDict["Scan Data"]["view"].enableAutoRange(axis=ViewBox.XAxis)     
-<<<<<<< HEAD
                     self.context.plottedTraceList.append( plottedTrace )
             self.context.plottedTraceList[0].traceCollection.name = self.context.scan.settingsName
             self.context.plottedTraceList[0].traceCollection.description["comment"] = ""
@@ -571,32 +571,17 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.context.plottedTraceList[0].traceCollection.description["Scan"] = self.context.scan.description()
             self.context.plottedTraceList[0].traceCollection.autoSave = self.context.scan.autoSave
             self.context.plottedTraceList[0].traceCollection.filenamePattern = self.context.scan.filename
-            if len(self.context.plottedTraceList) > 1:
-                for plottedTrace in self.context.plottedTraceList:
-                    plottedTrace.category = plottedTrace.traceCollection.fileleaf if self.context.scan.autoSave else "UNSAVED_"+plottedTrace.traceCollection.filenamePattern+"_{0}".format(self.unsavedTraceCount)
+            if len(self.context.plottedTraceList)==1:
+                category = None
+            elif self.context.scan.autoSave:
+                category = self.traceui.getUniqueCategory(self.context.plottedTraceList[0].traceCollection.filename)
+            else:
+                category = "UNSAVED_"+self.context.plottedTraceList[0].traceCollection.filenamePattern+"_{0}".format(self.unsavedTraceCount)
+            for plottedTrace in self.context.plottedTraceList:
+                plottedTrace.category = category
             if not self.context.scan.autoSave: self.unsavedTraceCount+=1
             self.context.generator.appendData( self.context.plottedTraceList, x, evaluated, timeinterval )
             for index, plottedTrace in reversed(list(enumerate(self.context.plottedTraceList))):
-=======
-                    self.plottedTraceList.append( plottedTrace )
-            self.plottedTraceList[0].traceCollection.name = self.scan.settingsName
-            self.plottedTraceList[0].traceCollection.description["comment"] = ""
-            self.plottedTraceList[0].traceCollection.description["PulseProgram"] = self.pulseProgramUi.description()
-            self.plottedTraceList[0].traceCollection.description["Scan"] = self.scan.description()
-            self.plottedTraceList[0].traceCollection.autoSave = self.scan.autoSave
-            self.plottedTraceList[0].traceCollection.filenamePattern = self.scan.filename
-            if len(self.plottedTraceList)==1:
-                category = None
-            elif self.scan.autoSave:
-                category = self.traceui.getUniqueCategory(self.plottedTraceList[0].traceCollection.filename)
-            else:
-                category = "UNSAVED_"+self.plottedTraceList[0].traceCollection.filenamePattern+"_{0}".format(self.unsavedTraceCount)
-            for plottedTrace in self.plottedTraceList:
-                plottedTrace.category = category
-            if not self.scan.autoSave: self.unsavedTraceCount+=1
-            self.generator.appendData( self.plottedTraceList, x, evaluated, timeinterval )
-            for index, plottedTrace in reversed(list(enumerate(self.plottedTraceList))):
->>>>>>> develop
                 self.traceui.addTrace(plottedTrace, pen=-1)
             if self.traceui.expandNew:
                 self.traceui.expand(self.context.plottedTraceList[0])
