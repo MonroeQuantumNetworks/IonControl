@@ -46,6 +46,7 @@ from pulser import ShutterUi
 from pulser.OKBase import OKBase
 from pulser.PulserParameterUi import PulserParameterUi
 from gui.FPGASettings import FPGASettings
+from gui.StashButton import StashButtonControl
 import ctypes
 import locket
 import scan.EvaluationAlgorithms #@UnusedImport
@@ -213,7 +214,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
             self.tabDict[name] = widget
             widget.ClearStatusMessage.connect( self.statusbar.clearMessage)
             widget.StatusMessage.connect( self.statusbar.showMessage)
-            widget.stashSizeChanged.connect(self.onStashSizeChanged)
+            widget.stashChanged.connect(self.onStashChanged)
                     
         self.scanExperiment = self.tabDict["Scan"]
                     
@@ -359,8 +360,6 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
 
         self.actionStart.triggered.connect(self.onStart)
         self.actionStop.triggered.connect(self.onStop)
-        self.actionStash.triggered.connect(self.onStash)
-        self.actionResume.triggered.connect(self.onResume)
         self.actionAbort.triggered.connect(self.onAbort)
         self.actionExit.triggered.connect(self.onClose)
         self.actionContinue.triggered.connect(self.onContinue)
@@ -440,6 +439,12 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         # initialize ScriptingUi
         self.scriptingWindow = ScriptingUi(self)
         self.scriptingWindow.setupUi(self.scriptingWindow)
+
+        # initialize StashButton
+        self.actionStash.triggered.connect(self.onStash)
+        self.actionResume.triggered.connect(self.onResume)
+        self.stashButton = StashButtonControl(self.actionResume)
+        self.stashButton.resume.connect(self.onResume)
 
     def callWhenDoneAdjusting(self, callback):
         self.ExternalParametersUi.callWhenDoneAdjusting(callback)
@@ -535,12 +540,13 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         if hasattr(self.currentTab, 'onStash'):
             self.currentTab.onStash()
 
-    def onStashSizeChanged(self, size):
-        self.actionResume.setEnabled(size>0)
+    def onStashChanged(self, stash):
+        self.actionResume.setEnabled(len(stash)>0)
+        self.stashButton.onStashChanged(stash)
 
-    def onResume(self):
+    def onResume(self, index=-1):
         if hasattr(self.currentTab, 'onResume'):
-            self.currentTab.onResume()
+            self.currentTab.onResume(index)
 
     def onPause(self):
         self.currentTab.onPause()

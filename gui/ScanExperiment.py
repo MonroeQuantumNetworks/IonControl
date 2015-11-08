@@ -86,6 +86,13 @@ class ScanExperimentContext(object):
         self.startTime = None
         self.rawDataFile = None
 
+    @property
+    def key(self):
+        return hash((self.scan.settingsName, self.currentIndex, len(self.scan.list), self.startTime))
+
+    def __str__(self):
+        return "{0} ({1}/{2}) started {3}".format(self.scan.settingsName, self.currentIndex, len(self.scan.list), datetime.fromtimestamp(self.startTime))
+
 class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     StatusMessage = QtCore.pyqtSignal( str )
     ClearStatusMessage = QtCore.pyqtSignal()
@@ -101,7 +108,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     analysisConfigurationChanged = None
     evaluatedDataSignal = QtCore.pyqtSignal( dict ) #key is the eval name, val is (x, y)
     allDataSignal = QtCore.pyqtSignal( dict ) #key is the eval name, val is (xlist, ylist)
-    stashSizeChanged = QtCore.pyqtSignal(object) # indicates that the size of the stash has changed
+    stashChanged = QtCore.pyqtSignal(object) # indicates that the size of the stash has changed
     def __init__(self, settings, pulserHardware, globalVariablesUi, experimentName, toolBar=None, parent=None, measurementLog=None, callWhenDoneAdjusting=None):
         MainWindowWidget.MainWindowWidget.__init__(self,toolBar=toolBar,parent=parent)
         ScanExperimentForm.__init__(self)
@@ -423,14 +430,14 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.context.progressData = self.progressUi.getData()
         self.stash.append(self.context)
         self.progressUi.setIdle()
-        self.stashSizeChanged.emit(len(self.stash))
+        self.stashChanged.emit(self.stash)
+        logging.getLogger(__name__).info("Stashed {0}".format(self.context))
         self.context = ScanExperimentContext()
 
-    def onResume(self, index=None):
+    def onResume(self, index=-1):
         """Resume the stashed run given by index"""
         logger = logging.getLogger(__name__)
         if self.progressUi.is_idle:
-            index = firstNotNone(index, len(self.stash) - 1)
             self.context = self.stash.pop(index)
             self.pulserHardware.ppFlushData()
             self.pulserHardware.ppClearWriteFifo()
@@ -440,8 +447,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.progressUi.setData(self.context.progressData)
             self.progressUi.resumeRunning(self.context.currentIndex)
             self.timestampsNewRun = False
-            logger.info( "continued" )
-            self.stashSizeChanged.emit(len(self.stash))
+            logger.info("continued")
+            self.stashChanged.emit(self.stash)
 
     def onInterrupt(self, reason):
         self.pulserHardware.ppStop()
