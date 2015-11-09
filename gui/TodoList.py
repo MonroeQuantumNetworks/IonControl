@@ -130,13 +130,11 @@ class MasterSettings:
     def __init__(self):
         self.currentSettingName = None
         self.autoSave = False
-        self.revertGlobals = True
-        
+
     def __setstate__(self, d):
         self.__dict__ = d
         self.__dict__.setdefault( 'autoSave', False )
-        self.__dict__.setdefault( 'revertGlobals', True )
-
+ 
 class TodoList(Form, Base):
     def __init__(self,scanModules,config,currentScan,setCurrentScan,globalVariablesUi,parent=None):
         Base.__init__(self,parent)    
@@ -226,9 +224,6 @@ class TodoList(Form, Base):
         self.addSettingButton.clicked.connect( self.onAddSetting )
         self.removeSettingButton.clicked.connect( self.onRemoveSetting )
         self.tableView.selectionModel().currentChanged.connect( self.onActiveItemChanged )
-        # Revert
-        self.revertCheckBox.setChecked( self.masterSettings.revertGlobals  )
-        self.revertCheckBox.stateChanged.connect( self.onRevertChanged )
         # Context Menu for Table
         self.tableView.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
         self.loadLineAction = QtGui.QAction( "load line settings" , self)
@@ -282,10 +277,7 @@ class TodoList(Form, Base):
         elif mode == "Add":
             newSettingsCache.update( self.settingsCache )
             self.settingsCache = newSettingsCache
-       
-    def onRevertChanged(self, state):
-        self.masterSettings.revertGlobals = state==QtCore.Qt.Checked
-        
+
     def onActiveItemChanged(self, modelIndex, modelIndex2 ):
         self.settingTableModel.setSettings( self.settings.todoList[modelIndex.row()].settings )
         self.currentlySelectedLabel.setText( "{0} - {1}".format( self.settings.todoList[modelIndex.row()].measurement, self.settings.todoList[modelIndex.row()].evaluation) )
@@ -489,8 +481,7 @@ class TodoList(Form, Base):
     def exitMeasurementRunning(self):
         self.settings.currentIndex = (self.settings.currentIndex+1) % len(self.settings.todoList)
         self.tableModel.setActiveRow(self.settings.currentIndex, False)
-        if self.masterSettings.revertGlobals:
-            self.globalVariablesUi.update(self.revertGlobalsList)
+        self.globalVariablesUi.update(self.revertGlobalsList)
             
         
     def enterPaused(self):

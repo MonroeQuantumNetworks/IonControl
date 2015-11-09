@@ -177,16 +177,6 @@
       </widget>
      </item>
      <item>
-      <widget class="QCheckBox" name="revertCheckBox">
-       <property name="toolTip">
-        <string>Revert globals after each measurement</string>
-       </property>
-       <property name="text">
-        <string>Revert globals</string>
-       </property>
-      </widget>
-     </item>
-     <item>
       <spacer name="horizontalSpacer">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
