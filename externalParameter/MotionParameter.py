@@ -109,7 +109,7 @@ class ConexRotation(ExternalParameterBase):
             if self.lastValue is None or value < self.lastValue:
                 self._setValue( channel, value-self.settings.belowMargin )
                 self.lastValue = value-self.settings.belowMargin
-                return False
+                return reported, False
             else:
                 self._setValue( channel, value )
                 self.lastValue = value
