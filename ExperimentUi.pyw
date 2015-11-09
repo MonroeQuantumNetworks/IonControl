@@ -533,8 +533,8 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.config.saveConfig() 
         QtCore.QTimer.singleShot(60000, self.onCommitConfig )      
             
-    def onStart(self):
-        self.currentTab.onStart()
+    def onStart(self, globalOverrides=list()):
+        self.currentTab.onStart(globalOverrides)
 
     def onStash(self):
         if hasattr(self.currentTab, 'onStash'):

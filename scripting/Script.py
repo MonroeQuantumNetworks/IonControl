@@ -48,7 +48,7 @@ class Script(QtCore.QThread):
     
     setGlobalSignal = QtCore.pyqtSignal(str, float, str) #args: name, value, unit
     addGlobalSignal = QtCore.pyqtSignal(str, float, str) #args: name, value, unit
-    startScanSignal = QtCore.pyqtSignal()
+    startScanSignal = QtCore.pyqtSignal(object)  # args: globalOverrides list
     setScanSignal = QtCore.pyqtSignal(str) #arg: scan name
     setEvaluationSignal = QtCore.pyqtSignal(str) #arg: evaluation name
     setAnalysisSignal = QtCore.pyqtSignal(str) #arg: analysis name
@@ -233,16 +233,19 @@ class Script(QtCore.QThread):
         self.stopScriptSignal.emit()
 
     @scriptFunction()
-    def startScan(self, wait=True):
-        """startScan(wait=True)
+    def startScan(self, globalOverrides=list(), wait=True):
+        """startScan(globalOverrides=list(), wait=True)
         Start the scan.
         
-        This is equivalent to clicking "start" on the experiment GUI. If
-        wait=True, the script will not continue until the scan is finished.
-        
+        This is equivalent to clicking "start" on the experiment GUI.
+        Optionally a list of (name, magnitude) tuples or (name, (value, unit)) tuples
+        can be given that overrides global variables during the scan.
+        If wait=True, the script will not continue until the scan is finished.
+
+        globalOverrides: list((name, value)) or list((name, (value, unit)))
         wait: bool"""
         self.waitOnScan = wait
-        self.startScanSignal.emit()
+        self.startScanSignal.emit(globalOverrides)
         
     @scriptFunction()
     def setScan(self, name):
