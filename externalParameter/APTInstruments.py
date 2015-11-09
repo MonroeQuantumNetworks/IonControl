@@ -96,7 +96,7 @@ class APTRotation(ExternalParameterBase):
         logger.info( "opened {0}".format(instrument) )
         self.setDefaults()
         self.initializeChannelsToExternals()
-        self.lastValue = None
+        self.lastTargetValue = None
         if self.settings.limit > self.instrument.maxPos:
             self.settings.limit = magnitude.mg(self.instrument.maxPos,'')
 
@@ -109,8 +109,7 @@ class APTRotation(ExternalParameterBase):
         if v>self.settings.limit:
             v = self.setting.limit
         self.instrument.position = v.toval()
-        self.settings.value[channel] = v
-        
+
     def getValue(self, channel):
         return magnitude.mg(self.instrument.position)
         
@@ -125,18 +124,20 @@ class APTRotation(ExternalParameterBase):
         del self.instrument
 
     def setValue(self, channel, value):
-        reported=self.getValue(channel)
+        reported = self.getValue(channel)
         if self.instrument.motionRunning():
             return reported, False
-        if value != self.outputChannels[channel].settings.value:
-            if self.lastValue is None or value < self.lastValue:
+        if value != self.lastTargetValue:
+            if self.lastTargetValue is None or value < self.lastTargetValue:
                 self._setValue(channel, value-self.settings.belowMargin)
-                self.lastValue = value-self.settings.belowMargin
+                self.lastTargetValue = value - self.settings.belowMargin
                 return reported, False
             else:
                 self._setValue( channel, value )
-                self.lastValue = value
+                self.lastTargetValue = value
         arrived = not self.instrument.motionRunning()
+        if arrived:
+            self.lastTargetValue = None  # setting it to None so we re-send the value if the user initiates a new write
         return reported, arrived
     
 if __name__ == "__main__":
