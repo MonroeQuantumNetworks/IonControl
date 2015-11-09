@@ -63,6 +63,62 @@ class CosFit(FitFunctionBase):
         logging.getLogger(__name__).info("smart start values A={0}, k={1}, theta={2}, O={3}".format(A,k,theta,O))
         return (A,k,theta,O )
 
+class SinCosFit(FitFunctionBase):
+    name = "SinCos"
+    functionString =  'A*sin(2*pi*k*x)+B*sin(2*pi*k*x)+O'
+    parameterNames = [ 'A', 'B', 'k', 'O' ]
+    def __init__(self):
+        FitFunctionBase.__init__(self)
+        self.parameters = [1,1,1,0]
+        self.startParameters = [1,1,1,0]
+        self.results['phase'] = ResultRecord(name='phase')
+        self.results['amplitude'] = ResultRecord(name='amplitude')
+
+    def residuals(self,p, y, x, sigma):
+        A, B, k, O = self.allFitParameters(p)
+        if sigma is not None:
+            return (y-A*numpy.sin(2*numpy.pi*k*x)-B*numpy.cos(2*numpy.pi*k*x)-O)/sigma
+        else:
+            return y-A*numpy.sin(2*numpy.pi*k*x)-B*numpy.cos(2*numpy.pi*k*x)-O
+
+    def value(self,x,p=None):
+        A, B, k, O = self.parameters if p is None else p
+        return A*numpy.sin(2*numpy.pi*k*x)+B*numpy.cos(2*numpy.pi*k*x)+O
+
+    def update(self,parameters=None):
+        A, B, k, O = parameters if parameters is not None else self.parameters
+        self.results['phase'].value = numpy.arctan2(B, A)
+        self.results['amplitude'].value = numpy.sqrt(A*A+B*B)
+
+#     def smartStartValues(self, xIn, yIn, parameters, enabled):
+#         A,B,k,O = parameters   #@UnusedVariable
+#         x,y = zip(*sorted(zip(xIn, yIn)))
+#         x = numpy.array(x)
+#         y = numpy.array(y)
+#         maximum = numpy.amax(y)
+#         minimum = numpy.amin(y)
+#         A=(maximum-minimum)/2
+#         O=(maximum+minimum)/2
+#         #minindex = numpy.argmin(y)
+#         maxindex = numpy.argmax(y)
+#         #theta = x[maxindex]
+#         B=0;
+#         threshold = (maximum+minimum)/2.0
+#         NewZeroCrossing = x[0]
+#         PreviousZeroCrossing = x[0]
+#         maxZeroCrossingDelta = 0
+#         for ind in range(len(y)-1):
+#             if (y[ind] <= threshold <= y[ind+1]) or (y[ind+1] <= threshold <= y[ind]):
+#                 NewZeroCrossing = x[ind]
+#                 NewZeroCrossingDelta = NewZeroCrossing-PreviousZeroCrossing
+#                 if NewZeroCrossingDelta > maxZeroCrossingDelta:
+#                     maxZeroCrossingDelta = NewZeroCrossingDelta
+#                 PreviousZeroCrossing = NewZeroCrossing
+#         k = 1.0/(2.0*maxZeroCrossingDelta)
+# #        theta = numpy.remainder(x0,T)
+#         logging.getLogger(__name__).info("smart start values A={0}, B={1}, k={2}, O={3}".format(A,B,k,O))
+#         return (A,B,k,O )
+
 class CosSqFit(FitFunctionBase):
     name = "Cos2"
     functionString =  'A*cos^2(pi*x/(2*T)+theta)+O'
