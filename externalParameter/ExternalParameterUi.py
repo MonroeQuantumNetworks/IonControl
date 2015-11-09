@@ -11,15 +11,13 @@ import logging
 from PyQt4 import QtCore, QtGui
 import PyQt4.uic
 
+from externalParameter.OutputChannel import OutputChannel
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
-from modules.SequenceDict import SequenceDict
 from modules.firstNotNone import firstNotNone
 from modules.Expression import Expression
-from modules.Observable import Observable
 from modules.GuiAppearance import restoreGuiState, saveGuiState
 from modules.magnitude import MagnitudeError
 from uiModules.CategoryTree import CategoryTreeModel, CategoryTreeView, nodeTypes
-from copy import deepcopy
 
 import os
 uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\ExternalParameterUi.ui')
@@ -55,8 +53,6 @@ class ExternalParameterControlModel(CategoryTreeModel):
         self.flagsLookup = {
             1:QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsSelectable
         }
-        self.adjustingDevices = 0
-        self.doneAdjusting = Observable()
         self.numColumns = 3
         self.allowReordering = True
         self.signalConnections = list()
@@ -107,8 +103,6 @@ class ExternalParameterControlModel(CategoryTreeModel):
         logger = logging.getLogger(__name__)
         logger.debug( "setValue {0}".format(value))
         inst.targetValue = value
-        self.adjustingDevices += 1
-        logger.debug("Increased adjusting instruments to {0}".format(self.adjustingDevices))
         self.setValueFollowup(inst)
         return True
  
@@ -124,12 +118,6 @@ class ExternalParameterControlModel(CategoryTreeModel):
             if not inst.setValue(inst.targetValue):
                 delay = int( inst.settings.delay.toval('ms') )
                 QtCore.QTimer.singleShot(delay,functools.partial(self.setValueFollowup,inst))
-            else:
-                self.adjustingDevices -= 1
-                logger.debug("Decreased adjusting instruments to {0}".format(self.adjustingDevices))
-                if self.adjustingDevices==0:
-                    self.doneAdjusting.firebare()
-                    self.doneAdjusting.callbacks = list()
         except Exception as e:
             logger.exception(e)
             logger.warning( "Exception during setValueFollowup, number of adjusting devices likely to be faulty")
@@ -213,15 +201,9 @@ class ControlUi(Form, Base):
     def evaluate(self, name):
         self.categoryTreeView.model().evaluate(name)
         
-    def isAdjusting(self):
-        return self.categoryTreeView.model().adjustingDevices>0
-    
     def callWhenDoneAdjusting(self, callback):
-        if self.isAdjusting():
-            self.categoryTreeView.model().doneAdjusting.subscribe(callback)
-        else:
-            QtCore.QTimer.singleShot(0, callback)
-            
+        OutputChannel.useTracker.callWhenDoneAdjusting(callback)
+
     def saveConfig(self):
         self.config[self.configName+'.guiState'] = saveGuiState(self)
         try:

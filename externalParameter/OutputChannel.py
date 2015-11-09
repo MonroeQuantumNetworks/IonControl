@@ -3,6 +3,7 @@ Created on Dec 18, 2014
 
 @author: pmaunz
 '''
+from externalParameter.useTracker import UseTracker
 from gui.ExpressionValue import ExpressionValue
 from modules import magnitude
 from decimation import StaticDecimation
@@ -27,6 +28,7 @@ class OutputChannel(QtCore.QObject):
     persistSpace = 'externalOutput'
     valueChanged = QtCore.pyqtSignal(object)
     targetChanged = QtCore.pyqtSignal(object)
+    useTracker = UseTracker()
 
     def __init__(self, device, deviceName, channelName, globalDict, settings=None, outputUnit=''):
         super(OutputChannel, self).__init__()
@@ -220,6 +222,9 @@ class SlowAdjustOutputChannel(OutputChannel):
             self.valueChanged.emit(self.settings.value)
             if arrived:
                 self.persist(self.name, self.settings.value)
+                self.useTracker.release(self.name)
+            else:
+                self.useTracker.take(self.name)
             return arrived
         return True
 
@@ -227,7 +232,10 @@ class SlowAdjustOutputChannel(OutputChannel):
         if origin == 'recalculate':
             self.expressionUpdateBottomHalf(value)
             self.targetChanged.emit(value)
+            self.useTracker.take(self.name)
 
     def expressionUpdateBottomHalf(self, target):
         if not self.setValue(target):
             QtCore.QTimer.singleShot(self.settings.delay.toval('ms'), partial(self.expressionUpdateBottomHalf, target))
+        else:
+            self.useTracker.release(self.name)
