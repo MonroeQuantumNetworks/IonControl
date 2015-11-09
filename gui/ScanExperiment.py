@@ -85,6 +85,19 @@ class ScanExperimentContext(object):
         self.scanMethod = None
         self.startTime = None
         self.rawDataFile = None
+        self.globalOverrides = list()
+        self.revertGlobalsValues = list()
+
+    def overrideGlobals(self, globalDict):
+        self.revertGlobals(globalDict)  # make sure old values were reverted e.g. when calling start on a running scan
+        for key, value in self.globalOverrides:
+            self.revertGlobalsValues.append((key, globalDict[key]))
+            globalDict[key] = value
+
+    def revertGlobals(self, globalDict):
+        for key, value in self.revertGlobalsValues:
+            globalDict[key] = value
+        self.revertGlobalsValues[:] = list()
 
     @property
     def key(self):
@@ -320,7 +333,9 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.scanControlWidget.timeLabel.setText( "{0} / {1}".format(timedelta(seconds=round(elapsed)),
                                                  timedelta(seconds=round(expected)))) 
  
-    def onStart(self):
+    def onStart(self, globalOverrides=list()):
+        self.context.globalOverrides = globalOverrides
+        self.context.overrideGlobals(self.globalVariables)
         self.accumulatedTimingViolations = set()
         self.pulseProgramUi.setTimingViolations( [] )
         self.context.scan = self.scanControlWidget.getScan()
@@ -431,24 +446,32 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.stash.append(self.context)
         self.progressUi.setIdle()
         self.stashChanged.emit(self.stash)
+        self.context.revertGlobals(self.globalVariables)
         logging.getLogger(__name__).info("Stashed {0}".format(self.context))
         self.context = ScanExperimentContext()
 
     def onResume(self, index=-1):
         """Resume the stashed run given by index"""
-        logger = logging.getLogger(__name__)
         if self.progressUi.is_idle:
             self.context = self.stash.pop(index)
-            self.pulserHardware.ppFlushData()
-            self.pulserHardware.ppClearWriteFifo()
-            self.pulserHardware.ppWriteData(self.context.generator.restartCode(self.context.currentIndex))
-            logger.info( "Starting" )
-            self.pulserHardware.ppStart()
-            self.progressUi.setData(self.context.progressData)
-            self.progressUi.resumeRunning(self.context.currentIndex)
-            self.timestampsNewRun = False
-            logger.info("continued")
-            self.stashChanged.emit(self.stash)
+            self.context.overrideGlobals(self.globalVariables)
+            if self.callWhenDoneAdjusting is None:
+                self.resumeBottomHalf()
+            else:
+                self.callWhenDoneAdjusting(self.resumeBottomHalf)
+
+    def resumeBottomHalf(self):
+        logger = logging.getLogger(__name__)
+        self.pulserHardware.ppFlushData()
+        self.pulserHardware.ppClearWriteFifo()
+        self.pulserHardware.ppWriteData(self.context.generator.restartCode(self.context.currentIndex))
+        logger.info( "Starting" )
+        self.pulserHardware.ppStart()
+        self.progressUi.setData(self.context.progressData)
+        self.progressUi.resumeRunning(self.context.currentIndex)
+        self.timestampsNewRun = False
+        logger.info("continued")
+        self.stashChanged.emit(self.stash)
 
     def onInterrupt(self, reason):
         self.pulserHardware.ppStop()
@@ -467,6 +490,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             except Exception as e:
                 logging.getLogger(__name__).warning("Analysis failed: {0}".format(str(e)))
             self.context.scanMethod.onStop()
+            self.context.revertGlobals(self.globalVariables)
             self.ppStopSignal.emit()
 
     def traceFilename(self, pattern):
