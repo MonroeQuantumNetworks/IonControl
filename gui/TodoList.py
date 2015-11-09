@@ -476,7 +476,6 @@ class TodoList(Form, Base):
         #self.globalVariablesUi.update( ( ('Global', k, v) for k,v in entry.settings.iteritems() ))
         # start
         currentwidget.onStart([(k, v) for k, v in entry.settings.iteritems()])
-        logging.getLogger(__name__).debug("override globals: {0}".format([(k, v) for k, v in entry.settings.iteritems()]))
         self.tableModel.setActiveRow(self.settings.currentIndex, True)
         
     def exitMeasurementRunning(self):

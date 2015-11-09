@@ -34,7 +34,6 @@ class GlobalVariable(QtCore.QObject):
 
     @value.setter
     def value(self, newvalue):
-        print "GlobalVariable setter {0}: {1}".format(self._name, newvalue)
         if isinstance(newvalue, tuple):
             v, o = newvalue
         else:
