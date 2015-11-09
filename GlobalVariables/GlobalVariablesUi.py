@@ -32,6 +32,11 @@ class GlobalVariablesUi(Form, Base):
             storedGlobals = self.config.get(self.configName, dict())
             if storedGlobals.__class__==list: #port over globals stored as a list
                 storedGlobals = {g.name:g for g in storedGlobals}
+            # make sure that GlobalVariable type is the newest type
+            for key in storedGlobals.iterkeys():
+                if not hasattr(storedGlobals[key], '_name'):
+                    oldCategories = storedGlobals[key].__dict__.get('categories',None)
+                    storedGlobals[key] = GlobalVariable(key, storedGlobals[key].value, oldCategories)
         except:
             storedGlobals = dict()
         self._globalDict_ = storedGlobals
