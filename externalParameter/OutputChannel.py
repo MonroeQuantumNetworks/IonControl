@@ -186,6 +186,8 @@ class OutputChannel(QtCore.QObject):
 class SlowAdjustOutputChannel(OutputChannel):
     def __init__(self, device, deviceName, channelName, globalDict, settings, outputUnit):
         super(SlowAdjustOutputChannel, self).__init__(device, deviceName, channelName, globalDict, settings, outputUnit)
+        self.currentTarget = None
+        self.timerActive = False
         
     def setDefaults(self):
         super(SlowAdjustOutputChannel, self).setDefaults()
@@ -230,12 +232,16 @@ class SlowAdjustOutputChannel(OutputChannel):
 
     def onExpressionUpdate(self, name, value, string, origin):
         if origin == 'recalculate':
-            self.expressionUpdateBottomHalf(value)
+            self.currentTarget = value
             self.targetChanged.emit(value)
             self.useTracker.take(self.name)
+            if not self.timerActive:
+                self.timerActive = True
+                self.expressionUpdateBottomHalf()
 
-    def expressionUpdateBottomHalf(self, target):
-        if not self.setValue(target):
-            QtCore.QTimer.singleShot(self.settings.delay.toval('ms'), partial(self.expressionUpdateBottomHalf, target))
+    def expressionUpdateBottomHalf(self):
+        if not self.setValue(self.currentTarget):
+            QtCore.QTimer.singleShot(self.settings.delay.toval('ms'), self.expressionUpdateBottomHalf)
         else:
             self.useTracker.release(self.name)
+            self.timerActive = False
