@@ -172,7 +172,7 @@ class ScriptHandler:
                 else:
                     value = magnitude.mg(value)
             myGlobalOverrides.append((key, value))
-        self.experimentUi.onStart(myGlobalOverrides)
+        self.experimentUi.onStart(globalOverrides=myGlobalOverrides)
         scan = self.scanControlWidget.settingsName
         evaluation = self.evaluationControlWidget.settingsName
         analysis = self.analysisControlWidget.currentAnalysisName
