@@ -67,17 +67,22 @@ class FitHistogramEvaluation(EvaluationBase):
     def loadReferenceData(self):
         for name in ['ZeroBright','OneBright', 'TwoBright']:
             filename = path.join(self.settings['Path'],self.settings[name])
-            if filename and path.exists(filename):
-                t = TraceCollection()
-                t.loadTrace(filename)
-                yColumnName = t.tracePlottingList[0].yColumn
-                setattr(self.fitFunction, name, self.normalizeHistogram( getattr(t, yColumnName )) )
+            if filename:
+                if path.exists(filename):
+                    t = TraceCollection()
+                    t.loadTrace(filename)
+                    yColumnName = t.tracePlottingList[0].yColumn
+                    setattr(self.fitFunction, name, self.normalizeHistogram( getattr(t, yColumnName )) )
+                else:
+                    logging.getLogger(__name__).error("Reference data file '{0}' does not exist.".format(filename))
+            else:
+                logging.getLogger(__name__).error("Reference filename invalid.")
         
     def setDefault(self):
-        self.settings.setdefault('Path',r'')
-        self.settings.setdefault('ZeroBright','ZeroIonHistogram')
-        self.settings.setdefault('OneBright','OneIonHistogram')
-        self.settings.setdefault('TwoBright','TwoIonHistogram')
+        self.settings.setdefault('Path',r'C:\Users\Public\Documents\experiments\QGA\2015\2015_10\2015_10_21')
+        self.settings.setdefault('ZeroBright','ZeroBright')
+        self.settings.setdefault('OneBright','OneBright')
+        self.settings.setdefault('TwoBright','TwoBright')
         self.settings.setdefault('HistogramBins',50)
         self.settings.setdefault('Mode','Zero')
         

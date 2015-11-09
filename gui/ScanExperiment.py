@@ -87,6 +87,7 @@ class ScanExperimentContext(object):
         self.rawDataFile = None
         self.globalOverrides = list()
         self.revertGlobalsValues = list()
+        self.analysisName = None
 
     def overrideGlobals(self, globalDict):
         self.revertGlobals(globalDict)  # make sure old values were reverted e.g. when calling start on a running scan
@@ -334,7 +335,9 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                                                  timedelta(seconds=round(expected)))) 
  
     def onStart(self, globalOverrides=list()):
+        logging.getLogger(__name__).debug("globalOverrides: {0}".format(globalOverrides))
         self.context.globalOverrides = globalOverrides
+        self.context.analysisName = self.analysisControlWidget.currentAnalysisName
         self.context.overrideGlobals(self.globalVariables)
         self.accumulatedTimingViolations = set()
         self.pulseProgramUi.setTimingViolations( [] )
@@ -656,7 +659,9 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.allDataSignal.emit(allData)
         
     def dataAnalysis(self):
-        return self.analysisControlWidget.analyze( dict( ( (evaluation.name,plottedTrace) for evaluation, plottedTrace in zip(self.context.evaluation.evalList, self.plottedTraceList) ) ) )
+        if self.context.analysisName != self.analysisControlWidget.currentAnalysisName:
+            self.analysisControlWidget.onLoadAnalysisConfiguration( self.context.analysisName )
+        return self.analysisControlWidget.analyze(dict(((evaluation.name, plottedTrace) for evaluation, plottedTrace in zip(self.context.evaluation.evalList, self.context.plottedTraceList))))
                 
             
     def showTimestamps(self,data):
