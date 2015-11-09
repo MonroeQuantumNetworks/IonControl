@@ -23,6 +23,7 @@ uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\GlobalVariables.ui'
 Form, Base = PyQt4.uic.loadUiType(uipath)
 
 class GlobalVariablesUi(Form, Base):
+    """Class for displaying, adding, and modifying global variables"""
     def __init__(self, config, preferences, parent=None):
         Form.__init__(self)
         Base.__init__(self, parent)
@@ -96,6 +97,7 @@ class GlobalVariablesUi(Form, Base):
         sortAction.triggered.connect(partial(self.view.sortByColumn, self.model.column.name, QtCore.Qt.DescendingOrder))
 
     def refreshCategories(self):
+        """Set up the categories context menu and combo box"""
         self.categorizeMenu.clear()
         newCategoryAction = QtGui.QAction("New category", self)
         self.categorizeMenu.addAction(newCategoryAction)
@@ -114,6 +116,10 @@ class GlobalVariablesUi(Form, Base):
                 self.addCategories(categories)
 
     def addCategories(self, categories):
+        """add the specified categories to the context menu and combo box
+        Args:
+            categories (str): a single category, or a dotted string containing a list of categories (a.b.c)
+            """
         if categories not in self.categoriesList:
             self.categoriesList.append(categories)
             self.categoriesListModel.setStringList(self.categoriesList)
@@ -122,6 +128,7 @@ class GlobalVariablesUi(Form, Base):
             action.triggered.connect(partial(self.onCategorize, categories))
 
     def onNewCategory(self):
+        """new category action selected from context menu"""
         categories, ok = QtGui.QInputDialog.getText(self, 'New category', 'Please enter new category(ies) (dot sub-categories: cat1.cat2.cat3): ')
         if ok:
             categories = str(categories).strip('.')
@@ -129,6 +136,10 @@ class GlobalVariablesUi(Form, Base):
             self.onCategorize(categories)
 
     def onCategorize(self, categories):
+        """categorize the selected nodes under 'categories'
+        Args:
+            categories (str): a single category, or a dotted string containing a list of categories (a.b.c)
+            """
         if categories:
             categories = categories.split('.')
         nodes = self.view.selectedNodes()
@@ -153,6 +164,15 @@ class GlobalVariablesUi(Form, Base):
         self.importXml(element, mode=mode)
 
     def importXml(self, element, mode="Add"):   # modes: replace, update, Add
+        """import global variables from XML file.
+        Args:
+            element: root of XML tree
+            mode: how to add in global variables:
+
+                - Add: add any missing global variables, leave existing global variables untouched.
+                - Update: As 'Add', but also change values of existing global variables based on file.
+                - Replace: As 'Update', but also remove any global variables not found in file.
+        """
         newGlobalDict = xmlParseDictionary(element, "Variable")
         self.model.beginResetModel()
 
@@ -174,6 +194,7 @@ class GlobalVariablesUi(Form, Base):
         self.model.endResetModel()
 
     def onAddVariable(self):
+        """A new variable is added via the UI, either by typing in a name and pressing enter, or by clicking add."""
         name = str(self.newNameEdit.text())
         categories = str(self.categoriesListComboBox.currentText())
         categories = categories.strip('.')
@@ -186,6 +207,7 @@ class GlobalVariablesUi(Form, Base):
         self.categoriesListComboBox.setCurrentIndex(blankInd)
 
     def saveConfig(self):
+        """save gui configuration state and _globalDict_"""
         self.config[self.configName] = self._globalDict_
         self.config[self.configName+".guiState"] = saveGuiState(self)
         try:
@@ -194,6 +216,7 @@ class GlobalVariablesUi(Form, Base):
             logging.getLogger(__name__).error("unable to save tree state in {0}: {1}".format(self.configName, e))
 
     def update(self, updlist):
+        """Update list of globals"""
         self.model.update(updlist)
 
 

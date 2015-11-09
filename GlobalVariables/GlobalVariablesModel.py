@@ -22,18 +22,20 @@ from GlobalVariable import GlobalVariable
 
 api2 = sip.getapi("QVariant") == 2
 
-gridColor = QtGui.QColor(215, 215, 215, 255) #light gray
-
 class GridDelegateMixin(object):
+    """Contains methods for drawing a grid and setting the size in a view. Used as part of a delegate in a CategoryTreeView."""
+    gridColor = QtGui.QColor(215, 215, 215, 255) #light gray
     def paint(self, painter, option, index):
+        """Draw the grid if the node is a data node"""
         if index.model().nodeFromIndex(index).nodeType == nodeTypes.data:
             painter.save()
-            painter.setPen(gridColor)
+            painter.setPen(self.gridColor)
             painter.drawRect(option.rect)
             painter.restore()
         QtGui.QStyledItemDelegate.paint(self, painter, option, index)
 
     def sizeHint(self, option, index):
+        """Set the size to be the same as the default size for table view."""
         text = str(index.data(QtCore.Qt.DisplayRole).toString())
         width = 1.05*textSize(text).width()
         height = 30
@@ -42,16 +44,27 @@ class GridDelegateMixin(object):
 
 
 class MagnitudeSpinBoxGridDelegate(MagnitudeSpinBoxDelegate, GridDelegateMixin):
+    """Same as MagnitudeSpinBoxDelegate, but with a grid and different default size"""
     paint = GridDelegateMixin.paint
     sizeHint = GridDelegateMixin.sizeHint
 
 
 class GridDelegate(QtGui.QStyledItemDelegate, GridDelegateMixin):
+    """Same as the default delegate, but with a grid and different default size"""
     paint = GridDelegateMixin.paint
     sizeHint = GridDelegateMixin.sizeHint
 
 
 class GlobalVariablesModel(CategoryTreeModel):
+    """Model for global variables.
+
+    Attributes:
+        valueChanged (PyQt signal): emitted whenever the value of any global changes
+        globalRemoved (PyQt signal): emitted whenever a global is removed
+
+    Args:
+        _globalDict_ (dict[name:GlobalVariable]): initial dict of global variables to display
+    """
     valueChanged = QtCore.pyqtSignal(object)
     globalRemoved = QtCore.pyqtSignal()
     expression = Expression.Expression()
@@ -85,6 +98,7 @@ class GlobalVariablesModel(CategoryTreeModel):
         self.connectAllVariableSignals()
 
     def connectAllVariableSignals(self):
+        """connect all variable valueChanged signals to the model's onValueChanged slot"""
         for item in self._globalDict_.values():
             try:
                 item.valueChanged.connect(self.onValueChanged, QtCore.Qt.UniqueConnection)
@@ -99,22 +113,26 @@ class GlobalVariablesModel(CategoryTreeModel):
         self.valueChanged.emit(name)
 
     def sort(self, column, order):
+        """sort the tree"""
         if column==self.column.name:
             self.beginResetModel()
             self.sortChildren(self.root)
             self.endResetModel()
 
     def sortChildren(self, node):
+        """Recursively sort tree below 'node' """
         node.children.sort(key=self.nodeSortKey)
         for child in node.children:
             self.sortChildren(child)
 
     @staticmethod
     def nodeSortKey(node):
+        """Sort key that puts categories before data"""
         nodeName = getattr(node.content, 'name', node.content)
         return nodeName if node.children==[] else '0_'+nodeName
 
     def setName(self, index, value):
+        """Change the name of a global variable"""
         logger = logging.getLogger(__name__)
         node = self.nodeFromIndex(index)
         var = node.content
@@ -129,12 +147,14 @@ class GlobalVariablesModel(CategoryTreeModel):
             return False
 
     def setValue(self, index, value):
+        """Change the value of a global variable"""
         name = self.nodeFromIndex(index).content.name
         oldValue = self._globalDict_[name].value
         if not oldValue.isIdenticalTo(value):
             self._globalDict_[name].value = value
 
     def addVariable(self, name, categories=None):
+        """Add a new global variable"""
         if name=="":
             name = 'NewGlobalVariable'
         if name not in self._globalDict_ and isIdentifier(name):
@@ -146,12 +166,13 @@ class GlobalVariablesModel(CategoryTreeModel):
             return node
 
     def addNode(self, content, name=None):
-        """make sure nodeID property of global variable is set whenever a node is added"""
+        """makes sure nodeID property of global variable is set whenever a node is added"""
         node = super(GlobalVariablesModel, self).addNode(content, name)
         node.content.nodeID = node.id #store ID to tree node in global variable itself for fast lookup
         return node
 
     def removeNode(self, node):
+        """Remove the global from the tree and from the globalDict"""
         if node.nodeType==nodeTypes.data:
             parent = node.parent
             var = node.content
@@ -166,6 +187,7 @@ class GlobalVariablesModel(CategoryTreeModel):
         return deletedID
 
     def changeCategory(self, node, categories=None, deleteOldIfEmpty=True):
+        """change the global's category, and update the nodeID and categories attributes"""
         node, oldDeleted, deletedCategoryNodeIDs = super(GlobalVariablesModel, self).changeCategory(node, categories, deleteOldIfEmpty)
         #update global variable to reflect category change
         var = node.content
@@ -174,6 +196,7 @@ class GlobalVariablesModel(CategoryTreeModel):
         return node, oldDeleted, deletedCategoryNodeIDs
 
     def update(self, updlist):
+        """Update the global variables based on updlist"""
         for destination, name, value in updlist:
             value = MagnitudeUtilit.mg(value)
             if destination=='Global' and name in self._globalDict_:
@@ -186,4 +209,5 @@ class GlobalVariablesModel(CategoryTreeModel):
                     self.dataChanged.emit(ind, ind)
 
     def nodeFromContent(self, content):
+        """Get the corresponding tree node from a global variable"""
         return self.nodeDict[content.nodeID]

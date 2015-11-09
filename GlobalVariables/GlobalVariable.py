@@ -16,6 +16,16 @@ class GlobalVariablesException(Exception):
 
 
 class GlobalVariable(QtCore.QObject):
+    """Class for encapsulating a global variable.
+
+    Attributes:
+        valueChanged (PyQt signal): emitted when value is changed, with signature (name, new-value, origin-of-change)
+        decimation (StaticDecimation): takes care of saving globals to database every 10 seconds
+        history (deque): history of the last 10 values the global has been set to
+        _value (magnitude): the global's value, accessed via 'value' property
+        _name (str): the global's name, accessed via 'name' property
+        categories (list[str]): the global's cateogires
+        """
     valueChanged = QtCore.pyqtSignal(object, object, object)
     persistSpace = 'globalVar'
     persistence = DBPersist()
@@ -34,6 +44,7 @@ class GlobalVariable(QtCore.QObject):
 
     @value.setter
     def value(self, newvalue):
+        """set the value and record the change"""
         if isinstance(newvalue, tuple):
             v, o = newvalue
         else:
@@ -53,6 +64,7 @@ class GlobalVariable(QtCore.QObject):
 
     @name.setter
     def name(self, newname):
+        """set the name and record the change in the database"""
         self._name, oldname = newname, self._name
         self.persistence.rename(self.persistSpace, oldname, newname)
 
@@ -73,6 +85,13 @@ class GlobalVariable(QtCore.QObject):
 
 
 class GlobalVariablesLookup(MutableMapping):
+    """Class for providing a view into the global variables.
+
+    globalDict is a dict which maps a name to a GlobalVariable class object. GlobalVariablesLookup acts as a dict which maps
+    a name to the value of said global variable, instead of to the class object itself, thereby providing controlled access to
+    the global variable objects themselves. This is used everywhere in the program with the exception of the global variables
+    control structures themselves.
+    """
     def __init__(self, globalDict):
         self.globalDict = globalDict
 
