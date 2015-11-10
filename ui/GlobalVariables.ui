@@ -151,6 +151,46 @@
        </property>
       </spacer>
      </item>
+     <item>
+      <widget class="QToolButton" name="condensedViewButton">
+       <property name="toolTip">
+        <string>use condensed view</string>
+       </property>
+       <property name="text">
+        <string>...</string>
+       </property>
+       <property name="icon">
+        <iconset resource="Experiment.qrc">
+         <normaloff>:/other/icons/condense.png</normaloff>:/other/icons/condense.png</iconset>
+       </property>
+       <property name="checkable">
+        <bool>true</bool>
+       </property>
+       <property name="autoRaise">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QToolButton" name="showGridButton">
+       <property name="toolTip">
+        <string>show grid</string>
+       </property>
+       <property name="text">
+        <string>...</string>
+       </property>
+       <property name="icon">
+        <iconset resource="Experiment.qrc">
+         <normaloff>:/other/icons/gray-grid.png</normaloff>:/other/icons/gray-grid.png</iconset>
+       </property>
+       <property name="checkable">
+        <bool>true</bool>
+       </property>
+       <property name="autoRaise">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
     </layout>
    </item>
    <item>

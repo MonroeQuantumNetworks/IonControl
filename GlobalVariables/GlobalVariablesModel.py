@@ -27,7 +27,8 @@ class GridDelegateMixin(object):
     gridColor = QtGui.QColor(215, 215, 215, 255) #light gray
     def paint(self, painter, option, index):
         """Draw the grid if the node is a data node"""
-        if index.model().nodeFromIndex(index).nodeType == nodeTypes.data:
+        model = index.model()
+        if model.nodeFromIndex(index).nodeType==nodeTypes.data and model.showGrid:
             painter.save()
             painter.setPen(self.gridColor)
             painter.drawRect(option.rect)
@@ -36,11 +37,14 @@ class GridDelegateMixin(object):
 
     def sizeHint(self, option, index):
         """Set the size to be the same as the default size for table view."""
-        text = str(index.data(QtCore.Qt.DisplayRole).toString())
-        width = 1.05*textSize(text).width()
-        height = 30
-        size = QtCore.QSize(width, height)
-        return size
+        if not index.model().condensedView:
+            text = str(index.data(QtCore.Qt.DisplayRole).toString())
+            width = 1.05*textSize(text).width()
+            height = 30
+            size = QtCore.QSize(width, height)
+            return size
+        else:
+            return QtGui.QStyledItemDelegate.sizeHint(self, option, index)
 
 
 class MagnitudeSpinBoxGridDelegate(MagnitudeSpinBoxDelegate, GridDelegateMixin):
@@ -95,6 +99,8 @@ class GlobalVariablesModel(CategoryTreeModel):
             }
         self.allowReordering = True
         self.allowDeletion = True
+        self.condensedView = False
+        self.showGrid = True
         self.connectAllVariableSignals()
 
     def connectAllVariableSignals(self):
