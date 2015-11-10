@@ -152,3 +152,8 @@ class OKBase(object):
             self.xem.UpdateWireOuts()
             return self.xem.GetWireOutValue(0x32)
         return 0
+
+    def close(self):
+        if self.xem is not None:
+            del self.xem
+            self.xem = None

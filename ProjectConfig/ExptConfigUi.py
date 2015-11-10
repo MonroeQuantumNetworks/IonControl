@@ -372,6 +372,7 @@ class OK_FPGA_Widget(QtGui.QHBoxLayout):
         else:
             self.pulser.openBySerial(FPGA.serial)
             self.pulser.uploadBitfile(bitFile)
+            self.pulser.close()
             logger.info("Uploaded file {0} to {1} (model {2})".format(bitFile, FPGA_name, FPGA.modelName))
 
     @QtCore.pyqtSlot(str)
