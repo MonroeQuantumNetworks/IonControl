@@ -493,7 +493,6 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             except Exception as e:
                 logging.getLogger(__name__).warning("Analysis failed: {0}".format(str(e)))
             self.context.scanMethod.onStop()
-            self.context.revertGlobals(self.globalVariables)
             self.ppStopSignal.emit()
 
     def traceFilename(self, pattern):
@@ -655,6 +654,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             if self.context.scan.histogramSave:
                 self.onSaveHistogram(self.context.scan.histogramFilename if self.context.scan.histogramFilename else None)
             self.context.dataFinalized = reason
+            self.context.revertGlobals(self.globalVariables)
             allData = {self.p.name:(self.p.x, self.p.y) for self.p in self.context.plottedTraceList}
             self.allDataSignal.emit(allData)
         
