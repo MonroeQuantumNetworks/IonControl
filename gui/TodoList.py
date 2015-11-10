@@ -134,7 +134,11 @@ class MasterSettings:
     def __setstate__(self, d):
         self.__dict__ = d
         self.__dict__.setdefault( 'autoSave', False )
+<<<<<<< HEAD
  
+=======
+
+>>>>>>> Stashing
 class TodoList(Form, Base):
     def __init__(self,scanModules,config,currentScan,setCurrentScan,globalVariablesUi,parent=None):
         Base.__init__(self,parent)    
@@ -472,17 +476,16 @@ class TodoList(Form, Base):
         _, currentwidget = self.currentScan()
         self.loadLine( entry )
         # set the global variables
-        self.revertGlobalsList = [('Global', key, self.globalVariablesUi.globalDict[key]) for key in entry.settings.iterkeys()]
-        self.globalVariablesUi.update( ( ('Global', k, v) for k,v in entry.settings.iteritems() ))   
+        #self.revertGlobalsList = [('Global', key, self.globalVariablesUi.globalDict[key]) for key in entry.settings.iterkeys()]
+        #self.globalVariablesUi.update( ( ('Global', k, v) for k,v in entry.settings.iteritems() ))
         # start
-        currentwidget.onStart()
+        currentwidget.onStart([(k, v) for k, v in entry.settings.iteritems()])
         self.tableModel.setActiveRow(self.settings.currentIndex, True)
         
     def exitMeasurementRunning(self):
         self.settings.currentIndex = (self.settings.currentIndex+1) % len(self.settings.todoList)
         self.tableModel.setActiveRow(self.settings.currentIndex, False)
-        self.globalVariablesUi.update(self.revertGlobalsList)
-            
+        #self.globalVariablesUi.update(self.revertGlobalsList)
         
     def enterPaused(self):
         self.statusLabel.setText('Paused')

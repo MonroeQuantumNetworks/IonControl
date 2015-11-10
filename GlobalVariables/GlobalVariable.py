@@ -20,13 +20,13 @@ class GlobalVariable(QtCore.QObject):
     persistSpace = 'globalVar'
     persistence = DBPersist()
 
-    def __init__(self, name, value=magnitude.mg(0)):
+    def __init__(self, name, value=magnitude.mg(0), categories=None):
         super(GlobalVariable, self).__init__()
         self.decimation = StaticDecimation(magnitude.mg(10, 's'))
         self.history = deque(maxlen=10)
         self._value = value
         self._name = name
-        self.categories = None
+        self.categories = categories
 
     @property
     def value(self):

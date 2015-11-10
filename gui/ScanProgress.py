@@ -11,8 +11,8 @@ import os
 uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\ScanProgress.ui')
 Form, Base = PyQt4.uic.loadUiType(uipath)
 
-class ScanProgress(Form,Base):
-    OpStates = enum('idle','running','paused','starting','stopping', 'interrupted')
+class ScanProgress(Form, Base):
+    OpStates = enum('idle', 'running', 'paused', 'starting', 'stopping', 'interrupted', 'stashing', 'resuming')
     stateChanged = QtCore.pyqtSignal( object )
     def __init__(self):
         Form.__init__(self)
@@ -23,6 +23,12 @@ class ScanProgress(Form,Base):
         self.previouslyElapsedTime = 0      # time spent on run before last start 
         self.expected = 0
         self.timer = None
+
+    def getData(self):
+        return (self.startTime, self.previouslyElapsedTime)
+
+    def setData(self, data):
+        self.startTime, self.previouslyElapsedTime = data
     
     def setupUi(self):
         super(ScanProgress,self).setupUi(self)
@@ -31,7 +37,16 @@ class ScanProgress(Form,Base):
         self.scanLabel.setText("")
         self.evaluationLabel.setText("")
         self.analysisLabel.setText("")
-        
+
+    def __getattr__(self, name):
+        """generates the is_idle, is_running, ... attributes"""
+        if name[0:3] == 'is_':
+            desiredState = self.OpStates.mapping.get(name[3:])
+            if desiredState is None:
+                raise AttributeError("{0} is not a valid state of ScanProgress")
+            return self.state == desiredState
+        raise AttributeError()
+
     def setScanLabel(self, scanName):        
         self.scanLabel.setText( firstNotNone(scanName,"") )
         
@@ -96,14 +111,17 @@ class ScanProgress(Form,Base):
         self.statusLabel.setText("Starting") 
         self.state = self.OpStates.starting
         self.stateChanged.emit('starting')
-      
-    
+
     def setStopping(self):
         self.statusLabel.setText("Stopping")    
         self.state = self.OpStates.stopping
         self.stateChanged.emit('stopping')
 
-    
+    def setStashing(self):
+        self.statusLabel.setText("Stashing")
+        self.state = self.OpStates.stashing
+        self.stateChanged.emit('stashing')
+
     def setInterrupted(self, reason):
         #self.progressBar.setStyleSheet(StyleSheets.RedProgressBar)
         self.previouslyElapsedTime = time.time()-self.startTime

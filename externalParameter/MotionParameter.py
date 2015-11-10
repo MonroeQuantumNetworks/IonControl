@@ -133,6 +133,7 @@ class PowerWaveplate(ExternalParameterBase):
         if not self.instrument.readyToMove():
             logger.warning("Conex device {0} needs to do a home search. Please press the home search button.".format(instrument))
         self.lastValue = None
+        self.arrived = False
         
     def homeSearch(self):
         self.instrument.homeSearch()  
@@ -191,19 +192,23 @@ class PowerWaveplate(ExternalParameterBase):
 
     def setValue(self, channel, value):
         reported = self.getValue(channel)
+        logging.getLogger(__name__).debug("{0} -> {1}".format(reported, value))
         if self.instrument.motionRunning():
             return reported, False
         if value != self.outputChannels[channel].settings.value:
             if self.lastValue is None or value < self.lastValue:
                 self._setValue( channel, value-self.settings.belowMargin )
+                logging.getLogger(__name__).debug("set {0}".format( value-self.settings.belowMargin))
                 self.lastValue = value-self.settings.belowMargin
                 return reported, False
             else:
                 self._setValue( channel, value )
+                logging.getLogger(__name__).debug("set {0}".format( value))
                 self.lastValue = value
-        arrived = not self.instrument.motionRunning()
+        arrived, self.arrived = self.arrived, not self.instrument.motionRunning() # buffers arrived state to fix a bug where an external parameter's final value was one step off.
         reported = self.getValue(channel)
-        return reported, arrived
+        logging.getLogger(__name__).debug(" -> {0} arrived {1}".format(reported, arrived))
+        return reported, arrived and self.arrived
 
     def update(self, param, changes):
         super(PowerWaveplate, self).update(param, changes)

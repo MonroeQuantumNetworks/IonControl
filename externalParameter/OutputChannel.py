@@ -186,7 +186,7 @@ class OutputChannel(QtCore.QObject):
 class SlowAdjustOutputChannel(OutputChannel):
     def __init__(self, device, deviceName, channelName, globalDict, settings, outputUnit):
         super(SlowAdjustOutputChannel, self).__init__(device, deviceName, channelName, globalDict, settings, outputUnit)
-        self.currentTarget = None
+        self._currentTarget = None
         self.timerActive = False
         
     def setDefaults(self):
@@ -201,6 +201,14 @@ class SlowAdjustOutputChannel(OutputChannel):
                             {'name': 'jump', 'type': 'bool', 'value': self.settings.jump},
                             {'name': 'stepsize', 'type': 'magnitude', 'value': self.settings.stepsize }])
         return param
+
+    @property
+    def currentTarget(self):
+        return self._currentTarget
+
+    @currentTarget.setter
+    def currentTarget(self, target):
+        self._currentTarget = target
 
     @staticmethod
     def encpasulate_value(arg, second=True):

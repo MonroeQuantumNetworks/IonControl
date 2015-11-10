@@ -45,7 +45,8 @@ class SymbolTable(OrderedDict):
         self.inlineParameterValues = dict() 
         self.setInlineParameter( 'NULL', 0 )
         self.setInlineParameter( 'FFFFFFFF', 0xffffffffffffffff )
-        self.labelNumber = 0 
+        self.setInlineParameter( 'INTERRUPT_EXITCODE', 0xfffe100000000000 )
+        self.labelNumber = 0
         
     def addBuiltins(self):
         self['set_shutter'] = Builtin('set_shutter',Builtins.set_shutter)

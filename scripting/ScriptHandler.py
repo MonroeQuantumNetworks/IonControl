@@ -3,7 +3,7 @@ Created on Aug 6, 2015
 
 @author: jmizrahi
 '''
-
+import collections
 from PyQt4 import QtCore
 import os
 import logging
@@ -12,6 +12,7 @@ import numpy
 from datetime import datetime
 from modules import magnitude
 from Script import ScriptException
+from modules.magnitude import is_magnitude
 from trace.PlottedTrace import PlottedTrace
 from trace.TraceCollection import TraceCollection
 from trace import pens
@@ -151,15 +152,27 @@ class ScriptHandler:
 
     @QtCore.pyqtSlot()
     @scriptCommand
-    def onStartScan(self):
-        """Start the scan"""
+    def onStartScan(self, globalOverrides=list()):
+        """Start the scan
+        globalOverrrides is list of (name, magnitude) values or list of (name, (value, unit)) values
+        that will override global variables during the scan
+        """
         logger = logging.getLogger(__name__)
         with QtCore.QMutexLocker(self.script.mutex):
             self.script.scanIsRunning = True
             self.script.analysisReady = False
             self.script.dataReady = False
             self.script.allDataReady = False
-        self.experimentUi.actionStart.trigger()
+        # make sure we hand on a list of (key, magnitude) pairs
+        myGlobalOverrides = list()
+        for key, value in globalOverrides:
+            if not is_magnitude(value):
+                if isinstance(value, collections.Sized):
+                    value = magnitude.mg(value[0], value[1])
+                else:
+                    value = magnitude.mg(value)
+            myGlobalOverrides.append((key, value))
+        self.experimentUi.onStart(globalOverrides=myGlobalOverrides)
         scan = self.scanControlWidget.settingsName
         evaluation = self.evaluationControlWidget.settingsName
         analysis = self.analysisControlWidget.currentAnalysisName

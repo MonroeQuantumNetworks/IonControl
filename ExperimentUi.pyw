@@ -46,6 +46,7 @@ from pulser import ShutterUi
 from pulser.OKBase import OKBase
 from pulser.PulserParameterUi import PulserParameterUi
 from gui.FPGASettings import FPGASettings
+from gui.StashButton import StashButtonControl
 import ctypes
 import locket
 import scan.EvaluationAlgorithms #@UnusedImport
@@ -213,6 +214,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
             self.tabDict[name] = widget
             widget.ClearStatusMessage.connect( self.statusbar.clearMessage)
             widget.StatusMessage.connect( self.statusbar.showMessage)
+            widget.stashChanged.connect(self.onStashChanged)
                     
         self.scanExperiment = self.tabDict["Scan"]
                     
@@ -382,6 +384,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         if 'MainWindow.State' in self.config:
             self.parent.restoreState(self.config['MainWindow.State'])
         self.initMenu()
+        self.actionResume.setEnabled(False)
         if 'MainWindow.pos' in self.config:
             self.move(self.config['MainWindow.pos'])
         if 'MainWindow.size' in self.config:
@@ -436,6 +439,12 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         # initialize ScriptingUi
         self.scriptingWindow = ScriptingUi(self)
         self.scriptingWindow.setupUi(self.scriptingWindow)
+
+        # initialize StashButton
+        self.actionStash.triggered.connect(self.onStash)
+        self.actionResume.triggered.connect(self.onResume)
+        self.stashButton = StashButtonControl(self.actionResume)
+        self.stashButton.resume.connect(self.onResume)
 
     def callWhenDoneAdjusting(self, callback):
         self.ExternalParametersUi.callWhenDoneAdjusting(callback)
@@ -524,9 +533,21 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.config.saveConfig() 
         QtCore.QTimer.singleShot(60000, self.onCommitConfig )      
             
-    def onStart(self):
-        self.currentTab.onStart()
-    
+    def onStart(self, checked=False, globalOverrides=list()):
+        self.currentTab.onStart(globalOverrides)
+
+    def onStash(self):
+        if hasattr(self.currentTab, 'onStash'):
+            self.currentTab.onStash()
+
+    def onStashChanged(self, stash):
+        self.actionResume.setEnabled(len(stash)>0)
+        self.stashButton.onStashChanged(stash)
+
+    def onResume(self, index=-1):
+        if hasattr(self.currentTab, 'onResume'):
+            self.currentTab.onResume(index)
+
     def onPause(self):
         self.currentTab.onPause()
     
@@ -564,6 +585,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
             if hasattr( self.currentTab, 'stateChanged' ):
                 self.currentTab.stateChanged.connect( self.todoList.onStateChanged )
             self.initMenu()
+            self.actionResume.setEnabled(self.currentTab.stashSize())
         
     def initMenu(self):
         """setup print and view menus"""

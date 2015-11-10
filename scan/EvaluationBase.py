@@ -74,7 +74,7 @@ class EvaluationBase(Observable):
         return self._parameter
     
     def __deepcopy__(self, memo=None):
-        return type(self)( copy.deepcopy(self.settings,memo) )
+        return type(self)( self.globalDict, settings=copy.deepcopy(self.settings,memo) )
   
     def histogram(self, data, evaluation, histogramBins=50 ):
         countarray = evaluation.getChannelData(data)

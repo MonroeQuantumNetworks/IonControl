@@ -131,7 +131,7 @@ class GlobalVariablesModel(CategoryTreeModel):
     def setValue(self, index, value):
         name = self.nodeFromIndex(index).content.name
         oldValue = self._globalDict_[name].value
-        if not oldValue.isIdenticalTo(value):
+        if oldValue is None or not oldValue.isIdenticalTo(value):
             self._globalDict_[name].value = value
 
     def addVariable(self, name, categories=None):

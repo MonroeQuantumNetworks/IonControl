@@ -148,20 +148,23 @@ class PulserHardwareServer(Process, OKBase):
         self.logicAnalyzerReadStatus = 0      #
         
     def run(self):
-        configureServerLogging(self.loggingQueue)
-        logger = logging.getLogger(__name__)
-        while (self.running):
-            if self.commandPipe.poll(0.01):
-                try:
-                    commandstring, argument = self.commandPipe.recv()
-                    command = getattr(self, commandstring)
-                    logger.debug( "PulserHardwareServer {0}".format(commandstring) )
-                    self.commandPipe.send(command(*argument))
-                except Exception as e:
-                    self.commandPipe.send(e)
-            self.readDataFifo()
-        self.dataQueue.put(FinishException())
-        logger.info( "Pulser Hardware Server Process finished." )
+        try:
+            configureServerLogging(self.loggingQueue)
+            logger = logging.getLogger(__name__)
+            while (self.running):
+                if self.commandPipe.poll(0.01):
+                    try:
+                        commandstring, argument = self.commandPipe.recv()
+                        command = getattr(self, commandstring)
+                        logger.debug( "PulserHardwareServer {0}".format(commandstring) )
+                        self.commandPipe.send(command(*argument))
+                    except Exception as e:
+                        self.commandPipe.send(e)
+                self.readDataFifo()
+            self.dataQueue.put(FinishException())
+            logger.info( "Pulser Hardware Server Process finished." )
+        except Exception as e:
+            logger.error("Pulser Hardware Server Process exception {0}".format(e))
         self.dataQueue.close()
         self.loggingQueue.put(None)
         self.loggingQueue.close()
@@ -291,7 +294,7 @@ class PulserHardwareServer(Process, OKBase):
                     elif token & 0xffff000000000000 == 0xfffe000000000000:  # exitparameter
                         self.data.final = True
                         self.data.exitcode = token & 0x0000ffffffffffff
-                        logger.info( "Exitcode {0} received".format(self.data.exitcode) )
+                        logger.info( "Exitcode {0:x} received".format(self.data.exitcode) )
                         self.data.timeTickOffset = self.timeTickOffset
                         self.dataQueue.put( self.data )
                         self.data = Data()
@@ -574,6 +577,11 @@ class PulserHardwareServer(Process, OKBase):
         else:
             logging.getLogger(__name__).warning("Pulser Hardware not available")
             return False
+
+    def ppInterrupt(self):
+        """Set a stop flag for the pulse program. The prepare_next_scan_point() function will then exit
+        with exitrcode 0xfffe100000000000 to signal an interrupt"""
+        self.xem.ActivateTriggerIn( 0x40, 14 )
 
     def interruptRead(self):
         self.sleepQueue.put(False)
