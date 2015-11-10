@@ -30,10 +30,16 @@ class InternalScanMethod(object):
         logger.info( "elapsed time {0}".format( time.time()-self.experiment.context.startTime ) )
 
     def onStop(self):
-        self.experiment.progressUi.setIdle()            
+        self.experiment.finalizeStop()
 
     def onData(self, data, queuesize, x ):
         self.experiment.dataMiddlePart( data, queuesize, x )
+
+    def onStash(self):
+        self.experiment.pulserHardware.ppInterrupt()
+
+    def resume(self):
+        self.experiment.resumeBottomHalf()
         
     def prepareNextPoint(self, data):
         if data.final:
@@ -61,8 +67,10 @@ class ExternalScanMethod(InternalScanMethod):
         super( ExternalScanMethod, self).__init__(experiment)
         self.maxUpdatesToWrite = 1
         self.parameter = None
+        self.interrupt = False
     
     def startScan(self):
+        self.interrupt = False
         if self.experiment.context.scan.scanParameter not in self.experiment.scanTargetDict[self.experiment.context.scan.scanTarget]:
             message = "{0} Scan Parameter '{1}' is not enabled.".format(self.name,self.experiment.context.scan.scanParameter)
             logging.getLogger(__name__).warning(message)
@@ -88,17 +96,28 @@ class ExternalScanMethod(InternalScanMethod):
             else:
                 QtCore.QTimer.singleShot(100,self.startBottomHalf)
 
+    def onStash(self):
+        self.interrupt = True
+
     def onStop(self):
         self.experiment.progressUi.setStopping()
         self.stopBottomHalf()
-                  
+
+    def resume(self):
+        self.parameter.saveValue(overwrite=False)
+        if self.experiment.context.scan.scanMode!=0 or self.parameter.setValue( self.experiment.context.scan.list[self.index]):
+            self.experiment.progressUi.setRunning( max(len(self.experiment.context.scan.list),1) )
+            self.experiment.resumeBottomHalf()
+        else:
+            QtCore.QTimer.singleShot(100,self.resume)
+
     def stopBottomHalf(self):
         logger = logging.getLogger(__name__)
         if self.experiment.progressUi.is_stopping:
             if self.experiment.context.scan.scanMode==0 and self.parameter and not self.parameter.restoreValue():
                 QtCore.QTimer.singleShot(100,self.stopBottomHalf)
             else:
-                self.experiment.progressUi.setIdle()
+                self.experiment.finalizeStop()
                 logger.info( "Status -> Idle" )
              
     def onData(self, data, queuesize, x ):
@@ -107,7 +126,17 @@ class ExternalScanMethod(InternalScanMethod):
             self.experiment.dataMiddlePart(data, queuesize, x)
         else:
             self.parameter.asyncCurrentExternalValue( partial( self.experiment.dataMiddlePart, data, queuesize) )
-            
+        if self.interrupt:
+            self.stashMiddlePart()
+
+    def stashMiddlePart(self):
+        logger = logging.getLogger(__name__)
+        if self.experiment.progressUi.is_stashing:
+            if self.experiment.context.scan.scanMode==0 and self.parameter and not self.parameter.restoreValue():
+                QtCore.QTimer.singleShot(100,self.stashMiddlePart)
+            else:
+                self.experiment.onStashBottomHalf()
+
     def prepareNextPoint(self, data):
         self.index += 1
         if self.experiment.progressUi.is_running:
@@ -124,7 +153,6 @@ class ExternalScanMethod(InternalScanMethod):
                 self.experiment.context.generator.dataOnFinal(self.experiment, self.experiment.progressUi.state )
                 logging.getLogger(__name__).info("Scan Completed")               
 
-        
     def dataBottomHalf(self):
         logger = logging.getLogger(__name__)
         if self.experiment.progressUi.is_running:

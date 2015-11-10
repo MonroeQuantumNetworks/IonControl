@@ -134,11 +134,7 @@ class MasterSettings:
     def __setstate__(self, d):
         self.__dict__ = d
         self.__dict__.setdefault( 'autoSave', False )
-<<<<<<< HEAD
- 
-=======
 
->>>>>>> Stashing
 class TodoList(Form, Base):
     def __init__(self,scanModules,config,currentScan,setCurrentScan,globalVariablesUi,parent=None):
         Base.__init__(self,parent)    

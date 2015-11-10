@@ -438,8 +438,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         """Pause the current run and stash all the variables.
         A stashed run can be interrupted by anythin and resumed"""
         if self.progressUi.is_running:
-            self.pulserHardware.ppInterrupt()
             self.progressUi.setStashing()
+            self.context.scanMethod.onStash()
 
     def stashSize(self):
         return len(self.stash)
@@ -459,16 +459,19 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.context = self.stash.pop(index)
             self.context.overrideGlobals(self.globalVariables)
             if self.callWhenDoneAdjusting is None:
-                self.resumeBottomHalf()
+                self.resumeMiddlePart()
             else:
-                self.callWhenDoneAdjusting(self.resumeBottomHalf)
+                self.callWhenDoneAdjusting(self.resumeMiddlePart)
+
+    def resumeMiddlePart(self):
+        self.context.scanMethod.resume()
 
     def resumeBottomHalf(self):
         logger = logging.getLogger(__name__)
         self.pulserHardware.ppFlushData()
         self.pulserHardware.ppClearWriteFifo()
         self.pulserHardware.ppWriteData(self.context.generator.restartCode(self.context.currentIndex))
-        logger.info( "Starting" )
+        logger.info( "Resuming" )
         self.pulserHardware.ppStart()
         self.progressUi.setData(self.context.progressData)
         self.progressUi.resumeRunning(self.context.currentIndex)
@@ -493,7 +496,11 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             except Exception as e:
                 logging.getLogger(__name__).warning("Analysis failed: {0}".format(str(e)))
             self.context.scanMethod.onStop()
-            self.ppStopSignal.emit()
+
+    def finalizeStop(self):
+        self.context.revertGlobals(self.globalVariables)
+        self.ppStopSignal.emit()
+        self.progressUi.setIdle()
 
     def traceFilename(self, pattern):
         directory = DataDirectory.DataDirectory()
@@ -542,11 +549,11 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         logger = logging.getLogger(__name__)
         logger.info( "onData {0} {1} {2}".format( self.context.currentIndex, dict((i,len(data.count[i])) for i in sorted(data.count.keys())), data.scanvalue ) )
         x = self.context.generator.xValue(self.context.currentIndex, data)
-        self.context.scanMethod.onData( data, queuesize, x )
         if self.context.rawDataFile is not None:
             self.context.rawDataFile.write( data.dataString() )
             self.context.rawDataFile.write( '\n' )
             self.context.rawDataFile.flush()
+        self.context.scanMethod.onData( data, queuesize, x )
 
     def dataMiddlePart(self, data, queuesize, x):
         if is_magnitude(x):
@@ -654,7 +661,6 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             if self.context.scan.histogramSave:
                 self.onSaveHistogram(self.context.scan.histogramFilename if self.context.scan.histogramFilename else None)
             self.context.dataFinalized = reason
-            self.context.revertGlobals(self.globalVariables)
             allData = {self.p.name:(self.p.x, self.p.y) for self.p in self.context.plottedTraceList}
             self.allDataSignal.emit(allData)
         

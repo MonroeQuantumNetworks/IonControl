@@ -186,7 +186,6 @@ class OutputChannel(QtCore.QObject):
 class SlowAdjustOutputChannel(OutputChannel):
     def __init__(self, device, deviceName, channelName, globalDict, settings, outputUnit):
         super(SlowAdjustOutputChannel, self).__init__(device, deviceName, channelName, globalDict, settings, outputUnit)
-        self._currentTarget = None
         self.timerActive = False
         
     def setDefaults(self):
@@ -201,14 +200,6 @@ class SlowAdjustOutputChannel(OutputChannel):
                             {'name': 'jump', 'type': 'bool', 'value': self.settings.jump},
                             {'name': 'stepsize', 'type': 'magnitude', 'value': self.settings.stepsize }])
         return param
-
-    @property
-    def currentTarget(self):
-        return self._currentTarget
-
-    @currentTarget.setter
-    def currentTarget(self, target):
-        self._currentTarget = target
 
     @staticmethod
     def encpasulate_value(arg, second=True):
@@ -240,7 +231,7 @@ class SlowAdjustOutputChannel(OutputChannel):
 
     def onExpressionUpdate(self, name, value, string, origin):
         if origin == 'recalculate':
-            self.currentTarget = value
+            self.settings.targetValue = value
             self.targetChanged.emit(value)
             self.useTracker.take(self.name)
             if not self.timerActive:
@@ -248,7 +239,7 @@ class SlowAdjustOutputChannel(OutputChannel):
                 self.expressionUpdateBottomHalf()
 
     def expressionUpdateBottomHalf(self):
-        if not self.setValue(self.currentTarget):
+        if not self.setValue(self.settings.targetValue):
             QtCore.QTimer.singleShot(self.settings.delay.toval('ms'), self.expressionUpdateBottomHalf)
         else:
             self.useTracker.release(self.name)

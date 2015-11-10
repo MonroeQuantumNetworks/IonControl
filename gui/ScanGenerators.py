@@ -51,6 +51,8 @@ class ParameterScanGenerator:
         return ( self.scan.code, data)
         
     def restartCode(self,currentIndex ):
+        if self.scan.scanTarget != 'Internal':
+            return list([4095, 0]) # writing the last memory location
         maxWordsToWrite = 2040 if self.maxUpdatesToWrite is None else 2*self.numUpdatedVariables*self.maxUpdatesToWrite
         currentWordCount = 2*self.numUpdatedVariables*currentIndex
         if len(self.scan.code)-currentWordCount>maxWordsToWrite:
