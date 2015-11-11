@@ -51,7 +51,8 @@ class GlobalVariable(QtCore.QObject):
             v, o = newvalue, None
         if self._value != v:
             self._value = v
-            self.valueChanged.emit(self.name, v, o)
+            if o != 'gui':
+                self.valueChanged.emit(self.name, v, o)
             self.history.appendleft((v, time.time(), o))
             if o is not None:
                 self.persistCallback((time.time(), v, None, None))
