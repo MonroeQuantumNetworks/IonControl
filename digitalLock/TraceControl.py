@@ -111,7 +111,6 @@ class TraceControl(Form, Base):
                                                   windowName=self.traceSettings.errorSigPlot)  
                 self.errorSigCurve.plot()
                 self.traceui.addTrace( self.errorSigCurve, pen=-1 )
-                self.trace.filenameCallback =  functools.partial( self.errorSigCurve.traceFilename, "LockScope.txt" )
             else:
                 self.errorSigCurve.replot()                
             self.newDataAvailable.emit( self.trace )                          

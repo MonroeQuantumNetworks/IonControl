@@ -271,7 +271,6 @@ class LockStatus(Form, Base):
                 
             if self.errorSigCurve is None:
                 self.errorSigCurve = PlottedTrace(self.trace, self.plotDict[self.settings.errorSigPlot]['view'], pen=-1, style=PlottedTrace.Styles.points, name="Error Signal", windowName=self.settings.errorSigPlot)  #@UndefinedVariable 
-                self.trace.filenameCallback =  functools.partial( self.errorSigCurve.traceFilename, "LockHistory.txt" )
                 self.errorSigCurve.plot()
                 self.traceui.addTrace( self.errorSigCurve, pen=-1 )
             else:
