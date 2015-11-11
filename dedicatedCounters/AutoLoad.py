@@ -45,6 +45,7 @@ def now():
 
 class AutoLoadSettings(object):
     def __init__(self):
+        self.globalDict = None
         self.counterChannel = 0
         self.shutterChannel = 0
         self.shutterChannel2 = 0
@@ -75,6 +76,10 @@ class AutoLoadSettings(object):
         self.loadingVoltageNode = ""
         self.shuttlingNodes = list()
         self.instantToLoading = False
+        self.beyondThresholdLimit = mg( 100, 'kHz')
+        self.beyondThresholdTime = mg(3, 's')
+        self.resetField = None
+        self.resetValue = mg(0)
 
     def paramDef(self):
         """
@@ -83,7 +88,9 @@ class AutoLoadSettings(object):
         return [{'name': 'Oven background', 'type': 'magnitude', 'value': self.thresholdOven, 'tip': "background counts added by oven (frequency)", 'field': 'thresholdOven', 'dimension': 'Hz' },
                 {'name': 'Threshold during loading', 'type': 'magnitude', 'value': self.thresholdBare, 'tip': "presence threshold during loading (frequency)", 'field': 'thresholdBare' , 'dimension': 'Hz'},
                 {'name': 'Threshold while running', 'type': 'magnitude', 'value': self.thresholdRunning, 'tip': "presence threshold during normal operation (frequency)", 'field': 'thresholdRunning', 'dimension': 'Hz'},
+                {'name': 'Beyond threshold limit', 'type':'magnitude', 'value': self.beyondThresholdLimit, 'tip': 'Beyond this rate we loaded more ions than intended', 'field':'beyondThresholdLimit' },
                 {'name': 'Check time', 'type': 'magnitude', 'value': self.checkTime, 'tip': "Time ions need to be present before switching to trapped", 'field': 'checkTime', 'dimension': 's'},
+                {'name': 'Beyond threshold time', 'type': 'magnitude', 'value': self.beyondThresholdTime, 'tip': "Time in the state BeyondThreshold to reset (kick out) the ions", 'field': 'beyondThresholdTime', 'dimension': 's'},
                 {'name': 'Max time', 'type': 'magnitude', 'value': self.maxTime, 'tip': "Maximum time oven is on during one attempt", 'field': 'maxTime', 'dimension': 's'},
                 {'name': 'Laser delay', 'type': 'magnitude', 'value': self.laserDelay, 'tip': "delay after which ionization laser is switched on", 'field': 'laserDelay', 'dimension': 's'},
                 {'name': 'Wait for comeback', 'type': 'magnitude', 'value': self.waitForComebackTime, 'tip': "time to wait for re-appearance of an ion after it is lost", 'field': 'waitForComebackTime', 'dimension': 's'},
@@ -97,6 +104,8 @@ class AutoLoadSettings(object):
                 {'name': 'Ionization shutter 2', 'type': 'int', 'value': self.shutterChannel2, 'tip': "Shutter channel controlling the second ionization laser", 'field': 'shutterChannel2'},
                 {'name': 'Ionization active low 2', 'type': 'bool', 'value': self.shutterChannelActiveLow2, 'tip': "Ionization 2 shutter is active low", 'field': 'shutterChannelActiveLow2'},
                 {'name': 'Counter channel', 'type': 'int', 'value': self.counterChannel, 'tip': "Counter channel", 'field': 'counterChannel'},
+                {'name': 'Reset global name', 'type':'list', 'values': sorted(self.globalDict.keys()), 'value': self.resetField, 'tip': 'Beyond threshold sets this global to the value Reset global value', 'field':'resetField' },
+                {'name': 'Reset global value', 'type':'magnitude', 'value': self.resetValue, 'tip': 'Beyond threshold sets the global "Reset global name" to this value during reset', 'field':'resetValue' },
                 {'name': 'Wavemeter address', 'type': 'str', 'value': self.wavemeterAddress, 'tip': "Address of wavemeter interface (http://)", 'field': 'wavemeterAddress'},
                 {'name': 'History timespan', 'type': 'magnitude', 'value': self.historyLength, 'tip': "Time range to display loading history", 'field': 'historyLength'},
                 {'name': 'Loading shuttle instantly', 'type':'bool', 'value': self.instantToLoading, 'tip': 'When shuttling to loading, move there instantly instead of shuttling properly', 'field':'instantToLoading' },
@@ -120,6 +129,7 @@ class AutoLoadSettings(object):
         after unpickling. Only new class attributes need to be added here.
         """
         self.__dict__ = state
+        self.globalDict = None
         self.__dict__.setdefault( 'ovenChannelActiveLow', False)
         self.__dict__.setdefault( 'shutterChannelActiveLow', False )
         self.__dict__.setdefault( 'shutterChannel2', False )
@@ -139,11 +149,17 @@ class AutoLoadSettings(object):
         self.__dict__.setdefault( 'loadingVoltageNode', "" )
         self.__dict__.setdefault( 'shuttlingNodes', list())
         self.__dict__.setdefault( 'instantToLoading', False )
+        self.__dict__.setdefault( 'beyondThresholdLimit', mg(100, 'kHz'))
+        self.__dict__.setdefault( 'beyondThresholdTime', mg(10, 's'))
+        self.__dict__.setdefault( 'resetField', None)
+        self.__dict__.setdefault( 'resetValue', mg(0))
 
     stateFields = ['counterChannel', 'shutterChannel', 'shutterChannel2', 'ovenChannel', 'laserDelay', 'maxTime', 'thresholdBare', 'thresholdOven',
                    'checkTime', 'useInterlock', 'interlock', 'wavemeterAddress', 'ovenChannelActiveLow', 'shutterChannelActiveLow', 'shutterChannelActiveLow2',
                    'autoReload', 'waitForComebackTime', 'minLaserScatter', 'maxFailedAutoload', 'postSequenceWaitTime', 'loadAlgorithm',
-                   'shuttleLoadTime', 'shuttleCheckTime', 'ovenCoolingTime', 'thresholdRunning', 'globalsAdjustList', 'historyLength', 'instantToLoading' ] 
+                   'shuttleLoadTime', 'shuttleCheckTime', 'ovenCoolingTime', 'thresholdRunning', 'globalsAdjustList', 'historyLength', 'loadingVoltageNode', 'shuttlingNodes',
+                   'instantToLoading', 'beyondThresholdLimit',
+                   'beyondThresholdTime', 'resetField', 'resetValue']
         
     def __eq__(self,other):
         return tuple(getattr(self,field) for field in self.stateFields)==tuple(getattr(other,field) for field in self.stateFields)
@@ -153,6 +169,12 @@ class AutoLoadSettings(object):
 
     def __hash__(self):
         return hash(tuple(getattr(self,field) for field in self.stateFields))
+
+    def __getstate__(self):
+        dictcopy = dict(self.__dict__)
+        dictcopy.pop('globalDict')
+        return dictcopy
+
 
 def invertIf( logic, invert ):
     """ returns logic for positive channel number, inverted for negative channel number """
@@ -171,9 +193,11 @@ class AutoLoad(UiForm,UiBase):
     def __init__(self, config, dbConnection, pulser, dataAvailableSignal, globalVariablesUi, externalInstrumentObservable, parent=None):
         UiBase.__init__(self,parent)
         UiForm.__init__(self)
+        self.globalVariablesUi = globalVariablesUi
         self.config = config
         self.parameters = self.config.get('AutoLoad.Parameters', Parameters() )
         self.settings = self.config.get('AutoLoad.Settings',AutoLoadSettings())
+        self.settings.globalDict = self.globalVariablesUi.globalDict
         self.settingsDict = self.config.get('AutoLoad.Settings.dict', dict())
         self.currentSettingsName = self.config.get('AutoLoad.SettingsName','')
         self.loadingHistory = LoadingHistory(dbConnection)
@@ -190,7 +214,6 @@ class AutoLoad(UiForm,UiBase):
         self.trappingTime = None
         self.voltageControl = None
         self.preheatStartTime = now()
-        self.globalVariablesUi = globalVariablesUi
         self.globalAdjustRevertList = list()
         self.voltageNodeBeforeLoading = ""
         self.externalInstrumentObservable = externalInstrumentObservable
@@ -202,6 +225,7 @@ class AutoLoad(UiForm,UiBase):
         self.statemachine.addState( 'Preheat', self.setPreheat )
         self.statemachine.addState( 'Load', self.setLoad )
         self.statemachine.addState( 'Check', self.setCheck )
+        self.statemachine.addState( 'BeyondThreshold', self.setBeyondThreshold, self.exitBeyondThreshold )
         self.statemachine.addState( 'AdjustFromLoading' )
         self.statemachine.addState( 'Trapped', self.setTrapped, self.exitTrapped )
         self.statemachine.addState( 'Disappeared', self.setDisappeared )
@@ -273,7 +297,10 @@ class AutoLoad(UiForm,UiBase):
                                         lambda state: state.timeInState() > self.settings.ovenCoolingTime and
                                                       self.settings.autoReload,
                                          description="waitForComebackTime" )
-        self.statemachine.addTransition( 'data', 'PostSequenceWait', 'Trapped', 
+        self.statemachine.addTransition( 'timer', 'BeyondThreshold', 'Load',
+                                        lambda state: state.timeInState() > self.settings.beyondThresholdTime,
+                                         description="end beyond threshold" )
+        self.statemachine.addTransition( 'data', 'PostSequenceWait', 'Trapped',
                                          lambda state, data: state.timeInState() > self.settings.postSequenceWaitTime and
                                                              data.data[self.settings.counterChannel]/data.integrationTime >= self.settings.thresholdRunning,
                                          description="postSequenceWaitTime" )
@@ -283,6 +310,9 @@ class AutoLoad(UiForm,UiBase):
                                          description="postSequenceWaitTime" )
         self.statemachine.addTransition( 'data', 'Load', 'Check', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime > self.settings.thresholdOven+self.settings.thresholdBare,
                                          description="thresholdOven"  )
+        self.statemachine.addTransition( 'data', 'Check', 'BeyondThreshold', lambda state, data: state.timeInState() > self.settings.checkTime/2 and
+                                                                                                 data.data[self.settings.counterChannel]/data.integrationTime > self.settings.beyondThresholdLimit,
+                                         description="too many ions"  )
         self.statemachine.addTransition( 'data', 'Check', 'Load', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime < self.settings.thresholdOven+self.settings.thresholdBare,
                                          description="thresholdRunning"  )
         self.statemachine.addTransition( 'data', 'Trapped', 'Disappeared', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime < self.settings.thresholdRunning,
@@ -825,3 +855,11 @@ class AutoLoad(UiForm,UiBase):
             
     def onLoadAlgorithmChanged(self, number):
         self.settings.loadAlgorithm = number
+
+    def setBeyondThreshold(self):
+        self.originalResetValue = self.globalVariablesUi.globalDict[self.settings.resetField]
+        self.globalVariablesUi.globalDict[self.settings.resetField] = self.settings.resetValue
+        self.statusLabel.setText("Too many ions, dumping them :(")
+
+    def exitBeyondThreshold(self):
+        self.globalVariablesUi.globalDict[self.settings.resetField] = self.originalResetValue
