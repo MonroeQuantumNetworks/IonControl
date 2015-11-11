@@ -112,7 +112,8 @@ class GlobalVariablesModel(CategoryTreeModel):
     def onValueChanged(self, name, value, origin):
         node = self.nodeFromContent(self._globalDict_[name])
         ind = self.indexFromNode(node, col=self.column.value)
-        self.dataChanged.emit(ind, ind)
+        if origin != 'gui':
+            self.dataChanged.emit(ind, ind)
         self.valueChanged.emit(name)
 
     def sort(self, column, order):
