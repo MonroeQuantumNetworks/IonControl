@@ -136,7 +136,7 @@ class DataHandling(object):
                 if minval is not None:
                     self.trace.bottom = numpy.array( [value - minval])
                 self.plottedTrace = PlottedTrace(self.trace, plot, pens.penList, xAxisUnit = "s", xAxisLabel = "time", windowName=self.plotName) 
-                self.plottedTrace.trace.filenameCallback = functools.partial( WeakMethod.ref(self.plottedTrace.traceFilename), self.filename )
+                # self.plottedTrace.trace.filenameCallback = functools.partial( WeakMethod.ref(self.plottedTrace.traceFilename), self.filename )
                 traceui.addTrace( self.plottedTrace, pen=-1)
                 traceui.resizeColumnsToContents()
             else:
