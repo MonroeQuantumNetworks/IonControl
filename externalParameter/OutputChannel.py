@@ -108,11 +108,14 @@ class OutputChannel(QtCore.QObject):
         if the stored value is reached returns True, otherwise False. Needs to be called repeatedly
         until it returns True in order to restore the saved value.
         """
-        if self.savedValue is None:
-            return True
-        arrived = self.setValue(self.savedValue)
-        if arrived:
-            self.savedValue = None
+        if self.expressionValue.hasDependency:
+            arrived = self.setValue(self.expressionValue.value)
+        else:
+            if self.savedValue is None:
+                return True
+            arrived = self.setValue(self.savedValue)
+            if arrived:
+                self.savedValue = None
         return arrived
         
     @property
