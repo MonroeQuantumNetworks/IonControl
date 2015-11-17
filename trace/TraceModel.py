@@ -296,7 +296,7 @@ class TraceModel(CategoryTreeModel):
                     del self.traceDict[key]
                     self.traceRemoved.emit(key)
                     if dataNode.parent is not self.root and dataNode.parent is not node:
-                        super(TraceModel, self).removeNode(dataNode.parent)
+                        super(TraceModel, self).removeNode(dataNode.parent, useModelReset)
             if nodeIsNotData:
                 super(TraceModel, self).removeNode(node, useModelReset)
 
