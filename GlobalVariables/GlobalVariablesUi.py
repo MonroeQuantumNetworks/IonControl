@@ -51,7 +51,7 @@ class GlobalVariablesUi(Form, Base):
     def setupUi(self, parent):
         Form.setupUi(self,parent)
         self.model = GlobalVariablesModel(self.config, self._globalDict_)
-        self.model.condensedView = self.config.get(self.configName+".condensedView", True)
+        self.model.condensedView = self.config.get(self.configName+".condensedView", False)
         self.condensedViewButton.setChecked( self.model.condensedView )
         self.model.showGrid = self.config.get(self.configName+".showGrid", True)
         self.showGridButton.setChecked( self.model.showGrid )
