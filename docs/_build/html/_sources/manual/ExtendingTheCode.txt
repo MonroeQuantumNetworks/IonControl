@@ -11,6 +11,27 @@ Adding Hardware
 External Parameters
 ~~~~~~~~~~~~~~~~~~~
 
+Add new instruments in \\IonControl\\externalParameter\\StandardExternalParameter.py. Each instrument is a class that inherits from ExternalParameterBase, and must specify its name and output channels (and associated unit). It must provide three methods: __init__, setValue, and close. It can also provide a getValue method if the instrument can report its value. For a simple example, see the class HP6632B.
+
+If the new instrument is part of an existing category of instruments (like a VISA instrument), then no change to the experiment configuration is necessary; just add your class under the "if visaEnabled" statement.
+
+If the new instrument is a new category which requires its own libraries/DLLs/etc., you will need to add this as an option in the experiment config file. To do that, do the following:
+
+   1) Open \\IonControl\\config\\ExptConfigGuiTemplate.yml
+   2) Add a new entry under hardware for your new instrument. Give it a description, and any necessary fields, in the same way that the other instruments are specified. Note that configuration options for specific instances of instrument can be specified in the params selection GUI. THe configuration options in the expt config file are more for the entire category of instrument, i.e. things like DLLs.
+
+These two steps will make your piece of hardware appear as an option in the experiment config GUI.
+
+   3) In StandardExternalParameter.py, add a line of the form:
+
+      .. code-block:: python
+
+         yourInstrumentEnabled = project.isEnabled('hardware', 'yourInstrument')
+
+   4) Create your class inside of an if statement "if yourInstrumentEnabled." Read in any configuration data by looking in the project dictionary.
+
+You should now be able to select your instrument from the Params Selection GUI.
+
 Voltage Controllers
 ~~~~~~~~~~~~~~~~~~~
 
@@ -20,7 +41,7 @@ AWGs
 Adding Evaluations
 ------------------
 
-The evaluations are defined in \IonControl\scan\CountEvaluation.py, and listed in \IonControl\scan\EvaluationAlgorithms.py. Each evaluation is a class which inherits from EvaluationBase, and is listed in EvaluationAlgorthms.py. An evaluation class must provide:
+The evaluations are defined in \\IonControl\\scan\\CountEvaluation.py, and listed in \IonControl\scan\EvaluationAlgorithms.py. Each evaluation is a class which inherits from EvaluationBase, and is listed in EvaluationAlgorthms.py. An evaluation class must provide:
 
    - A name
    - A tooltip
@@ -31,55 +52,12 @@ The evaluations are defined in \IonControl\scan\CountEvaluation.py, and listed i
 
       Raw value is typically the value not scaled by the number of experiments, i.e. if 100 experiments were performed and in 43 of them the ion is bright, the evaluated value would be 0.43 and the raw value would be 43.
 
-Here is a relatively simple example:
-
-.. code-block:: Python
-
-    class ThresholdEvaluation(EvaluationBase):
-        """
-        simple threshold state detection: if more than threshold counts are observed
-        the ion is considered bright. For threshold photons or less it is considered
-        dark.
-        """
-        name = "Threshold"
-        tooltip = "Above threshold is bright"
-        def __init__(self,settings=None):
-            EvaluationBase.__init__(self,settings)
-
-        def setDefault(self):
-            self.settings.setdefault('threshold',1)
-            self.settings.setdefault('invert',False)
-
-        def evaluate(self, data, evaluation, expected=None, ppDict=None, globalDict=None ):
-            countarray = evaluation.getChannelData(data)
-            if not countarray:
-                return 0, None, 0
-            N = float(len(countarray))
-            if self.settings['invert']:
-                discriminated = [ 0 if count > self.settings['threshold'] else 1 for count in countarray ]
-            else:
-                discriminated = [ 1 if count > self.settings['threshold'] else 0 for count in countarray ]
-            if evaluation.name:
-                data.evaluated[evaluation.name] = discriminated
-            x = numpy.sum( discriminated )
-            p = x/N
-            # Wilson score interval with continuity correction
-            # see http://en.wikipedia.org/wiki/Binomial_proportion_confidence_interval
-            rootp = 3-1/N -4*p+4*N*(1-p)*p
-            top = min( 1, (2 + 2*N*p + math.sqrt(rootp))/(2*(N+1)) ) if rootp>=0 else 1
-            rootb = -1-1/N +4*p+4*N*(1-p)*p
-            bottom = max( 0, (2*N*p - math.sqrt(rootb))/(2*(N+1)) ) if rootb>=0 else 0
-            return p, (p-bottom, top-p), x
-
-        def children(self):
-            return [{'name':'threshold','type':'int','value':self.settings['threshold']},
-                    {'name':'invert', 'type': 'bool', 'value':self.settings['invert'] }]
-
+See ThresholdEvaluation for a relatively simple example.
 
 Adding Fits
 -----------
 
-The fits are defined in \IonControl\fit\FitFunctions.py. Each fit is a class which inherits from FitFunctionBase. At a bare minimum, the fit must provide:
+The fits are defined in \\IonControl\\fit\\FitFunctions.py. Each fit is a class which inherits from FitFunctionBase. At a bare minimum, the fit must provide:
 
     - a name
     - a function string to display
@@ -87,21 +65,7 @@ The fits are defined in \IonControl\fit\FitFunctions.py. Each fit is a class whi
     - default values
     - the method "functionEval" which defines how to evaluate the function.
 
-Here is a minimal example:
-
-.. code-block:: Python
-
-    class SinSqGaussFit(FitFunctionBase):
-        name = "Sin2 Gaussian Decay"
-        functionString =  'A * exp(-x^2/tau^2) * sin^2(pi/(2*T)*x+theta) + O'
-        parameterNames = [ 'A', 'T', 'theta', 'O', 'tau' ]
-        def __init__(self):
-            FitFunctionBase.__init__(self)
-            self.parameters = [1,100,0,0, 1000]
-            self.startParameters = [1,100,0,0, 1000]
-
-        def functionEval(self, x, A, T, theta, O, tau ):
-            return A*numpy.exp(-numpy.square(x/tau))*numpy.square(numpy.sin(numpy.pi/2/T*x+theta))+O
+See SinSqGaussFit for a relatively simple example.
 
 Fits can also provide:
 

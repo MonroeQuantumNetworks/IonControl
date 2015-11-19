@@ -1,6 +1,13 @@
 trace
 =====
 
+BlockAutoRange
+--------------
+
+.. automodule:: trace.BlockAutoRange
+   :members:
+   :undoc-members:
+
 pens
 ----
 

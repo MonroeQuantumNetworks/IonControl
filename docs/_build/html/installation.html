@@ -146,7 +146,7 @@
 <li><p class="first">Install <a class="reference external" href="https://winpython.github.io/">WinPython</a></p>
 <blockquote>
 <div><ul class="simple">
-<li>get version 2.7.9.4+, 64 bit</li>
+<li>get version 2.7.X+, 64 bit</li>
 <li>install into C:\</li>
 </ul>
 </div></blockquote>
@@ -177,12 +177,12 @@
 </li>
 <li><p class="first">This will require registration with Opal Kelly Pins</p>
 </li>
-<li><p class="first">This should install the <strong>ok</strong> module into C:\WinPython-64bit-2.7.9.4\python-2.7.9.amd64\Lib\site-packages</p>
+<li><p class="first">This should install the <strong>ok</strong> module into C:\$yourWinPythonDir$\$yourPythonDir$\Lib\site-packages</p>
 </li>
 <li><p class="first"><strong>if there is no ok directory at this path:</strong></p>
 <blockquote>
 <div><ul class="simple">
-<li>create directory &#8220;C:\WinPython-64bit-2.7.9.1\python-2.7.9.amd64\Lib\site-packages\ok&#8221;</li>
+<li>create directory &#8220;\$yourWinPythonDir$\$yourPythonDir$\Lib\site-packages\ok&#8221;</li>
 <li>copy into that directory contents of &#8220;C:\Program Files\Opal Kelly\FrontPanelUSB\API\Python\2.7\x64&#8221;</li>
 </ul>
 </div></blockquote>
@@ -192,18 +192,40 @@
 </li>
 <li><p class="first">Install <a class="reference external" href="https://github.com/pmaunz/pyqtgraph/archive/develop-pm.zip">pyqtgraph</a> &#8211; used for all plotting</p>
 <blockquote>
-<div><ul class="simple">
-<li>Extract the archive at your favorite location (inside download folder is just fine)</li>
-<li>Open a command terminal</li>
-<li>Change into the folder pyqtgraph-develop-pm</li>
-<li>Execute &#8220;WinPython-64bit-2.7.9.4python-2.7.9.amd64python setup.py install&#8221;</li>
+<div><ul>
+<li><p class="first">Extract the archive at your favorite location (inside download folder is just fine)</p>
+</li>
+<li><p class="first">Open a command terminal</p>
+</li>
+<li><p class="first">Change into the folder pyqtgraph-develop-pm</p>
+</li>
+<li><p class="first">Execute</p>
+<blockquote>
+<div><div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">python</span> <span class="n">setup</span><span class="o">.</span><span class="n">py</span> <span class="n">install</span>
+</pre></div>
+</div>
+</div></blockquote>
+</li>
 </ul>
 </div></blockquote>
 </li>
 <li><p class="first">Install <a class="reference external" href="https://pyvisa.readthedocs.org/en/stable/">pyvisa</a> &#8211; used for communicating with many external instruments</p>
 <blockquote>
+<div><ul>
+<li><p class="first">get via pip:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">pip</span> <span class="n">install</span> <span class="n">pyvisa</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first"><strong>Note:</strong> versions 1.7 and 1.8 are definitely fine</p>
+</li>
+</ul>
+</div></blockquote>
+</li>
+<li><p class="first">Install <em>locket</em> &#8211; used for ensuring same config file is not used by multiple programs</p>
+<blockquote>
 <div><ul class="simple">
-<li><strong>Note:</strong> versions 1.7 and 1.8 are definitely fine</li>
+<li>get via pip:</li>
 </ul>
 </div></blockquote>
 </li>

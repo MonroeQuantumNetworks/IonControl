@@ -106,7 +106,6 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="instrumentLoggerUi_manual.html">Instrument Logger User Manual</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../code/codeDocs.html">Code Documentation</a></li>
 </ul>
 
             
@@ -272,7 +271,16 @@ if plotName is not a plot</p>
 <dl class="method">
 <dt>
 <code class="descname">fit</code><span class="sig-paren">(</span><em>fitName</em>, <em>traceName</em><span class="sig-paren">)</span></dt>
-<dd><p>fit the data in &#8216;traceName&#8217; using &#8216;fitName&#8217;</p>
+<dd><p>Fit trace using specified fit.
+:param traceName: name of trace to fit
+:type traceName: str
+:param fitName: name of fit settings to use (from fit GUI)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -326,6 +334,12 @@ if plotName is not a plot</p>
 </tr>
 </tbody>
 </table>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="descname">getGlobal</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span></dt>
+<dd><p>get current value of global &#8216;name&#8217;</p>
 </dd></dl>
 
 <dl class="method">
@@ -520,11 +534,14 @@ if there is no scan by that name</td>
 
 <dl class="method">
 <dt>
-<code class="descname">startScan</code><span class="sig-paren">(</span><em>wait=True</em><span class="sig-paren">)</span></dt>
+<code class="descname">startScan</code><span class="sig-paren">(</span><em>globalOverrides=list()</em>, <em>wait=True</em><span class="sig-paren">)</span></dt>
 <dd><p>Start the scan.</p>
-<p>This is equivalent to clicking &#8220;start&#8221; on the experiment GUI. If
-wait=True, the script will not continue until the scan is finished.</p>
-<p>wait: bool</p>
+<p>This is equivalent to clicking &#8220;start&#8221; on the experiment GUI.
+Optionally a list of (name, magnitude) tuples or (name, (value, unit)) tuples
+can be given that overrides global variables during the scan.
+If wait=True, the script will not continue until the scan is finished.</p>
+<p>globalOverrides: list((name, value)) or list((name, (value, unit)))
+wait: bool</p>
 </dd></dl>
 
 <dl class="method">

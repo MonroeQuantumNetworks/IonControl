@@ -1,6 +1,13 @@
 uiModules
 =========
 
+CamelionDelegate
+----------------
+
+.. automodule:: uiModules.CamelionDelegate
+   :members:
+   :undoc-members:
+
 CategoryTree
 ------------
 

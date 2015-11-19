@@ -90,10 +90,7 @@
 <li class="toctree-l2"><a class="reference internal" href="Projects.html">Projects</a></li>
 <li class="toctree-l2"><a class="reference internal" href="MainGUI.html">Main GUI</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="">FPGA Control</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#pi-loops">PI Loops</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#virtual-dac-channels">Virtual DAC Channels</a></li>
-</ul>
-</li>
+<li class="toctree-l3"><a class="reference internal" href="#pi-loops">PI Loops</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="PulseProgram.html">Pulse Program</a></li>
@@ -109,7 +106,6 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="instrumentLoggerUi_manual.html">Instrument Logger User Manual</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../code/codeDocs.html">Code Documentation</a></li>
 </ul>
 
             
@@ -169,7 +165,7 @@
 </li>
 <li><dl class="first docutils">
 <dt>Triggers</dt>
-<dd><p class="first last">Allows control of each trigger line. Select the lines you want to trigger, then click <em>Apply</em>. As with shutters, these names appear in the pulse program triggers window.</p>
+<dd><p class="first last">Allows control of each trigger line. Triggers go high for one clock cycle (= 10 ns) before going low again. The are used internally to control when the DDSs or DACs change their value. Select the lines you want to trigger, then click <em>Apply</em>. As with shutters, these names appear in the pulse program triggers window.</p>
 </dd>
 </dl>
 </li>
@@ -184,7 +180,8 @@
 </li>
 <li><dl class="first docutils">
 <dt>DAC</dt>
-<dd><p class="first">Similar to DDS. For <em>IonControl-firmware-LX150-UMD.bit</em>, channels 0-7 control the DACs directly. Channels 8-15 are virtual DAC channels that control the DAC in concert with the PI loops. see <a class="reference internal" href="#piloops"><span>PI Loops</span></a> .</p>
+<dd><p class="first">Similar to DDS. For <em>IonControl-firmware-LX150-UMD.bit</em>, channels 0-7 control the DACs directly. The &#8220;Write All&#8221; checkbox controls whether the value set here is written to the DAC Channels when the pulse program stops. If the DAC is the output of an &#8220;always on&#8221; servo loop, make sure this box is unchecked. Otherwise, whenever a pulse program stops, there will be hiccup in the lock, as the DAC gets reset to this value.</p>
+<p>Channels 8-15 are virtual DAC channels that control the DAC in concert with the PI loops. see <a class="reference internal" href="#piloops"><span>PI Loops</span></a> .</p>
 <p class="last">As with the DDSs, globals and expressions can be used, and values written in the pulse program overwrite values set here.</p>
 </dd>
 </dl>
@@ -229,18 +226,19 @@
 <div class="section" id="pi-loops">
 <span id="piloops"></span><h2>PI Loops<a class="headerlink" href="#pi-loops" title="Permalink to this headline">¶</a></h2>
 <p>Each of the 8 ADCs on the breakout board can be used as the error signal for a PI control loop. PI Loop &lt;n&gt; corresponds to ADC &lt;n&gt;. The output of the PI loop is reconfigurable &#8211; any DAC or any DDS amplitude can &#8220;listen&#8221; to any PI loop. The PI loops are turned on and off via the shutters (shutters 32-39 on <em>IonControl-firmware-LX150-UMD.bit</em>). The PI loops can be used as either always-on or sample-and-hold. If <em>PI loop &lt;n&gt;</em> is turned off during the pulse program, and turned back on later, the integrator will pick up where it left off.</p>
+<p>There are cases where this behavior is undesirable. For example, if the lock is a laser lock to a spectral feature, then you want the ability to move the DAC to the appropriate point, then turn on the lock, and have the lock start at wherever the DAC is currently, i.e. NOT wherever the lock was the last time it was turned off. This is the purpose of the virtual channels DACs 8-15. If you write a value to DAC 8, this is equivalent to writing a value to DAC 0, except that when the PI loop is turned on, the output will initially be set to the value DAC 8 is set to. If you write a value to DAC 0 and turn on the PI loop, the output will be whatever it was when last the PI loop was turned off (or 0). Thus, use DACs 0-7 for things like laser power stabilization locks (or unlocked DACs), and DACs 8-15 for things like laser frequency locks.</p>
 <p>The routing of the PI loops is controlled in the Pulser Parameters dock by the PI Loop Regulator Inputs section. If <em>DAC&lt;n&gt; regulator input</em> is set to <em>&lt;m&gt;</em> where <em>m</em> is between 0 and 7, then <em>DAC&lt;n&gt;</em> will be controlled by <em>PI loop &lt;m&gt;</em> (and the corresponding error signal on <em>ADC&lt;m&gt;</em>) when <em>PI loop &lt;m&gt;</em> is enabled. If <em>DAC&lt;n&gt; regulator input</em> is set to any number over 7, then it will not be controlled by a PI loop. The same applies to all DDS amplitudes, which can also be controlled by a PI loop by setting <em>DDS&lt;n&gt; regulator input</em>.</p>
 <p>The settings of the PI loop are set in the <em>PI Loop Parameters</em> section of the Pulser Parameters dock.</p>
 <ul>
 <li><dl class="first docutils">
 <dt>P Coefficient</dt>
-<dd><p class="first last">Proportional gain (units: unitless)</p>
+<dd><p class="first last">32 bit proportional gain (units: unitless)</p>
 </dd>
 </dl>
 </li>
 <li><dl class="first docutils">
 <dt>I Coefficient</dt>
-<dd><p class="first last">Integrator gain (units: unitless)</p>
+<dd><p class="first last">32 bit integrator gain (units: unitless)</p>
 </dd>
 </dl>
 </li>
@@ -257,9 +255,9 @@
 </dl>
 </li>
 </ul>
-<div class="section" id="virtual-dac-channels">
-<h3>Virtual DAC Channels<a class="headerlink" href="#virtual-dac-channels" title="Permalink to this headline">¶</a></h3>
-</div>
+<p>ErrorSignal = ADC - offset (each 16 bit)
+Output = P/(2^16) * ErrorSignal + Sum(I/(2^16) * ErrorSignal)
+integration depends on ADC update rate, which is of order 10 us</p>
 </div>
 </div>
 

@@ -43,6 +43,13 @@ EvaluationAlgorithms
    :members:
    :undoc-members:
 
+EvaluationBase
+--------------
+
+.. automodule:: scan.EvaluationBase
+   :members:
+   :undoc-members:
+
 EvaluationControl
 -----------------
 

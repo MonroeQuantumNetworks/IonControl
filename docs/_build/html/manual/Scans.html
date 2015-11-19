@@ -114,7 +114,6 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="instrumentLoggerUi_manual.html">Instrument Logger User Manual</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../code/codeDocs.html">Code Documentation</a></li>
 </ul>
 
             
@@ -206,7 +205,13 @@
 </li>
 <li><dl class="first docutils">
 <dt>Free Running</dt>
-<dd></dd>
+<dd><p class="first">Freerunning is a mode where the pulse program can trigger the end of a point and the beginning of the next point. No data is provided via the pipe to the pulse program at that point boundary.
+The pulse program can insert a point separator as follows:</p>
+<div class="last highlight-Python"><div class="highlight"><pre><span class="n">write_pipe</span><span class="p">(</span> <span class="n">nextPointMarker</span> <span class="p">)</span>  <span class="c"># where nextPointMarker = 0xfffc000000000000</span>
+<span class="n">write_pipe</span><span class="p">(</span> <span class="n">counter</span> <span class="p">)</span>
+</pre></div>
+</div>
+</dd>
 </dl>
 </li>
 </ul>
@@ -315,12 +320,14 @@
 </li>
 <li><dl class="first docutils">
 <dt>Histogram file</dt>
-<dd></dd>
+<dd><p class="first last">If this is checked, all histograms will be saved to the filename specified.</p>
+</dd>
 </dl>
 </li>
 <li><dl class="first docutils">
 <dt>Raw data</dt>
-<dd></dd>
+<dd><p class="first last">If this is checked, all raw, unevaluated data transmitted by the FPGA will be saved. For most simple experiments, this will contain no new information that is not already in the standard data file.</p>
+</dd>
 </dl>
 </li>
 <li><dl class="first docutils">
@@ -368,7 +375,7 @@
 </li>
 <li><dl class="first docutils">
 <dt>ID/channel</dt>
-<dd><p class="first last">Specifies which counter channel to plot. The ID is the same ID specified in the pulse program counters dock.</p>
+<dd><p class="first last">Specifies which counter channel to plot. The ID is the same ID specified in the pulse program counters dock. If the type is a counter, the channel will be a drop down with the available counter channels. If the type is a result, it will be a spin box, as result can be any 8 bit number (0-255).</p>
 </dd>
 </dl>
 </li>
@@ -398,7 +405,16 @@
 </li>
 <li><dl class="first docutils">
 <dt>Abszisse</dt>
-<dd></dd>
+<dd><p class="first">What to use for x-axis in plot.</p>
+<ul class="simple">
+<li>x: scan value</li>
+<li>index: enumerates the points as taken</li>
+<li>time: software timestamp (time the computer added the point to the trace)</li>
+<li>fist: hardware timetick of first data in this point (in seconds since epoch)</li>
+<li>last: hardware timetick of last data in this point (in seconds since epoch)</li>
+</ul>
+<p class="last">These alternative x axes are useful if a scan is being done with randomized points while simultaneously a PI lock is being run during the scan. The evaluation looking at the scan itself will need to be plotted a function of the scan value, but the evaluation monitoring the PI lock is more informative if it plots as a function of time.</p>
+</dd>
 </dl>
 </li>
 </ul>
@@ -663,7 +679,7 @@
 <p><a class="reference internal" href="../_images/remove.png"><img alt="remove2" src="../_images/remove.png" style="width: 22.4px; height: 22.4px;" /></a> - remove the selected trace from the list (DEL). This has no effect on the file on disk. Only finalized traces can be removed.</p>
 <p><a class="reference internal" href="../_images/colorize.png"><img alt="applyStyle" src="../_images/colorize.png" style="width: 24.0px; height: 24.0px;" /></a> - Apply the style in the drop down menu to the selected traces.</p>
 <p>style drop down menu - Determines what style to use for plotting the trace (lines, points, linespoints, etc.)</p>
-<p><a class="reference internal" href="../_images/games-solve.png"><img alt="magicWand" src="../_images/games-solve.png" style="width: 24.0px; height: 24.0px;" /></a> -</p>
+<p><a class="reference internal" href="../_images/games-solve.png"><img alt="magicWand" src="../_images/games-solve.png" style="width: 24.0px; height: 24.0px;" /></a> - Show only last dataset.</p>
 <p>Traces can be moved around in the dock using the PG-UP and PG-DOWN keys. Hitting CTRL-B on a trace will bold the text in that line. This has no effect on the trace, it is to make it easier to find a specific trace in a long list.</p>
 </div>
 <div class="section" id="fit">

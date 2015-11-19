@@ -30,10 +30,7 @@
   
 
   
-    <link rel="top" title="IonControl 0.8 documentation" href="../index.html"/>
-        <link rel="up" title="Code Documentation" href="codeDocs.html"/>
-        <link rel="next" title="trace" href="trace-doc.html"/>
-        <link rel="prev" title="scan" href="scan-doc.html"/> 
+    <link rel="top" title="IonControl 0.8 documentation" href="../index.html"/> 
 
   
   <script src="../_static/js/modernizr.min.js"></script>
@@ -82,42 +79,11 @@
           
             
             
-                <ul class="current">
+                <ul>
 <li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../FPGAhardware.html">Hardware</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../manual/experimentUi_manual.html">User Manual</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../manual/instrumentLoggerUi_manual.html">Instrument Logger User Manual</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="codeDocs.html">Code Documentation</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="AWG-doc.html">AWG</a></li>
-<li class="toctree-l2"><a class="reference internal" href="ProjectConfig-doc.html">ProjectConfig</a></li>
-<li class="toctree-l2"><a class="reference internal" href="dedicatedCounters-doc.html">dedicatedCounters</a></li>
-<li class="toctree-l2"><a class="reference internal" href="digitalLock-doc.html">digitalLock</a></li>
-<li class="toctree-l2"><a class="reference internal" href="externalParameter-doc.html">externalParameter</a></li>
-<li class="toctree-l2"><a class="reference internal" href="fit-doc.html">fit</a></li>
-<li class="toctree-l2"><a class="reference internal" href="gateSequence-doc.html">gateSequence</a></li>
-<li class="toctree-l2"><a class="reference internal" href="gui-doc.html">gui</a></li>
-<li class="toctree-l2"><a class="reference internal" href="logicAnalyzer-doc.html">logicAnalyzer</a></li>
-<li class="toctree-l2"><a class="reference internal" href="modules-doc.html">modules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="mylogging-doc.html">mylogging</a></li>
-<li class="toctree-l2"><a class="reference internal" href="persist-doc.html">persist</a></li>
-<li class="toctree-l2"><a class="reference internal" href="pppCompiler-doc.html">pppCompiler</a></li>
-<li class="toctree-l2"><a class="reference internal" href="pulseProgram-doc.html">pulseProgram</a></li>
-<li class="toctree-l2"><a class="reference internal" href="pulser-doc.html">pulser</a></li>
-<li class="toctree-l2"><a class="reference internal" href="scan-doc.html">scan</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="">scripting</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#module-scripting.Script">Script</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#module-scripting.ScriptHandler">ScriptHandler</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#module-scripting.ScriptingUi">ScriptingUi</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="trace-doc.html">trace</a></li>
-<li class="toctree-l2"><a class="reference internal" href="uiModules-doc.html">uiModules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="voltageControl-doc.html">voltageControl</a></li>
-<li class="toctree-l2"><a class="reference internal" href="DigitalLockUi-doc.html">DigitalLockUi</a></li>
-<li class="toctree-l2"><a class="reference internal" href="InstrumentLoggingUi-doc.html">InstrumentLoggingUi</a></li>
-<li class="toctree-l2"><a class="reference internal" href="ExperimentUi-doc.html">ExperimentUi</a></li>
-</ul>
-</li>
 </ul>
 
             
@@ -147,8 +113,6 @@
 <div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href="../index.html">Docs</a> &raquo;</li>
-      
-          <li><a href="codeDocs.html">Code Documentation</a> &raquo;</li>
       
     <li>scripting</li>
       <li class="wy-breadcrumbs-aside">
@@ -324,12 +288,26 @@ if plotName is not a plot</p>
 <dl class="method">
 <dt id="scripting.Script.Script.fit">
 <code class="descname">fit</code><span class="sig-paren">(</span><em>fitName</em>, <em>traceName</em><span class="sig-paren">)</span><a class="headerlink" href="#scripting.Script.Script.fit" title="Permalink to this definition">¶</a></dt>
-<dd><p>fit the data in &#8216;traceName&#8217; using &#8216;fitName&#8217;</p>
+<dd><p>Fit trace using specified fit.
+:param traceName: name of trace to fit
+:type traceName: str
+:param fitName: name of fit settings to use (from fit GUI)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="scripting.Script.Script.fitSignal">
 <code class="descname">fitSignal</code><a class="headerlink" href="#scripting.Script.Script.fitSignal" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="scripting.Script.Script.genericCallSignal">
+<code class="descname">genericCallSignal</code><a class="headerlink" href="#scripting.Script.Script.genericCallSignal" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -383,6 +361,12 @@ if plotName is not a plot</p>
 </tr>
 </tbody>
 </table>
+</dd></dl>
+
+<dl class="method">
+<dt id="scripting.Script.Script.getGlobal">
+<code class="descname">getGlobal</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#scripting.Script.Script.getGlobal" title="Permalink to this definition">¶</a></dt>
+<dd><p>get current value of global &#8216;name&#8217;</p>
 </dd></dl>
 
 <dl class="method">
@@ -514,7 +498,7 @@ if traceName is not a trace</p>
 
 <dl class="method">
 <dt id="scripting.Script.Script.scriptFunction">
-<code class="descname">scriptFunction</code><span class="sig-paren">(</span><em>waitForGui=True</em>, <em>waitForAnalysis=False</em>, <em>waitForData=False</em>, <em>waitForAllData=False</em>, <em>runIfStopped=False</em><span class="sig-paren">)</span><a class="headerlink" href="#scripting.Script.Script.scriptFunction" title="Permalink to this definition">¶</a></dt>
+<code class="descname">scriptFunction</code><span class="sig-paren">(</span><em>waitForGui=True</em>, <em>waitForAnalysis=False</em>, <em>waitForData=False</em>, <em>waitForAllData=False</em>, <em>waitForGenericResult=False</em>, <em>runIfStopped=False</em><span class="sig-paren">)</span><a class="headerlink" href="#scripting.Script.Script.scriptFunction" title="Permalink to this definition">¶</a></dt>
 <dd><p>Decorator for script functions.</p>
 <p>This decorator performs all the functions that are common to all the script functions. It checks
 whether the script has been stopped or paused, and emits the current location in the script. Once
@@ -658,11 +642,14 @@ if there is no scan by that name</td>
 
 <dl class="method">
 <dt id="scripting.Script.Script.startScan">
-<code class="descname">startScan</code><span class="sig-paren">(</span><em>wait=True</em><span class="sig-paren">)</span><a class="headerlink" href="#scripting.Script.Script.startScan" title="Permalink to this definition">¶</a></dt>
+<code class="descname">startScan</code><span class="sig-paren">(</span><em>globalOverrides=list()</em>, <em>wait=True</em><span class="sig-paren">)</span><a class="headerlink" href="#scripting.Script.Script.startScan" title="Permalink to this definition">¶</a></dt>
 <dd><p>Start the scan.</p>
-<p>This is equivalent to clicking &#8220;start&#8221; on the experiment GUI. If
-wait=True, the script will not continue until the scan is finished.</p>
-<p>wait: bool</p>
+<p>This is equivalent to clicking &#8220;start&#8221; on the experiment GUI.
+Optionally a list of (name, magnitude) tuples or (name, (value, unit)) tuples
+can be given that overrides global variables during the scan.
+If wait=True, the script will not continue until the scan is finished.</p>
+<p>globalOverrides: list((name, value)) or list((name, (value, unit)))
+wait: bool</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -726,6 +713,11 @@ wait=True, the script will not continue until the scan is finished.</p>
 emits signals, which are picked up by the ScriptHandler, which executes the necessary changes on the
 GUI.</p>
 <dl class="method">
+<dt id="scripting.ScriptHandler.ScriptHandler.getGlobal">
+<code class="descname">getGlobal</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#scripting.ScriptHandler.ScriptHandler.getGlobal" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
 <dt id="scripting.ScriptHandler.ScriptHandler.onAbortScan">
 <code class="descname">onAbortScan</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwds</em><span class="sig-paren">)</span><a class="headerlink" href="#scripting.ScriptHandler.ScriptHandler.onAbortScan" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -786,6 +778,16 @@ GUI.</p>
 <dl class="method">
 <dt id="scripting.ScriptHandler.ScriptHandler.onFit">
 <code class="descname">onFit</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwds</em><span class="sig-paren">)</span><a class="headerlink" href="#scripting.ScriptHandler.ScriptHandler.onFit" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="scripting.ScriptHandler.ScriptHandler.onGenericCall">
+<code class="descname">onGenericCall</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwds</em><span class="sig-paren">)</span><a class="headerlink" href="#scripting.ScriptHandler.ScriptHandler.onGenericCall" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="scripting.ScriptHandler.ScriptHandler.onGenericResult">
+<code class="descname">onGenericResult</code><span class="sig-paren">(</span><em>genericResult</em><span class="sig-paren">)</span><a class="headerlink" href="#scripting.ScriptHandler.ScriptHandler.onGenericResult" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -870,7 +872,9 @@ GUI.</p>
 <dl class="method">
 <dt id="scripting.ScriptHandler.ScriptHandler.onStartScan">
 <code class="descname">onStartScan</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwds</em><span class="sig-paren">)</span><a class="headerlink" href="#scripting.ScriptHandler.ScriptHandler.onStartScan" title="Permalink to this definition">¶</a></dt>
-<dd><p>Start the scan</p>
+<dd><p>Start the scan
+globalOverrrides is list of (name, magnitude) values or list of (name, (value, unit)) values
+that will override global variables during the scan</p>
 </dd></dl>
 
 <dl class="method">
@@ -1108,15 +1112,6 @@ specified action has been completed.</p>
            </div>
           </div>
           <footer>
-  
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-        <a href="trace-doc.html" class="btn btn-neutral float-right" title="trace" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
-      
-      
-        <a href="scan-doc.html" class="btn btn-neutral" title="scan" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
-      
-    </div>
   
 
   <hr/>

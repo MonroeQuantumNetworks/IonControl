@@ -29,20 +29,6 @@ FPGASettings
    :members:
    :undoc-members:
 
-GlobalVariables
----------------
-
-.. automodule:: gui.GlobalVariables
-   :members:
-   :undoc-members:
-
-GlobalVariableTableModel
-------------------------
-
-.. automodule:: gui.GlobalVariableTableModel
-   :members:
-   :undoc-members:
-
 MainWindowWidget
 ----------------
 
@@ -103,6 +89,13 @@ SettingsDialog
 --------------
 
 .. automodule:: gui.SettingsDialog
+   :members:
+   :undoc-members:
+
+StashButton
+-----------
+
+.. automodule:: gui.StashButton
    :members:
    :undoc-members:
 

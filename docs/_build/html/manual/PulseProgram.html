@@ -113,7 +113,6 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="instrumentLoggerUi_manual.html">Instrument Logger User Manual</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../code/codeDocs.html">Code Documentation</a></li>
 </ul>
 
             
@@ -212,7 +211,7 @@
 </li>
 <li><dl class="first docutils">
 <dt>Triggers</dt>
-<dd><p class="first last">Interface for defining triggers. There are trigger lines for updating the DDSs, updating the DACs, and resetting the PI Loops. When a <cite>trigger</cite> is declared in the pulse program, a line is added.</p>
+<dd><p class="first last">Interface for defining triggers. A trigger is an internal signal that goes high for one clock cycle (= 10 ns) before going low again. There are trigger lines for updating the DDSs, updating the DACs, and resetting the PI Loops. When a <cite>trigger</cite> is declared in the pulse program, a line is added.</p>
 </dd>
 </dl>
 </li>
@@ -251,7 +250,8 @@
 </li>
 <li><dl class="first docutils">
 <dt>timeTick:</dt>
-<dd></dd>
+<dd><p class="first last">On rising edge of counter, inserts the current time tick into the stream to the computer. It is saved in the raw data and results file, and can be used as an x-axis in plots. It is intended to give absolute hardware timestamps to experiments to check for things like 60 Hz noise.</p>
+</dd>
 </dl>
 </li>
 <li><dl class="first docutils">
@@ -620,7 +620,14 @@ until the next counter gate is closed for the same channel.</p>
 <dl class="function">
 <dt id="Builtins.pulse">
 <code class="descname">pulse</code><span class="sig-paren">(</span><em> [shutter=shutter] [, counter=counter] [, trigger=trigger] [, duration=time] [, end_shutter=shuttervar] </em><span class="sig-paren">)</span><a class="headerlink" href="#Builtins.pulse" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generate a pulse with shutter, trigger, counter and duration time. Equivalent to</p>
+<dd><p>Generate a pulse with shutter, trigger, counter and duration time. Equivalent to
+set_shutter(shutter)  # only if shutter is given
+set_trigger(trigger)  # only if trigger is given
+set_counter(counter)  # only if counter is given
+update(duration, pulse_mode=False if end_shutter is given else True) # if duration is given
+update()              # without duration
+set_shutter(end_shutter) # if end_shutter is given
+set_inv_shutter(shutter) # if NO end_shutter is given and shutter is given</p>
 </dd></dl>
 
 <dl class="function">

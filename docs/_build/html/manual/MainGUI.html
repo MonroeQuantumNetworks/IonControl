@@ -119,7 +119,6 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="instrumentLoggerUi_manual.html">Instrument Logger User Manual</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../code/codeDocs.html">Code Documentation</a></li>
 </ul>
 
             
@@ -228,9 +227,17 @@
 <p class="last">Note that this is only for taking a snapshot to return to. Ordinary saving of the GUI configuration happens automatically once a minute, and whenever the program is closed.</p>
 </dd>
 <dt>File &gt; Save Settings:</dt>
-<dd>This will save experiment configuration data to a file in the day&#8217;s data directory, in a human-readable format. This is useful for taking a snapshot of settings which can later be return to, or for moving settings between projects.</dd>
+<dd>This will save experiment configuration data to a file in the day&#8217;s data directory, in a human-readable (XML) format. This is useful for taking a snapshot of settings which can later be return to, or for moving settings between projects.</dd>
 <dt>File &gt; Load Settings:</dt>
-<dd>Load experiment configuration data from a file saved via File &gt; Save Settings.</dd>
+<dd><p class="first">Load specific experiment configuration data from a file saved via File &gt; Save Settings. Options:</p>
+<blockquote class="last">
+<div><ul class="simple">
+<li><strong>Add</strong>: add any missing elements, without modifying existing elements.</li>
+<li><strong>Update</strong>: add any missing elements, and modify existing elements based on the file. Do not delete anything.</li>
+<li><strong>Replace</strong>: completely replace existing settings with settings in file.</li>
+</ul>
+</div></blockquote>
+</dd>
 </dl>
 </div>
 <div class="section" id="docks">
@@ -282,12 +289,13 @@ Allows querying the history associated with a specific value. History is shown i
 <div class="section" id="global-variables-dock">
 <h3>Global Variables Dock<a class="headerlink" href="#global-variables-dock" title="Permalink to this headline">¶</a></h3>
 <div class="figure" id="id3">
-<a class="reference internal image-reference" href="../_images/GlobalVariables.png"><img alt="../_images/GlobalVariables.png" src="../_images/GlobalVariables.png" style="width: 322.0px; height: 398.0px;" /></a>
+<a class="reference internal image-reference" href="../_images/GlobalVariables.png"><img alt="../_images/GlobalVariables.png" src="../_images/GlobalVariables.png" style="width: 341.0px; height: 490.0px;" /></a>
 <p class="caption"><span class="caption-text">Global Variables Dock</span></p>
 </div>
-<p>Global variables can be referenced in many places throught the program, and allow different parts of the program to reference the same value. The global variables dock shows all current global variables. They can be re-arranged in the table using the PgUp and PgDn keys, or sorted by clicking the column header. If the global variables are arranged in a particular order, and then sorted, they can be restored to the previous order by right clicking in the table and selecting &#8220;restore custom order.&#8221;</p>
-<p>Global variables can also be made bold by selecting the variable and hitting CTRL-B. This has no effect on the program, it simply makes that global variable easier to find quickly in the list.</p>
-<p>To add a global variable, type a name in the text box and click <a class="reference internal" href="../_images/edit-add.png"><img alt="add" src="../_images/edit-add.png" style="width: 14.4px; height: 14.4px;" /></a>. The are no specific naming requirements, however, to avoid namespace collisions with the pulse program, I tend to end all global variables with the word &#8220;Global.&#8221; (If you have a pulse program variable &#8220;CoolingFreq&#8221; and a global variable by the same name, this will likely cause problems and at the very least confusion.)</p>
+<p>Global variables can be referenced in many places throught the program, and allow different parts of the program to reference the same value. The global variables dock shows all current global variables. To add a global variable, type a name in the &#8220;Name&#8221; box and hit enter or click <a class="reference internal" href="../_images/edit-add.png"><img alt="add" src="../_images/edit-add.png" style="width: 14.4px; height: 14.4px;" /></a>. The are no specific naming requirements, however, to avoid namespace collisions with the pulse program, I tend to end all global variables with the word &#8220;Global.&#8221; (If you have a pulse program variable &#8220;CoolingFreq&#8221; and a global variable by the same name, this will likely cause problems and at the very least confusion.)</p>
+<p>Global variables can be categorized and displayed in a tree structure to make it easier to keep them organized. This has no effect on the global variable&#8217;s behavior in the program, it is purely a visual tool. To categorize a global variable, right click on the global and select from the &#8220;Categorize&#8221; menu. You can also add a global to a category on creation by using the &#8220;Category&#8221; text field/drop down menu.</p>
+<p>Global variables can be made bold by selecting the variable and hitting CTRL-B, or have a different background color by right clicking and selecting &#8220;background color&#8221;. This has no effect on the program, it simply makes that global variable easier to find quickly in the list.</p>
+<p>The <a class="reference internal" href="../_images/gray-grid.png"><img alt="grid" src="../_images/gray-grid.png" style="width: 20.4px; height: 20.4px;" /></a> button controls whether a grid is shown, and the <a class="reference internal" href="../_images/condense.png"><img alt="condense" src="../_images/condense.png" style="width: 15.2px; height: 21.6px;" /></a> button controls how densely the global variables are displayed.</p>
 </div>
 <div class="section" id="console-docks">
 <h3>Console Docks<a class="headerlink" href="#console-docks" title="Permalink to this headline">¶</a></h3>
