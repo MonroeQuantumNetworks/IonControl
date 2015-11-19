@@ -47,7 +47,7 @@ The pulse program window consists of the following docks:
       The last 16 bits are internal control lines for turning on and off the PI Loops, and turning on and off the DAC scans.
 
    - Triggers
-      Interface for defining triggers. There are trigger lines for updating the DDSs, updating the DACs, and resetting the PI Loops. When a `trigger` is declared in the pulse program, a line is added.
+      Interface for defining triggers. A trigger is an internal signal that goes high for one clock cycle (= 10 ns) before going low again. There are trigger lines for updating the DDSs, updating the DACs, and resetting the PI Loops. When a `trigger` is declared in the pulse program, a line is added.
 
    - Counters
       Interface for defining specific counters to gate, or other types of measurements done by the FPGA. The counters interface has the following columns:
@@ -67,7 +67,7 @@ The pulse program window consists of the following docks:
             .. important:: This is not to be confused with the PI<n> enable lines in the shutters interface! Those lines are for turning PI loops on and off, while these lines are for monitoring the output of PI loops.
 
          - timeTick:
-            .. TODO: what does this do?
+            On rising edge of counter, inserts the current time tick into the stream to the computer. It is saved in the raw data and results file, and can be used as an x-axis in plots. It is intended to give absolute hardware timestamps to experiments to check for things like 60 Hz noise.
 
          - id:
             Assigning a counter line an id allows using the same physical counter in multiple roles. For example, suppose you want to monitor fluorescence during cooling and during detection, and you have a single PMT connected to channel 0. You would have two lines for creating the counters, `counter CoolingCounters` and `counter DetectionCounters`. Both would have *channel 0* selected, but one with *id 0* and one with *id 1*. The two counters can then be treated as if they were different physical counters.

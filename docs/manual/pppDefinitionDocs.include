@@ -79,8 +79,6 @@
 
    An address is just a parameter which is used specifically as a RAM address.
 
-   .. TODO: Why do we have this? Is it necessary?
-
 .. py:data:: exitcode
 
    Exitcodes are transmitted to the computer when the pulse program stops executing. Exitcodes are 64bit numbers where the most significant bits are 0xfffe.

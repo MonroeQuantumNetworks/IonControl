@@ -59,7 +59,18 @@ for name in os.listdir(IonControlDir):
 
 codeDocsName='codeDocs.rst'
 with open(codeDocsName, 'w') as f:
-    f.write("Code Documentation\n==================\n\nContents:\n\n.. toctree::\n   :maxdepth: 2\n\n")
+    f.write("""
+Code Documentation
+==================
+
+   Contents:
+
+   .. toctree::
+      :maxdepth: 2
+
+The code is written in Python 2.7. The GUI uses the PyQt4 library, which is a Python port of the Qt framework. Heavy use is made of the Qt model/view architecture, and Qt signals and slots. The plotting is all done using the pyqtgraph library, which is especially good at rapid plot updates.
+
+""")
     for name in modulesToDocument:
         docName = name + '-doc'
         f.write('   '+docName+'\n')
