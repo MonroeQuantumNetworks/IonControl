@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <PulserList>
-<Pulser configurationId="0x7001">
-    <Description>Duke breakout board v2, UMD pulser configuration</Description>
+<Pulser configurationId="0x7002">
+    <Description>Duke breakout board v2, UMD pulser configuration, 10 DDS AD9912 channels</Description>
     <ExtendedWireIns>
         <Parameter address="0x20" default="0" bitmask="0xffffffffffffffff" categories="PI Loop Parameters, Channel 0" shift="0" name="Ch 0 p Coefficient" encoding="None" enabled="True"/>
         <Parameter address="0x21" default="0" bitmask="0xffffffffffffffff" categories="PI Loop Parameters, Channel 0" shift="0" name="Ch 0 i Coefficient" encoding="None" enabled="True"/>
@@ -83,6 +83,8 @@
         <Parameter address="0x40" default="0xff" bitmask="0xff" categories="PI Loop Regulator Inputs, DDS Regulator Inputs" shift="40" name="DDS5 regulator input" encoding="None" enabled="True" />
         <Parameter address="0x40" default="0xff" bitmask="0xff" categories="PI Loop Regulator Inputs, DDS Regulator Inputs" shift="48" name="DDS6 regulator input" encoding="None" enabled="True" />
         <Parameter address="0x40" default="0xff" bitmask="0xff" categories="PI Loop Regulator Inputs, DDS Regulator Inputs" shift="56" name="DDS7 regulator input" encoding="None" enabled="True" />
+        <Parameter address="0x42" default="0xff" bitmask="0xff" categories="PI Loop Regulator Inputs, DDS Regulator Inputs" shift="0" name="DDS8 regulator input" encoding="None" enabled="True" />
+        <Parameter address="0x42" default="0xff" bitmask="0xff" categories="PI Loop Regulator Inputs, DDS Regulator Inputs" shift="8" name="DDS9 regulator input" encoding="None" enabled="True" />
 
         <Parameter address="0x41" default="0xff" bitmask="0xff" categories="PI Loop Regulator Inputs, DAC Regulator Inputs" shift="0" name="DAC0 regulator input" encoding="None" enabled="True" />
         <Parameter address="0x41" default="0xff" bitmask="0xff" categories="PI Loop Regulator Inputs, DAC Regulator Inputs" shift="8" name="DAC1 regulator input" encoding="None" enabled="True" />
@@ -216,22 +218,24 @@
         <ShutterBit bitNo="29" name="DDS 5 enable"/>
         <ShutterBit bitNo="30" name="DDS 6 enable"/>
         <ShutterBit bitNo="31" name="DDS 7 enable"/>
-        <ShutterBit bitNo="32" name="PI 0 enable"/>
-        <ShutterBit bitNo="33" name="PI 1 enable"/>
-        <ShutterBit bitNo="34" name="PI 2 enable"/>
-        <ShutterBit bitNo="35" name="PI 3 enable"/>
-        <ShutterBit bitNo="36" name="PI 4 enable"/>
-        <ShutterBit bitNo="37" name="PI 5 enable"/>
-        <ShutterBit bitNo="38" name="PI 6 enable"/>
-        <ShutterBit bitNo="39" name="PI 7 enable"/>
-        <ShutterBit bitNo="40" name="Scan 0 enable"/>
-        <ShutterBit bitNo="41" name="Scan 1 enable"/>
-        <ShutterBit bitNo="42" name="Scan 2 enable"/>
-        <ShutterBit bitNo="43" name="Scan 3 enable"/>
-        <ShutterBit bitNo="44" name="Scan 4 enable"/>
-        <ShutterBit bitNo="45" name="Scan 5 enable"/>
-        <ShutterBit bitNo="46" name="Scan 6 enable"/>
-        <ShutterBit bitNo="47" name="Scan 7 enable"/>
+        <ShutterBit bitNo="32" name="DDS 8 enable"/>
+        <ShutterBit bitNo="33" name="DDS 9 enable"/>
+        <ShutterBit bitNo="40" name="PI 0 enable"/>
+        <ShutterBit bitNo="41" name="PI 1 enable"/>
+        <ShutterBit bitNo="42" name="PI 2 enable"/>
+        <ShutterBit bitNo="43" name="PI 3 enable"/>
+        <ShutterBit bitNo="44" name="PI 4 enable"/>
+        <ShutterBit bitNo="45" name="PI 5 enable"/>
+        <ShutterBit bitNo="46" name="PI 6 enable"/>
+        <ShutterBit bitNo="47" name="PI 7 enable"/>
+        <ShutterBit bitNo="48" name="Scan 0 enable"/>
+        <ShutterBit bitNo="49" name="Scan 1 enable"/>
+        <ShutterBit bitNo="50" name="Scan 2 enable"/>
+        <ShutterBit bitNo="51" name="Scan 3 enable"/>
+        <ShutterBit bitNo="52" name="Scan 4 enable"/>
+        <ShutterBit bitNo="53" name="Scan 5 enable"/>
+        <ShutterBit bitNo="54" name="Scan 6 enable"/>
+        <ShutterBit bitNo="55" name="Scan 7 enable"/>
     </ShutterBits>
     <TriggerBits>
         <TriggerBit bitNo="0" name="DDS update 0"/>
@@ -242,15 +246,18 @@
         <TriggerBit bitNo="5" name="DDS update 5"/>
         <TriggerBit bitNo="6" name="DDS update 6"/>
         <TriggerBit bitNo="7" name="DDS update 7"/>
-        <TriggerBit bitNo="8" name="PI 0 reset"/>
-        <TriggerBit bitNo="9" name="PI 1 reset"/>
-        <TriggerBit bitNo="10" name="PI 2 reset"/>
-        <TriggerBit bitNo="11" name="PI 3 reset"/>
-        <TriggerBit bitNo="12" name="PI 4 reset"/>
-        <TriggerBit bitNo="13" name="PI 5 reset"/>
-        <TriggerBit bitNo="14" name="PI 6 reset"/>
-        <TriggerBit bitNo="15" name="PI 7 reset"/>
-        <TriggerBit bitNo="16" name="DAC update"/>
+        <TriggerBit bitNo="8" name="DDS update 8"/>
+        <TriggerBit bitNo="9" name="DDS update 9"/>
+
+        <TriggerBit bitNo="16" name="PI 0 reset"/>
+        <TriggerBit bitNo="17" name="PI 1 reset"/>
+        <TriggerBit bitNo="18" name="PI 2 reset"/>
+        <TriggerBit bitNo="19" name="PI 3 reset"/>
+        <TriggerBit bitNo="20" name="PI 4 reset"/>
+        <TriggerBit bitNo="21" name="PI 5 reset"/>
+        <TriggerBit bitNo="22" name="PI 6 reset"/>
+        <TriggerBit bitNo="23" name="PI 7 reset"/>
+        <TriggerBit bitNo="24" name="DAC update"/>
     </TriggerBits>
     <DDSChannels>
         <DDSChannel channel="0" chip="AD9912" shutter="24"/>
@@ -261,6 +268,8 @@
         <DDSChannel channel="5" chip="AD9912" shutter="29"/>
         <DDSChannel channel="6" chip="AD9912" shutter="30"/>
         <DDSChannel channel="7" chip="AD9912" shutter="31"/>
+        <DDSChannel channel="8" chip="AD9912" shutter="32"/>
+        <DDSChannel channel="9" chip="AD9912" shutter="33"/>
     </DDSChannels>
     <CounterBits>
         <CounterBit bitNo="0" name="Count 0"/>
