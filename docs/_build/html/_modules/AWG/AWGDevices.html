@@ -165,8 +165,8 @@
     <span class="n">enabled</span> <span class="o">=</span> <span class="bp">False</span>
     
     <span class="c"># parent should be the AWGUi, which we read whether or not to modify the internal scan as well</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">name</span><span class="p">,</span><span class="n">config</span><span class="p">,</span><span class="n">waveform</span><span class="p">,</span><span class="n">parent</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
-        <span class="n">ExternalParameterBase</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">name</span><span class="p">,</span><span class="n">config</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">globalDict</span><span class="p">,</span> <span class="n">waveform</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="n">ExternalParameterBase</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">globalDict</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">setWaveform</span><span class="p">(</span><span class="n">waveform</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">parent</span> <span class="o">=</span> <span class="n">parent</span>
@@ -178,9 +178,7 @@
         <span class="n">vardict</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="s">&quot;&quot;</span> <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="s">&#39;value&#39;</span><span class="p">],</span> <span class="n">Magnitude</span><span class="p">))</span> <span class="ow">or</span> <span class="n">v</span><span class="p">[</span><span class="s">&#39;value&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">dimensionless</span><span class="p">()</span> <span class="k">else</span> \
                       <span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="s">&#39;value&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot; &quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_waveform</span><span class="o">.</span><span class="n">vars</span><span class="o">.</span><span class="n">iteritems</span><span class="p">()}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_outputChannels</span> <span class="o">=</span> <span class="n">vardict</span>
-        <span class="k">for</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="ow">in</span> <span class="n">vardict</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_waveform</span><span class="o">.</span><span class="n">vars</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="s">&#39;value&#39;</span><span class="p">]</span>
-    </div>
+</div>
 <div class="viewcode-block" id="AWGDevice.fullName"><a class="viewcode-back" href="../../code/AWG-doc.html#AWG.AWGDevices.AWGDevice.fullName">[docs]</a>    <span class="k">def</span> <span class="nf">fullName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">channel</span><span class="p">):</span>
         <span class="k">return</span> <span class="s">&quot;{0}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">channel</span><span class="p">)</span>
     </div>
@@ -188,33 +186,13 @@
         <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">setScanParam</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">scanParam</span><span class="p">))</span>
 </div>
 <div class="viewcode-block" id="AWGDevice.setDefaults"><a class="viewcode-back" href="../../code/AWG-doc.html#AWG.AWGDevices.AWGDevice.setDefaults">[docs]</a>    <span class="k">def</span> <span class="nf">setDefaults</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">ExternalParameterBase</span><span class="o">.</span><span class="n">setDefaults</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s">&#39;stepsize&#39;</span> <span class="p">,</span> <span class="n">magnitude</span><span class="o">.</span><span class="n">mg</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="s">&#39;&#39;</span><span class="p">))</span>
-                </div>
-    <span class="k">def</span> <span class="nf">_setValue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">continuous</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">initializeChannelsToExternals</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="AWGDevice.setValue"><a class="viewcode-back" href="../../code/AWG-doc.html#AWG.AWGDevices.AWGDevice.setValue">[docs]</a>    <span class="k">def</span> <span class="nf">setValue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">continuous</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_waveform</span><span class="o">.</span><span class="n">vars</span><span class="p">[</span><span class="n">channel</span><span class="p">][</span><span class="s">&#39;value&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">program</span><span class="p">(</span><span class="n">continuous</span><span class="p">)</span>
-        
-<div class="viewcode-block" id="AWGDevice.setValue"><a class="viewcode-back" href="../../code/AWG-doc.html#AWG.AWGDevices.AWGDevice.setValue">[docs]</a>    <span class="k">def</span> <span class="nf">setValue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">continuous</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        This function returns True if the value is reached. Otherwise</span>
-<span class="sd">        it should return False. The user should call repeatedly until the intended value is reached</span>
-<span class="sd">        and True is returned.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_setValue</span><span class="p">(</span><span class="n">channel</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">continuous</span><span class="p">)</span>
-        
-        <span class="c">#self.setWaveform(self._waveform)</span>
-        
-        <span class="k">return</span> <span class="bp">True</span>
-        </div>
-<div class="viewcode-block" id="AWGDevice.paramDef"><a class="viewcode-back" href="../../code/AWG-doc.html#AWG.AWGDevices.AWGDevice.paramDef">[docs]</a>    <span class="k">def</span> <span class="nf">paramDef</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        return the parameter definition used by pyqtgraph parametertree to show the gui</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">superior</span> <span class="o">=</span> <span class="n">ExternalParameterBase</span><span class="o">.</span><span class="n">paramDef</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-        <span class="n">superior</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s">&#39;name&#39;</span><span class="p">:</span> <span class="s">&#39;stepsize&#39;</span><span class="p">,</span> <span class="s">&#39;type&#39;</span><span class="p">:</span> <span class="s">&#39;magnitude&#39;</span><span class="p">,</span> <span class="s">&#39;value&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">stepsize</span><span class="p">})</span>
-        <span class="k">return</span> <span class="n">superior</span>
-        </div>
+        <span class="k">return</span> <span class="n">v</span>
+</div>
 <div class="viewcode-block" id="AWGDevice.isEnabled"><a class="viewcode-back" href="../../code/AWG-doc.html#AWG.AWGDevices.AWGDevice.isEnabled">[docs]</a>    <span class="k">def</span> <span class="nf">isEnabled</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">enabled</span>
     </div>

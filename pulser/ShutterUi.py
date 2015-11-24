@@ -27,6 +27,8 @@ class ShutterUi(ShutterForm, ShutterBase):
         self.configname = 'ShutterUi.'+self.outputname
         self.dataContainer = dataContainer
         self.size = size
+        self.bitsLookup = sorted(dataContainer[0].defaultDict.keys())
+        self.size = max(size, self.bitsLookup[-1] + 1)
         
     def setupUi(self,parent,dynupdate=False):
         logger = logging.getLogger(__name__)

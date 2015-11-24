@@ -26,5 +26,5 @@ Added columns can be removed by right clicking in the table and selecting "remov
 
 .. warning:: The database stores all the meta-data associated with a scan, but it does NOT stores the data itself. That is stored in the text file in the data directory. The database only stores the path to that file. An entry is created in the measurement log whenever a scan is started, whether or not auto-save is on. If you choose to disable auto-save, and subsequently close the program without saving the scan, you will lose the data. The entry in the measurement log will still be there, but you will not be able to plot the data via the checkbox. Similarly, if you move (or delete) the saved file, the measurement log checkbox will not work unless you manually alter the entry in the database.
 
-.. TODO: what are studies?
-.. TODO: what does re-analyze data do?
+.. TODO: Studies -- not implemented
+.. TODO: Re-analyzed -- not implemented

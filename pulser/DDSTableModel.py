@@ -46,9 +46,7 @@ class DDSTableModel(QtCore.QAbstractTableModel):
                                  }
         self.globalDict = globalDict
 
-    def onShutterChanged(self, shutterBitmask ):
-        for i, channel in enumerate( self.ddsChannels ):
-            channel.enabled = bool(shutterBitmask & (1<<(i+24)))
+    def onShutterChanged(self):
         self.dataChanged.emit( self.createIndex(0,0), self.createIndex(0,self.rowCount()) )
 
     def setEnabled(self, index, value):

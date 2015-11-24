@@ -135,3 +135,9 @@
 
 .. |filter| image:: ../../ui/icons/view-filter.png
    :scale: 50 %
+
+.. |grid| image:: ../../ui/icons/gray-grid.png
+   :scale: 40 %
+
+.. |condense| image:: ../../ui/icons/condense.png
+   :scale: 10 %

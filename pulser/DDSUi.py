@@ -36,12 +36,16 @@ class DDSChannelSettings(object):
         self.enabled = False
         self.name = ""
         self.squareEnabled = False
+        self.shutter = None
+        self.channel = None
         
     def __setstate__(self, state):
         self.__dict__ = state
         self.__dict__.setdefault('name','')
         self.__dict__.setdefault('squareEnabled',False)
-        
+        self.__dict__.setdefault('shutter', None)
+        self.__dict__.setdefault('channel', None)
+
     def evaluateFrequency(self, globalDict ):
         if self.frequencyText:
             oldfreq = self.frequency
@@ -68,7 +72,8 @@ class DDSUi(DDSForm, DDSBase):
     def __init__(self,config,pulser,globalDict,parent=None):
         DDSBase.__init__(self,parent)
         DDSForm.__init__(self)
-        self.numChannels = 8
+        self.channelInfo = sorted(pulser.pulserConfiguration().ddsChannels.values(), key=lambda x: x.channel)
+        self.numChannels = len(self.channelInfo)
         self.config = config
         self.ad9912 = Ad9912.Ad9912(pulser)
         self.ddsChannels = self.config.get('DDSUi.ddsChannels', [DDSChannelSettings() for _ in range(self.numChannels) ] )
@@ -77,7 +82,10 @@ class DDSUi(DDSForm, DDSBase):
         self.persistence = DBPersist()
         self.globalDict = globalDict
         self.pulser = pulser
-        
+        for index, channelinfo in enumerate(self.channelInfo):
+            self.ddsChannels[index].channel = channelinfo.channel
+            self.ddsChannels[index].shutter = channelinfo.shutter
+
     def setupUi(self,parent):
         DDSForm.setupUi(self,parent)
         self.ddsTableModel = DDSTableModel(self.ddsChannels, self.globalDict)
@@ -101,11 +109,17 @@ class DDSUi(DDSForm, DDSBase):
         self.ddsTableModel.amplitudeChanged.connect( self.onAmplitude )
         self.ddsTableModel.enableChanged.connect( self.onEnableChanged )
         self.ddsTableModel.squareChanged.connect( self.onSquareChanged )
-        self.pulser.shutterChanged.connect( self.ddsTableModel.onShutterChanged )
+        self.pulser.shutterChanged.connect( self.onShutterChanged )
         restoreGuiState( self, self.config.get('DDSUi.guiState') )
-            
+
+    def onShutterChanged(self, shutterBitmask):
+        for channel in self.ddsChannels:
+            channel.enabled = bool(shutterBitmask & (1<<(channel.shutter)))
+        self.ddsTableModel.onShutterChanged()
+
     def onEnableChanged(self, index, value):
-        self.pulser.setShutterBit( 24+index, value )
+        channelObj = self.ddsChannels[index]
+        self.pulser.setShutterBit(channelObj.shutter, value)
             
     def setDisabled(self, disabled):
         pass
@@ -114,21 +128,29 @@ class DDSUi(DDSForm, DDSBase):
         self.autoApply = self.autoApplyBox.isChecked()
 
     def onFrequency(self, channel, value):
-        self.ad9912.setFrequency(channel, value )
+        channelObj = self.ddsChannels[channel]
+        channel = channelObj.channel
+        self.ad9912.setFrequency(channel, value)
         if self.autoApply: self.onApply()
-        self.decimation[(0,channel)].decimate( time.time(), value, partial(self.persistCallback, "Frequency:{0}".format(self.ddsChannels[channel].name if self.ddsChannels[channel].name else channel)) )
+        self.decimation[(0, channel)].decimate(time.time(), value, partial(self.persistCallback, "Frequency:{0}".format(channelObj.name if channelObj.name else channel)))
         
     def onPhase(self, channel, value):
+        channelObj = self.ddsChannels[channel]
+        channel = channelObj.channel
         self.ad9912.setPhase(channel, value)
         if self.autoApply: self.onApply()
-        self.decimation[(1,channel)].decimate( time.time(), value, partial(self.persistCallback, "Phase:{0}".format(self.ddsChannels[channel].name if self.ddsChannels[channel].name else channel)) )
+        self.decimation[(1, channel)].decimate(time.time(), value, partial(self.persistCallback, "Phase:{0}".format(channelObj.name if channelObj.name else channel)))
 
     def onAmplitude(self, channel, value):
+        channelObj = self.ddsChannels[channel]
+        channel = channelObj.channel
         self.ad9912.setAmplitude(channel, value)
         if self.autoApply: self.onApply()
-        self.decimation[(2,channel)].decimate( time.time(), value, partial(self.persistCallback, "Amplitude:{0}".format(self.ddsChannels[channel].name if self.ddsChannels[channel].name else channel)) )
+        self.decimation[(2, channel)].decimate(time.time(), value, partial(self.persistCallback, "Amplitude:{0}".format(channelObj.name if channelObj.name else channel)))
  
     def onSquareChanged(self, channel, enable):
+        channelObj = self.ddsChannels[channel]
+        channel = channelObj.channel
         self.ad9912.setSquareEnabled(channel, enable)
  
     def persistCallback(self, source, data):
@@ -139,11 +161,11 @@ class DDSUi(DDSForm, DDSBase):
         self.persistence.persist(self.persistSpace, source, time, value, minval, maxval, unit)
    
     def onWriteAll(self):
-        for channel, settings in enumerate( self.ddsChannels ):
-            self.ad9912.setFrequency(channel, settings.frequency)
-            self.ad9912.setPhase(channel, settings.phase)
-            self.ad9912.setAmplitude(channel, settings.amplitude)
-            self.ad9912.setSquareEnabled(channel, settings.squareEnabled)
+        for settings in self.ddsChannels:
+            self.ad9912.setFrequency(settings.channel, settings.frequency)
+            self.ad9912.setPhase(settings.channel, settings.phase)
+            self.ad9912.setAmplitude(settings.channel, settings.amplitude)
+            self.ad9912.setSquareEnabled(settings.channel, settings.squareEnabled)
         if self.autoApply: 
             self.onApply()
         
@@ -167,13 +189,13 @@ class DDSUi(DDSForm, DDSBase):
         self.ad9912.reset(mask)
         
     def evaluate(self, name):
-        for channel, setting in enumerate(self.ddsChannels):
+        for setting in enumerate(self.ddsChannels):
             if setting.evaluateFrequency( self.globalDict ):
-                self.ad9912.setFrequency(channel, setting.frequency)
+                self.ad9912.setFrequency(setting.channel, setting.frequency)
             if setting.evaluatePhase( self.globalDict ):
-                self.ad9912.setPhase(channel, setting.phase)
+                self.ad9912.setPhase(setting.channel, setting.phase)
             if setting.evaluateAmplitude( self.globalDict ):
-                self.ad9912.setAmplitude(channel, setting.amplitude)
+                self.ad9912.setAmplitude(setting.channel, setting.amplitude)
         if self.autoApply: 
             self.onApply()
         self.tableView.viewport().repaint() 

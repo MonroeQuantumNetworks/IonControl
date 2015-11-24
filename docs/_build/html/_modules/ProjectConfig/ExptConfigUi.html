@@ -505,6 +505,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">pulser</span><span class="o">.</span><span class="n">openBySerial</span><span class="p">(</span><span class="n">FPGA</span><span class="o">.</span><span class="n">serial</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">pulser</span><span class="o">.</span><span class="n">uploadBitfile</span><span class="p">(</span><span class="n">bitFile</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pulser</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Uploaded file {0} to {1} (model {2})&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">bitFile</span><span class="p">,</span> <span class="n">FPGA_name</span><span class="p">,</span> <span class="n">FPGA</span><span class="o">.</span><span class="n">modelName</span><span class="p">))</span>
 </div>
     <span class="nd">@QtCore.pyqtSlot</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>

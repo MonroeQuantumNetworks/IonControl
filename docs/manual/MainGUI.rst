@@ -88,10 +88,14 @@ File > Save GUI Configuration:
    Note that this is only for taking a snapshot to return to. Ordinary saving of the GUI configuration happens automatically once a minute, and whenever the program is closed.
 
 File > Save Settings:
-   This will save experiment configuration data to a file in the day's data directory, in a human-readable format. This is useful for taking a snapshot of settings which can later be return to, or for moving settings between projects.
+   This will save experiment configuration data to a file in the day's data directory, in a human-readable (XML) format. This is useful for taking a snapshot of settings which can later be return to, or for moving settings between projects.
 
 File > Load Settings:
-   Load experiment configuration data from a file saved via File > Save Settings.
+   Load specific experiment configuration data from a file saved via File > Save Settings. Options:
+
+      - **Add**: add any missing elements, without modifying existing elements.
+      - **Update**: add any missing elements, and modify existing elements based on the file. Do not delete anything.
+      - **Replace**: completely replace existing settings with settings in file.
 
 Docks
 -----
@@ -150,11 +154,13 @@ Global Variables Dock
 
    Global Variables Dock
 
-Global variables can be referenced in many places throught the program, and allow different parts of the program to reference the same value. The global variables dock shows all current global variables. They can be re-arranged in the table using the PgUp and PgDn keys, or sorted by clicking the column header. If the global variables are arranged in a particular order, and then sorted, they can be restored to the previous order by right clicking in the table and selecting "restore custom order."
+Global variables can be referenced in many places throught the program, and allow different parts of the program to reference the same value. The global variables dock shows all current global variables. To add a global variable, type a name in the "Name" box and hit enter or click |add|. The are no specific naming requirements, however, to avoid namespace collisions with the pulse program, I tend to end all global variables with the word "Global." (If you have a pulse program variable "CoolingFreq" and a global variable by the same name, this will likely cause problems and at the very least confusion.)
 
-Global variables can also be made bold by selecting the variable and hitting CTRL-B. This has no effect on the program, it simply makes that global variable easier to find quickly in the list.
+Global variables can be categorized and displayed in a tree structure to make it easier to keep them organized. This has no effect on the global variable's behavior in the program, it is purely a visual tool. To categorize a global variable, right click on the global and select from the "Categorize" menu. You can also add a global to a category on creation by using the "Category" text field/drop down menu.
 
-To add a global variable, type a name in the text box and click |add|. The are no specific naming requirements, however, to avoid namespace collisions with the pulse program, I tend to end all global variables with the word "Global." (If you have a pulse program variable "CoolingFreq" and a global variable by the same name, this will likely cause problems and at the very least confusion.)
+Global variables can be made bold by selecting the variable and hitting CTRL-B, or have a different background color by right clicking and selecting "background color". This has no effect on the program, it simply makes that global variable easier to find quickly in the list.
+
+The |grid| button controls whether a grid is shown, and the |condense| button controls how densely the global variables are displayed.
 
 Console Docks
 ~~~~~~~~~~~~~

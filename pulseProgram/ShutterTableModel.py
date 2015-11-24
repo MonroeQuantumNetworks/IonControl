@@ -20,7 +20,9 @@ class ShutterTableModel(QtCore.QAbstractTableModel):
         self.channelNames, self.channelSignal = channelNameData
         self.channelSignal.dataChanged.connect( self.onHeaderChanged )
         self.size = size
-        
+        self.bitsLookup = sorted(channelNameData[0].defaultDict.keys())
+        self.size = max(size, self.bitsLookup[-1] + 1)
+
     def setShutterdict(self, shutterdict):
         self.beginResetModel()
         self.shutterdict = shutterdict

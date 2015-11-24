@@ -30,10 +30,7 @@
   
 
   
-    <link rel="top" title="IonControl 0.8 documentation" href="../index.html"/>
-        <link rel="up" title="Code Documentation" href="codeDocs.html"/>
-        <link rel="next" title="ProjectConfig" href="ProjectConfig-doc.html"/>
-        <link rel="prev" title="Code Documentation" href="codeDocs.html"/> 
+    <link rel="top" title="IonControl 0.8 documentation" href="../index.html"/> 
 
   
   <script src="../_static/js/modernizr.min.js"></script>
@@ -82,42 +79,12 @@
           
             
             
-                <ul class="current">
+                <ul>
 <li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../FPGAhardware.html">Hardware</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../manual/experimentUi_manual.html">User Manual</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../manual/instrumentLoggerUi_manual.html">Instrument Logger User Manual</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="codeDocs.html">Code Documentation</a><ul class="current">
-<li class="toctree-l2 current"><a class="current reference internal" href="">AWG</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#awgdevices">AWGDevices</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#module-AWG.AWGTableModel">AWGTableModel</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#module-AWG.AWGUi">AWGUi</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="ProjectConfig-doc.html">ProjectConfig</a></li>
-<li class="toctree-l2"><a class="reference internal" href="dedicatedCounters-doc.html">dedicatedCounters</a></li>
-<li class="toctree-l2"><a class="reference internal" href="digitalLock-doc.html">digitalLock</a></li>
-<li class="toctree-l2"><a class="reference internal" href="externalParameter-doc.html">externalParameter</a></li>
-<li class="toctree-l2"><a class="reference internal" href="fit-doc.html">fit</a></li>
-<li class="toctree-l2"><a class="reference internal" href="gateSequence-doc.html">gateSequence</a></li>
-<li class="toctree-l2"><a class="reference internal" href="gui-doc.html">gui</a></li>
-<li class="toctree-l2"><a class="reference internal" href="logicAnalyzer-doc.html">logicAnalyzer</a></li>
-<li class="toctree-l2"><a class="reference internal" href="modules-doc.html">modules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="mylogging-doc.html">mylogging</a></li>
-<li class="toctree-l2"><a class="reference internal" href="persist-doc.html">persist</a></li>
-<li class="toctree-l2"><a class="reference internal" href="pppCompiler-doc.html">pppCompiler</a></li>
-<li class="toctree-l2"><a class="reference internal" href="pulseProgram-doc.html">pulseProgram</a></li>
-<li class="toctree-l2"><a class="reference internal" href="pulser-doc.html">pulser</a></li>
-<li class="toctree-l2"><a class="reference internal" href="scan-doc.html">scan</a></li>
-<li class="toctree-l2"><a class="reference internal" href="scripting-doc.html">scripting</a></li>
-<li class="toctree-l2"><a class="reference internal" href="trace-doc.html">trace</a></li>
-<li class="toctree-l2"><a class="reference internal" href="uiModules-doc.html">uiModules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="voltageControl-doc.html">voltageControl</a></li>
-<li class="toctree-l2"><a class="reference internal" href="DigitalLockUi-doc.html">DigitalLockUi</a></li>
-<li class="toctree-l2"><a class="reference internal" href="InstrumentLoggingUi-doc.html">InstrumentLoggingUi</a></li>
-<li class="toctree-l2"><a class="reference internal" href="ExperimentUi-doc.html">ExperimentUi</a></li>
-</ul>
-</li>
+<li class="toctree-l1"><a class="reference internal" href="codeDocs.html">Code Documentation</a></li>
 </ul>
 
             
@@ -148,8 +115,6 @@
   <ul class="wy-breadcrumbs">
     <li><a href="../index.html">Docs</a> &raquo;</li>
       
-          <li><a href="codeDocs.html">Code Documentation</a> &raquo;</li>
-      
     <li>AWG</li>
       <li class="wy-breadcrumbs-aside">
         
@@ -174,7 +139,7 @@
 it must inherit AWGDevice and implement open, program, and close.</p>
 <dl class="class">
 <dt id="AWG.AWGDevices.AWGDevice">
-<em class="property">class </em><code class="descname">AWGDevice</code><span class="sig-paren">(</span><em>name</em>, <em>config</em>, <em>waveform</em>, <em>parent=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/AWG/AWGDevices.html#AWGDevice"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AWG.AWGDevices.AWGDevice" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descname">AWGDevice</code><span class="sig-paren">(</span><em>name</em>, <em>config</em>, <em>globalDict</em>, <em>waveform</em>, <em>parent=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/AWG/AWGDevices.html#AWGDevice"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AWG.AWGDevices.AWGDevice" title="Permalink to this definition">¶</a></dt>
 <dd><p>The AWG does not fit into the external parameter framework,
 but given a waveform, the variables can act as external
 parameters. This class wraps a waveform into an external
@@ -210,12 +175,6 @@ parameter-based device.</p>
 <dd></dd></dl>
 
 <dl class="method">
-<dt id="AWG.AWGDevices.AWGDevice.paramDef">
-<code class="descname">paramDef</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/AWG/AWGDevices.html#AWGDevice.paramDef"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AWG.AWGDevices.AWGDevice.paramDef" title="Permalink to this definition">¶</a></dt>
-<dd><p>return the parameter definition used by pyqtgraph parametertree to show the gui</p>
-</dd></dl>
-
-<dl class="method">
 <dt id="AWG.AWGDevices.AWGDevice.program">
 <code class="descname">program</code><span class="sig-paren">(</span><em>continuous</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/AWG/AWGDevices.html#AWGDevice.program"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AWG.AWGDevices.AWGDevice.program" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -232,11 +191,8 @@ parameter-based device.</p>
 
 <dl class="method">
 <dt id="AWG.AWGDevices.AWGDevice.setValue">
-<code class="descname">setValue</code><span class="sig-paren">(</span><em>channel</em>, <em>value</em>, <em>continuous=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/AWG/AWGDevices.html#AWGDevice.setValue"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AWG.AWGDevices.AWGDevice.setValue" title="Permalink to this definition">¶</a></dt>
-<dd><p>This function returns True if the value is reached. Otherwise
-it should return False. The user should call repeatedly until the intended value is reached
-and True is returned.</p>
-</dd></dl>
+<code class="descname">setValue</code><span class="sig-paren">(</span><em>channel</em>, <em>v</em>, <em>continuous</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/AWG/AWGDevices.html#AWGDevice.setValue"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AWG.AWGDevices.AWGDevice.setValue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="AWG.AWGDevices.AWGDevice.setWaveform">
@@ -247,7 +203,7 @@ and True is returned.</p>
 
 <dl class="class">
 <dt id="AWG.AWGDevices.ChaseDA12000">
-<em class="property">class </em><code class="descname">ChaseDA12000</code><span class="sig-paren">(</span><em>name</em>, <em>config</em>, <em>waveform</em>, <em>parent=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/AWG/AWGDevices.html#ChaseDA12000"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AWG.AWGDevices.ChaseDA12000" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descname">ChaseDA12000</code><span class="sig-paren">(</span><em>name</em>, <em>config</em>, <em>globalDict</em>, <em>waveform</em>, <em>parent=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/AWG/AWGDevices.html#ChaseDA12000"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AWG.AWGDevices.ChaseDA12000" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="class">
 <dt id="AWG.AWGDevices.ChaseDA12000.SEGMENT">
 <em class="property">class </em><code class="descname">SEGMENT</code><a class="reference internal" href="../_modules/AWG/AWGDevices.html#ChaseDA12000.SEGMENT"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AWG.AWGDevices.ChaseDA12000.SEGMENT" title="Permalink to this definition">¶</a></dt>
@@ -324,7 +280,7 @@ and True is returned.</p>
 
 <dl class="class">
 <dt id="AWG.AWGDevices.DummyAWG">
-<em class="property">class </em><code class="descname">DummyAWG</code><span class="sig-paren">(</span><em>name</em>, <em>config</em>, <em>waveform</em>, <em>parent=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/AWG/AWGDevices.html#DummyAWG"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AWG.AWGDevices.DummyAWG" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descname">DummyAWG</code><span class="sig-paren">(</span><em>name</em>, <em>config</em>, <em>globalDict</em>, <em>waveform</em>, <em>parent=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/AWG/AWGDevices.html#DummyAWG"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AWG.AWGDevices.DummyAWG" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="attribute">
 <dt id="AWG.AWGDevices.DummyAWG.className">
 <code class="descname">className</code><em class="property"> = 'Dummy AWG'</em><a class="headerlink" href="#AWG.AWGDevices.DummyAWG.className" title="Permalink to this definition">¶</a></dt>
@@ -357,7 +313,7 @@ and True is returned.</p>
 <em class="property">class </em><code class="descname">AWGTableModel</code><span class="sig-paren">(</span><em>waveform</em>, <em>globalDict</em>, <em>parent=None</em>, <em>*args</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/AWG/AWGTableModel.html#AWGTableModel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AWG.AWGTableModel.AWGTableModel" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="method">
 <dt id="AWG.AWGTableModel.AWGTableModel.columnCount">
-<code class="descname">columnCount</code><span class="sig-paren">(</span><em>parent=&lt;PyQt4.QtCore.QModelIndex object at 0x000000000A5455F8&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/AWG/AWGTableModel.html#AWGTableModel.columnCount"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AWG.AWGTableModel.AWGTableModel.columnCount" title="Permalink to this definition">¶</a></dt>
+<code class="descname">columnCount</code><span class="sig-paren">(</span><em>parent=&lt;PyQt4.QtCore.QModelIndex object at 0x000000000A1F4DD8&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/AWG/AWGTableModel.html#AWGTableModel.columnCount"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AWG.AWGTableModel.AWGTableModel.columnCount" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -387,7 +343,7 @@ and True is returned.</p>
 
 <dl class="method">
 <dt id="AWG.AWGTableModel.AWGTableModel.rowCount">
-<code class="descname">rowCount</code><span class="sig-paren">(</span><em>parent=&lt;PyQt4.QtCore.QModelIndex object at 0x000000000A5456D8&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/AWG/AWGTableModel.html#AWGTableModel.rowCount"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AWG.AWGTableModel.AWGTableModel.rowCount" title="Permalink to this definition">¶</a></dt>
+<code class="descname">rowCount</code><span class="sig-paren">(</span><em>parent=&lt;PyQt4.QtCore.QModelIndex object at 0x000000000A1F4588&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/AWG/AWGTableModel.html#AWGTableModel.rowCount"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AWG.AWGTableModel.AWGTableModel.rowCount" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -555,7 +511,7 @@ and True is returned.</p>
 
 <dl class="attribute">
 <dt id="AWG.AWGUi.AWGWaveform.expression">
-<code class="descname">expression</code><em class="property"> = &lt;modules.Expression.Expression instance at 0x000000000BC85E08&gt;</em><a class="headerlink" href="#AWG.AWGUi.AWGWaveform.expression" title="Permalink to this definition">¶</a></dt>
+<code class="descname">expression</code><em class="property"> = &lt;modules.Expression.Expression instance at 0x000000000BB8EF88&gt;</em><a class="headerlink" href="#AWG.AWGUi.AWGWaveform.expression" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
@@ -577,15 +533,6 @@ and True is returned.</p>
            </div>
           </div>
           <footer>
-  
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-        <a href="ProjectConfig-doc.html" class="btn btn-neutral float-right" title="ProjectConfig" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
-      
-      
-        <a href="codeDocs.html" class="btn btn-neutral" title="Code Documentation" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
-      
-    </div>
   
 
   <hr/>

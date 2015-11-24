@@ -10,7 +10,7 @@ Python 2.7
 
 * Install WinPython_
 
-    * get version 2.7.9.4+, 64 bit
+    * get version 2.7.X+, 64 bit
     * install into C:\\
 
 * Open WinPython Control Panel
@@ -33,10 +33,10 @@ Python Modules
 
     * get 64 bit version
     * This will require registration with Opal Kelly Pins
-    * This should install the **ok** module into C:\\WinPython-64bit-2.7.9.4\\python-2.7.9.amd64\\Lib\\site-packages
+    * This should install the **ok** module into C:\\$yourWinPythonDir$\\$yourPythonDir$\\Lib\\site-packages
     * **if there is no ok directory at this path:**
 
-        * create directory "C:\\WinPython-64bit-2.7.9.1\\python-2.7.9.amd64\\Lib\\site-packages\\ok"
+        * create directory "\\$yourWinPythonDir$\\$yourPythonDir$\\Lib\\site-packages\\ok"
         * copy into that directory contents of "C:\\Program Files\\Opal Kelly\\FrontPanelUSB\\API\\Python\\2.7\\x64"
 
 * Install pyqtgraph_ -- used for all plotting
@@ -44,11 +44,29 @@ Python Modules
     * Extract the archive at your favorite location (inside download folder is just fine)
     * Open a command terminal
     * Change into the folder pyqtgraph-develop-pm
-    * Execute "\WinPython-64bit-2.7.9.4\python-2.7.9.amd64\python setup.py install"
+    * Execute
+
+       .. code-block:: python
+
+          >>> python setup.py install
 
 * Install pyvisa_ -- used for communicating with many external instruments
 
+    * get via pip:
+
+      .. code-block:: python
+
+         >>> pip install pyvisa
+
     * **Note:** versions 1.7 and 1.8 are definitely fine
+
+* Install *locket* -- used for ensuring same config file is not used by multiple programs
+
+    * get via pip:
+
+    .. code-block::
+
+         pip install locket
 
 * Equipment specific dependencies
 

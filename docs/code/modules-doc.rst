@@ -141,6 +141,20 @@ HashableList
    :members:
    :undoc-members:
 
+InkscapeConversion
+------------------
+
+.. automodule:: modules.InkscapeConversion
+   :members:
+   :undoc-members:
+
+ListWithKey
+-----------
+
+.. automodule:: modules.ListWithKey
+   :members:
+   :undoc-members:
+
 lru_cache
 ---------
 
@@ -166,6 +180,13 @@ MagnitudeUtilit
 ---------------
 
 .. automodule:: modules.MagnitudeUtilit
+   :members:
+   :undoc-members:
+
+make_tuple
+----------
+
+.. automodule:: modules.make_tuple
    :members:
    :undoc-members:
 

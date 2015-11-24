@@ -1,10 +1,13 @@
+
 Code Documentation
 ==================
 
-Contents:
+   Contents:
 
-.. toctree::
-   :maxdepth: 2
+   .. toctree::
+      :maxdepth: 2
+
+The code is written in Python 2.7. The GUI uses the PyQt4 library, which is a Python port of the Qt framework. Heavy use is made of the Qt model/view architecture, and Qt signals and slots. The plotting is all done using the pyqtgraph library, which is especially good at rapid plot updates.
 
    AWG-doc
    ProjectConfig-doc

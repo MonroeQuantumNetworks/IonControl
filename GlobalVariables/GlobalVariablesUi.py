@@ -17,14 +17,12 @@ import logging
 import os
 from copy import copy
 
-from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
-
 uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\GlobalVariables.ui')
 Form, Base = PyQt4.uic.loadUiType(uipath)
 
 class GlobalVariablesUi(Form, Base):
     """Class for displaying, adding, and modifying global variables"""
-    def __init__(self, config, preferences, parent=None):
+    def __init__(self, config, parent=None):
         Form.__init__(self)
         Base.__init__(self, parent)
         self.config = config
@@ -42,7 +40,6 @@ class GlobalVariablesUi(Form, Base):
             storedGlobals = dict()
         self._globalDict_ = storedGlobals
         self.globalDict = GlobalVariablesLookup(self._globalDict_)
-        self.guiPreferences = preferences.guiPreferences
 
     @property
     def valueChanged(self):
@@ -54,9 +51,14 @@ class GlobalVariablesUi(Form, Base):
     def setupUi(self, parent):
         Form.setupUi(self,parent)
         self.model = GlobalVariablesModel(self.config, self._globalDict_)
+        self.model.condensedView = self.config.get(self.configName+".condensedView", False)
+        self.condensedViewButton.setChecked( self.model.condensedView )
+        self.model.showGrid = self.config.get(self.configName+".showGrid", True)
+        self.showGridButton.setChecked( self.model.showGrid )
+
         self.view.setModel(self.model)
-        self.nameDelegate = QtGui.QStyledItemDelegate() if self.guiPreferences.useCondensedGlobalTree else GridDelegate()
-        self.valueDelegate = MagnitudeSpinBoxDelegate() if self.guiPreferences.useCondensedGlobalTree else MagnitudeSpinBoxGridDelegate()
+        self.nameDelegate = GridDelegate()
+        self.valueDelegate = MagnitudeSpinBoxGridDelegate()
         self.view.setItemDelegateForColumn(self.model.column.name, self.nameDelegate)
         self.view.setItemDelegateForColumn(self.model.column.value, self.valueDelegate)
         restoreGuiState( self, self.config.get(self.configName+".guiState") )
@@ -73,6 +75,8 @@ class GlobalVariablesUi(Form, Base):
         self.collapseAllButton.clicked.connect( self.view.collapseAll )
         self.expandAllButton.clicked.connect( self.view.expandAll )
         self.model.globalRemoved.connect( self.refreshCategories )
+        self.condensedViewButton.clicked.connect( self.onCondensedView )
+        self.showGridButton.clicked.connect( self.onShowGrid )
 
         #Categorize Context Menu
         self.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
@@ -100,6 +104,20 @@ class GlobalVariablesUi(Form, Base):
         sortAction = QtGui.QAction("Sort", self)
         self.addAction(sortAction)
         sortAction.triggered.connect(partial(self.view.sortByColumn, self.model.column.name, QtCore.Qt.DescendingOrder))
+
+    def onCondensedView(self, condensedView):
+        state = self.view.treeState()
+        self.model.beginResetModel()
+        self.model.condensedView = condensedView
+        self.model.endResetModel()
+        self.view.restoreTreeState(state)
+
+    def onShowGrid(self, showGrid):
+        state = self.view.treeState()
+        self.model.beginResetModel()
+        self.model.showGrid = showGrid
+        self.model.endResetModel()
+        self.view.restoreTreeState(state)
 
     def refreshCategories(self):
         """Set up the categories context menu and combo box"""
@@ -215,6 +233,8 @@ class GlobalVariablesUi(Form, Base):
         """save gui configuration state and _globalDict_"""
         self.config[self.configName] = self._globalDict_
         self.config[self.configName+".guiState"] = saveGuiState(self)
+        self.config[self.configName+".condensedView"] = self.model.condensedView
+        self.config[self.configName+".showGrid"] = self.model.showGrid
         try:
             self.config[self.configName+'.treeState'] = self.view.treeState()
         except Exception as e:

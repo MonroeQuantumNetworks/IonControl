@@ -17,6 +17,7 @@ xmlschema = etree.XMLSchema( etree.fromstring("""<?xml version="1.0"?>
       <xs:element type="StatusBitsType" name="StatusBits" minOccurs="0"/>
       <xs:element type="ShutterBitsType" name="ShutterBits" minOccurs="0"/>
       <xs:element type="TriggerBitsType" name="TriggerBits" minOccurs="0"/>
+      <xs:element type="DDSChannelsType" name="DDSChannels" minOccurs="0"/>
       <xs:element type="CounterBitsType" name="CounterBits" minOccurs="0"/>
       <xs:element type="DACType" name="DAC" minOccurs="1"/>
       <xs:element type="ADCType" name="ADC" minOccurs="1"/>
@@ -76,6 +77,15 @@ xmlschema = etree.XMLSchema( etree.fromstring("""<?xml version="1.0"?>
       </xs:extension>
     </xs:simpleContent>
   </xs:complexType>
+  <xs:complexType name="DDSChannelType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute type="xs:byte" name="channel" use="required"/>
+        <xs:attribute type="xs:byte" name="shutter" use="required"/>
+        <xs:attribute type="xs:string" name="chip" use="optional"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
   <xs:complexType name="ShutterBitsType">
     <xs:sequence>
       <xs:element type="ShutterBitType" name="ShutterBit" maxOccurs="unbounded" minOccurs="0"/>
@@ -101,6 +111,11 @@ xmlschema = etree.XMLSchema( etree.fromstring("""<?xml version="1.0"?>
       <xs:element type="PulserType" name="Pulser" maxOccurs="unbounded" minOccurs="1"/>
     </xs:sequence>
   </xs:complexType>
+  <xs:complexType name="DDSChannelsType">
+    <xs:sequence>
+      <xs:element type="DDSChannelType" name="DDSChannel" maxOccurs="unbounded" minOccurs="1"/>
+    </xs:sequence>
+  </xs:complexType>
 </xs:schema>""") )
 
 class ExtendedWireParameter(object):
@@ -110,6 +125,12 @@ class DAADInfo(object):
     def __init__(self, numChannels=0, encoding=None ):
         self.numChannels = numChannels
         self.encoding = encoding
+
+class DDSInfo(object):
+    def __init__(self, channel=0, shutter=None, chip="AD9912"):
+        self.channel = channel
+        self.shutter = shutter if shutter is not None else 24+channel
+        self.chip = chip
 
 class PulserConfig(object):
     def __init__(self):
@@ -121,6 +142,7 @@ class PulserConfig(object):
         self.counterBits = dict()
         self.dac = DAADInfo()
         self.adc = DAADInfo()
+        self.ddsChannels = dict()
 
 def startPulseProgrammer(parent, elem):
     context = PulserConfig()
@@ -152,6 +174,10 @@ def endStatusbit(parent, elem):
 def endShutterbit(parent, elem):
     a = elem.attrib
     parent[int(a.get('bitNo'),0)] = a.get('name')
+
+def endDDSChannel(parent, elem):
+    a = elem.attrib
+    parent[int(a.get('channel'))] = DDSInfo(channel=int(a.get('channel')), shutter=int(a.get('shutter')), chip=a.get('chip',"AD9912"))
     
 def endDAC(parent, elem):
     a = elem.attrib
@@ -167,7 +193,9 @@ starthandler = { 'Pulser': startPulseProgrammer,
                  'StatusBits': lambda parent, elem: parent.statusBits,
                  'ShutterBits': lambda parent, elem: parent.shutterBits,
                  'TriggerBits': lambda parent, elem: parent.triggerBits,
-                 'CounterBits': lambda parent, elem: parent.counterBits }
+                 'CounterBits': lambda parent, elem: parent.counterBits,
+                 'DDSChannels': lambda parent, elem: parent.ddsChannels }
+
 endhandler = { 'Parameter': endParameter,
                'Description': endDescription,
                'StatusBit': endStatusbit,
@@ -175,7 +203,8 @@ endhandler = { 'Parameter': endParameter,
                'TriggerBit': endShutterbit,
                'CounterBit': endShutterbit,
                'DAC': endDAC,
-               'ADC': endADC }
+               'ADC': endADC,
+               'DDSChannel': endDDSChannel }
 
 
 def getPulserConfiguration( filename ):

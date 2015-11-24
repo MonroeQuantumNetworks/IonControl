@@ -155,6 +155,13 @@ InstrumentReaderBase
    :members:
    :undoc-members:
 
+InstrumentSettings
+------------------
+
+.. automodule:: externalParameter.InstrumentSettings
+   :members:
+   :undoc-members:
+
 InterProcessParameters
 ----------------------
 
@@ -250,6 +257,13 @@ TerranovaReader
 ---------------
 
 .. automodule:: externalParameter.TerranovaReader
+   :members:
+   :undoc-members:
+
+useTracker
+----------
+
+.. automodule:: externalParameter.useTracker
    :members:
    :undoc-members:
 
