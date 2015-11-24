@@ -247,6 +247,16 @@
         <TriggerBit bitNo="16" name="DAC update"/>
         <TriggerBit bitNo="17" name="External 2-6"/>
     </TriggerBits>
+    <DDSChannels>
+        <DDSChannel channel="0" chip="AD9912" shutter="24"/>
+        <DDSChannel channel="1" chip="AD9912" shutter="25"/>
+        <DDSChannel channel="2" chip="AD9912" shutter="26"/>
+        <DDSChannel channel="3" chip="AD9912" shutter="27"/>
+        <DDSChannel channel="4" chip="AD9912" shutter="28"/>
+        <DDSChannel channel="5" chip="AD9912" shutter="29"/>
+        <DDSChannel channel="6" chip="AD9912" shutter="30"/>
+        <DDSChannel channel="7" chip="AD9912" shutter="31"/>
+    </DDSChannels>
     <CounterBits>
         <CounterBit bitNo="0" name="Count 0"/>
         <CounterBit bitNo="1" name="Count 1"/>
