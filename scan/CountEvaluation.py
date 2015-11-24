@@ -139,7 +139,7 @@ class FeedbackEvaluation(EvaluationBase):
         self.integrator = self.integrator + errorval * self.settings['I'] 
         totalOut = pOut + self.integrator
         globalDict[globalName] = totalOut
-        return MagnitudeUtilit.value(totalOut), (None, None), raw
+        return MagnitudeUtilit.value(totalOut), (0.0, 0.0), raw
     
     def children(self):
         if not isinstance(self.settings['SetPoint'], ExpressionValue):
