@@ -89,7 +89,12 @@ class Parameters(object):
         self.autoSave = True
         self.setScanParam = False
         self.scanParam = ""
-        
+        self.plotEnabled = True
+
+    def __setstate__(self, state):
+        self.__dict__ = state
+        self.__dict__.setdefault('plotEnabled', True)
+
 class AWGUi(AWGForm, AWGBase):
     outputChannelsChanged = QtCore.pyqtSignal(object)
     analysisNamesChanged = QtCore.pyqtSignal(object)
@@ -148,14 +153,16 @@ class AWGUi(AWGForm, AWGBase):
         self.plot = CoordinatePlotWidget(self, name="Plot")
         self.plot.setTimeAxis(False)
         self.infoLayout.addWidget(self.plot)
-        
+        self.plotCheckbox.setChecked(self.parameters.plotEnabled)
+        self.plotCheckbox.stateChanged.connect(self.onPlotCheckbox)
+
         # Buttons
         self.evalButton.clicked.connect(self.onEvalEqn)
         self.programButton.clicked.connect(self.onProgram)
         if not hasattr(self.parameters, 'enabled'):
             self.parameters.enabled = False
-        self.enabledButton.toggled.connect(self.onEnable)
-        self.enabledButton.setChecked(self.parameters.enabled)
+        self.enabledCheckbox.stateChanged.connect(self.onEnable)
+        self.enabledCheckbox.setChecked(self.parameters.enabled)
         self.onEnable(self.parameters.enabled)
         
         # Context Menu
@@ -286,12 +293,12 @@ class AWGUi(AWGForm, AWGBase):
     def onEnable(self, checked):
         if checked:
             self.parameters.enabled = True
-            self.enabledButton.setText("Auto AWG program enabled")
-            self.enabledButton.setStyleSheet('QToolButton {color: green}')
+            self.enabledCheckbox.setText("Auto AWG program enabled")
+            self.enabledCheckbox.setStyleSheet('background-color: rgb(85, 255, 127);')
         else:
             self.parameters.enabled = False
-            self.enabledButton.setText("Auto AWG program disabled")
-            self.enabledButton.setStyleSheet('QToolButton {color: red}')
+            self.enabledCheckbox.setText("Auto AWG program disabled")
+            self.enabledCheckbox.setStyleSheet('background-color: rgb(255, 166, 168);')
         
     def onContinuousCheckBox(self, checked):
         self.parameters.continuous = checked
@@ -301,18 +308,29 @@ class AWGUi(AWGForm, AWGBase):
         
     def refreshWF(self):
         self.device.setWaveform(self.waveform)
-
         self.replot()
         self.checkSettingsSavable()
         
     def replot(self):
         logger = logging.getLogger(__name__)
-        self.plot.getItem(0,0).clear()
+        evalError = False
         try:
-            self.plot.getItem(0,0).plot(self.waveform.evaluate())
+            waveform = self.waveform.evaluate()
         except (MagnitudeError, NameError, IndexError) as e:
-            logger.warn(e)
-           
-           
+            logger.warning(e)
+            evalError = True
+        if self.parameters.plotEnabled and not evalError:
+            self.plot.getItem(0,0).clear()
+            self.plot.getItem(0,0).plot(waveform)
+
     def evaluate(self, name):
         self.tableModel.evaluate(name)
+
+    def onPlotCheckbox(self, checked):
+        self.parameters.plotEnabled = checked
+        if not checked:
+            self.plot.getItem(0,0).clear()
+        elif checked:
+            self.replot()
+        self.plot.setDisabled(checked)
+        self.plot.setVisible(checked)

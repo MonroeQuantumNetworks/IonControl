@@ -106,38 +106,29 @@
                </property>
                <widget class="QListWidget" name="hardwareListWidget">
                 <property name="styleSheet">
-                 <string notr="true">/*QListWidget:item:selected:active {
-		background: darkBlue;
-		color: white;
+                 <string notr="true">QListWidget:item:selected:active {
+		background:qlineargradient(spread:repeat, x1:1, y1:1, x2:1, y2:0, stop:0.227273 rgba(200, 225, 255, 255), stop:1 rgba(255, 255, 255, 255));
+		color: black;
+		border: 1px solid;
+		border-color: rgb(98, 150, 214);
 	} 
 QListWidget:item:selected:!active {
-		background: darkBlue;
-		color: white;
+		background:qlineargradient(spread:repeat, x1:1, y1:1, x2:1, y2:0, stop:0.227273 rgba(200, 225, 255, 255), stop:1 rgba(255, 255, 255, 255));
+		color: black;
+		border: 1px solid;
+		border-color: rgb(98, 150, 214);
 	} 
 QListWidget:item:selected:disabled {
-		background: darkBlue;
-		color: white;
+		background:qlineargradient(spread:repeat, x1:1, y1:1, x2:1, y2:0, stop:0.227273 rgba(200, 225, 255, 255), stop:1 rgba(255, 255, 255, 255));
+		color: black;
+		border: 1px solid;
+		border-color: rgb(98, 150, 214);
 	} 
 QListWidget:item:selected:!disabled {
-		background: darkBlue;
-		color: white;
-	}*/
-
-QListWidget:item:selected:active {
-		background: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(208, 229, 255, 255),  stop:1 rgba(171, 208, 255, 255));
+		background:qlineargradient(spread:repeat, x1:1, y1:1, x2:1, y2:0, stop:0.227273 rgba(200, 225, 255, 255), stop:1 rgba(255, 255, 255, 255));
 		color: black;
-	} 
-QListWidget:item:selected:!active {
-		background: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(208, 229, 255, 255),  stop:1 rgba(171, 208, 255, 255));
-		color: black;
-	} 
-QListWidget:item:selected:disabled {
-		background: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(208, 229, 255, 255),  stop:1 rgba(171, 208, 255, 255));
-		color: black;
-	} 
-QListWidget:item:selected:!disabled {
-		background: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(208, 229, 255, 255),  stop:1 rgba(171, 208, 255, 255));
-		color: black;
+		border: 1px solid;
+		border-color: rgb(98, 150, 214);
 	}</string>
                 </property>
                </widget>
@@ -197,38 +188,29 @@ QListWidget:item:selected:!disabled {
                </property>
                <widget class="QListWidget" name="softwareListWidget">
                 <property name="styleSheet">
-                 <string notr="true">/*QListWidget:item:selected:active {
-		background: darkBlue;
-		color: white;
+                 <string notr="true">QListWidget:item:selected:active {
+		background:qlineargradient(spread:repeat, x1:1, y1:1, x2:1, y2:0, stop:0.227273 rgba(200, 225, 255, 255), stop:1 rgba(255, 255, 255, 255));
+		color: black;
+		border: 1px solid;
+		border-color: rgb(98, 150, 214);
 	} 
 QListWidget:item:selected:!active {
-		background: darkBlue;
-		color: white;
+		background:qlineargradient(spread:repeat, x1:1, y1:1, x2:1, y2:0, stop:0.227273 rgba(200, 225, 255, 255), stop:1 rgba(255, 255, 255, 255));
+		color: black;
+		border: 1px solid;
+		border-color: rgb(98, 150, 214);
 	} 
 QListWidget:item:selected:disabled {
-		background: darkBlue;
-		color: white;
+		background:qlineargradient(spread:repeat, x1:1, y1:1, x2:1, y2:0, stop:0.227273 rgba(200, 225, 255, 255), stop:1 rgba(255, 255, 255, 255));
+		color: black;
+		border: 1px solid;
+		border-color: rgb(98, 150, 214);
 	} 
 QListWidget:item:selected:!disabled {
-		background: darkBlue;
-		color: white;
-	}*/
-
-QListWidget:item:selected:active {
-		background: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(208, 229, 255, 255),  stop:1 rgba(171, 208, 255, 255));
+		background:qlineargradient(spread:repeat, x1:1, y1:1, x2:1, y2:0, stop:0.227273 rgba(200, 225, 255, 255), stop:1 rgba(255, 255, 255, 255));
 		color: black;
-	} 
-QListWidget:item:selected:!active {
-		background: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(208, 229, 255, 255),  stop:1 rgba(171, 208, 255, 255));
-		color: black;
-	} 
-QListWidget:item:selected:disabled {
-		background: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(208, 229, 255, 255),  stop:1 rgba(171, 208, 255, 255));
-		color: black;
-	} 
-QListWidget:item:selected:!disabled {
-		background: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(208, 229, 255, 255),  stop:1 rgba(171, 208, 255, 255));
-		color: black;
+		border: 1px solid;
+		border-color: rgb(98, 150, 214);
 	}</string>
                 </property>
                </widget>
