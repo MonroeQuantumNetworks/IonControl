@@ -96,7 +96,7 @@ class Parameters(object):
         self.__dict__.setdefault('plotEnabled', True)
 
 class AWGUi(AWGForm, AWGBase):
-    outputChannelsChanged = QtCore.pyqtSignal(object)
+    varDictChanged = QtCore.pyqtSignal(object)
     analysisNamesChanged = QtCore.pyqtSignal(object)
     def __init__(self, pulser, config, globalDict, parent = None):
         AWGBase.__init__(self, parent)
@@ -197,12 +197,12 @@ class AWGUi(AWGForm, AWGBase):
         logger = logging.getLogger(__name__)
         if devicestr != None: self.parameters.device = str(devicestr) # in case devicestr is a QString, e.g. from the event listener
         try:
-            self.device = (device(None, InstrumentSettings(), self.globalDict, self.waveform, parent=self) \
+            self.device = (device(None, self.waveform, parent=self) \
                            for device in AWGDeviceList if device.className == self.parameters.device).next()
         except StopIteration:
             logger.warn("Could not find awg with string \"%s\", reverting to dummy AWG!", self.parameters.device)
             self.parameters.device = 'Dummy AWG'
-            self.device = AWGDeviceList[self.parameters.device](None, InstrumentSettings(), self.globalDict, self.waveform, parent=self)
+            self.device = AWGDeviceList[self.parameters.device](None, self.waveform, parent=self)
     
     def checkSettingsSavable(self, savable=None):
         if not isinstance(savable, bool):
@@ -221,8 +221,8 @@ class AWGUi(AWGForm, AWGBase):
                 pass
         self.saveButton.setEnabled( savable )
     
-    def outputChannels(self):  
-        return dict(self.device.outputChannels)
+    def varDict(self):
+        return self.device.varDict
     
     def setWaveform(self, waveform):
         self.waveform = waveform
@@ -273,7 +273,7 @@ class AWGUi(AWGForm, AWGBase):
         self.waveform.equation = str(self.eqnbox.text())
         self.refreshWF()
         
-        self.outputChannelsChanged.emit( self.outputChannels() )
+        self.varDictChanged.emit(self.varDict())
         self.checkSettingsSavable()
         
     def onValue(self, var, value):
@@ -307,7 +307,7 @@ class AWGUi(AWGForm, AWGBase):
         self.device.program(self.continuousCheckBox.isChecked())
         
     def refreshWF(self):
-        self.device.setWaveform(self.waveform)
+        self.device.waveform = self.waveform
         self.replot()
         self.checkSettingsSavable()
         
@@ -332,5 +332,4 @@ class AWGUi(AWGForm, AWGBase):
             self.plot.getItem(0,0).clear()
         elif checked:
             self.replot()
-        self.plot.setDisabled(checked)
         self.plot.setVisible(checked)

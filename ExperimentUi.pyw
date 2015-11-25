@@ -237,8 +237,8 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
             self.AWGUiDock.setWidget(self.AWGUi)
             self.AWGUiDock.setObjectName("_AWGUi")
             self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.AWGUiDock)
-            self.AWGUi.outputChannelsChanged.connect( partial(self.scanExperiment.updateScanTarget, 'AWG') )
-            self.scanExperiment.updateScanTarget( 'AWG', self.AWGUi.outputChannels() )
+            self.AWGUi.varDictChanged.connect( partial(self.scanExperiment.updateScanTarget, 'AWG') )
+            self.scanExperiment.updateScanTarget( 'AWG', self.AWGUi.varDict() )
             self.globalVariablesUi.valueChanged.connect( self.AWGUi.evaluate )
 
         self.pulserParameterUi = PulserParameterUi(self.pulser, self.config, self.globalVariablesUi.globalDict)

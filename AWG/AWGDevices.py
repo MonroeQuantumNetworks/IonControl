@@ -4,56 +4,43 @@ Created on Jul 2, 2015
 @author: Geoffrey Ji
 
 AWG Devices are defined here. If a new AWG needs to be added, 
-it must inherit AWGDevice and implement open, program, and close.
+it must inherit AWGDeviceBase and implement open, program, and close.
 '''
 
 from ctypes import *
 import logging
 
 from modules.magnitude import Magnitude
-
-from externalParameter.ExternalParameterBase import ExternalParameterBase
-import modules.magnitude as magnitude
 from modules.Observable import Observable
 
-
-
-
-class AWGDevice(ExternalParameterBase):
+class AWGDeviceBase(object):
     """
-    The AWG does not fit into the external parameter framework,
-    but given a waveform, the variables can act as external
-    parameters. This class wraps a waveform into an external
-    parameter-based device.
+    base class for AWG Devices
     """
     className = "Generic AWG"
-    _outputChannels = {}
     _waveform = None
     enabled = False
     
     # parent should be the AWGUi, which we read whether or not to modify the internal scan as well
-    def __init__(self, name, config, globalDict, waveform, parent=None):
-        ExternalParameterBase.__init__(self, name, config, globalDict)
+    def __init__(self, name, waveform, parent=None):
         self.open()
-        self.setWaveform(waveform)
+        self.name = name
         self.parent = parent
-        
-    def setWaveform(self, waveform):
-        self._waveform = waveform
-        self.setDefaults()
-        self.displayValueObservable = dict([(name,Observable()) for name in self._outputChannels])
-        vardict = {k: "" if (not isinstance(v['value'], Magnitude)) or v['value'].dimensionless() else \
-                      str(v['value']).split(" ")[1] for (k, v) in self._waveform.vars.iteritems()}
-        self._outputChannels = vardict
+        self.varDict = dict()
+        self.waveform = waveform
 
-    def fullName(self, channel):
-        return "{0}".format(channel)
-    
+    @property
+    def waveform(self):
+        return self._waveform
+
+    @waveform.setter
+    def waveform(self, waveform):
+        self._waveform = waveform
+        self.varDict = {k: "" if (not isinstance(v['value'], Magnitude)) or v['value'].dimensionless() else \
+                      str(v['value']).split(" ")[1] for (k, v) in self._waveform.vars.iteritems()}
+
     def scanParam(self):
         return (self.parent.parameters.setScanParam, str(self.parent.parameters.scanParam))
-
-    def setDefaults(self):
-        self.initializeChannelsToExternals()
 
     def setValue(self, channel, v, continuous):
         self._waveform.vars[channel]['value'] = v
@@ -72,7 +59,7 @@ class AWGDevice(ExternalParameterBase):
     def close(self):
         raise NotImplementedError("Method must be implemented by specific AWG device class!")
  
-class ChaseDA12000(AWGDevice):
+class ChaseDA12000(AWGDeviceBase):
     className = "Chase DA12000 AWG"
     _dllName = "DA12000_DLL64.dll"
  
@@ -120,7 +107,7 @@ class ChaseDA12000(AWGDevice):
         if self.enabled:
             ChaseDA12000.da.da12000_Close(1)
         
-class DummyAWG(AWGDevice):
+class DummyAWG(AWGDeviceBase):
     className = "Dummy AWG"
     
     def open(self): pass
