@@ -39,8 +39,9 @@ Python Modules
         * create directory "\\$yourWinPythonDir$\\$yourPythonDir$\\Lib\\site-packages\\ok"
         * copy into that directory contents of "C:\\Program Files\\Opal Kelly\\FrontPanelUSB\\API\\Python\\2.7\\x64"
 
-* Install pyqtgraph_ -- used for all plotting
+* Change to custom branch of pyqtgraph_ -- used for all plotting
 
+    * type "pip uninstall pyqtgraph" to uninstall existing copy of pyqtgraph
     * Extract the archive at your favorite location (inside download folder is just fine)
     * Open a command terminal
     * Change into the folder pyqtgraph-develop-pm
@@ -59,14 +60,6 @@ Python Modules
          >>> pip install pyvisa
 
     * **Note:** versions 1.7 and 1.8 are definitely fine
-
-* Install *locket* -- used for ensuring same config file is not used by multiple programs
-
-    * get via pip:
-
-    .. code-block::
-
-         pip install locket
 
 * Equipment specific dependencies
 
