@@ -158,6 +158,7 @@ class AWGUi(AWGForm, AWGBase):
 
         # Buttons
         self.evalButton.clicked.connect(self.onEvalEqn)
+        self.eqnbox.returnPressed.connect(self.onEvalEqn)
         self.programButton.clicked.connect(self.onProgram)
         if not hasattr(self.parameters, 'enabled'):
             self.parameters.enabled = False
