@@ -22,7 +22,7 @@ from uiModules.CoordinatePlotWidget import CoordinatePlotWidget
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 
 import os
-uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\AWGUi.ui')
+uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\AWG.ui')
 AWGForm, AWGBase = PyQt4.uic.loadUiType(uipath)
 
 class AWGWaveform(object):
@@ -126,11 +126,11 @@ class AWGUi(AWGForm, AWGBase):
         self.settingsDict = self.config.get(self.configname+'dict',dict())
         self.settingsName = self.config.get(self.configname+'settingsName',None)
         
-        self.comboBox.addItems( sorted(self.settingsDict.keys()))
-        if self.settingsName and self.comboBox.findText(self.settingsName):
-            self.comboBox.setCurrentIndex( self.comboBox.findText(self.settingsName) )
-        self.comboBox.currentIndexChanged[QtCore.QString].connect( self.onLoad )
-        self.comboBox.lineEdit().editingFinished.connect( self.checkSettingsSavable )
+        self.settingsComboBox.addItems( sorted(self.settingsDict.keys()))
+        if self.settingsName and self.settingsComboBox.findText(self.settingsName):
+            self.settingsComboBox.setCurrentIndex( self.settingsComboBox.findText(self.settingsName) )
+        self.settingsComboBox.currentIndexChanged[QtCore.QString].connect( self.onLoad )
+        self.settingsComboBox.lineEdit().editingFinished.connect( self.checkSettingsSavable )
         
         # Devices
         self.deviceComboBox.clear()
@@ -158,7 +158,7 @@ class AWGUi(AWGForm, AWGBase):
 
         # Buttons
         self.evalButton.clicked.connect(self.onEvalEqn)
-        self.eqnbox.returnPressed.connect(self.onEvalEqn)
+        self.equationEdit.returnPressed.connect(self.onEvalEqn)
         self.programButton.clicked.connect(self.onProgram)
         if not hasattr(self.parameters, 'enabled'):
             self.parameters.enabled = False
@@ -191,7 +191,7 @@ class AWGUi(AWGForm, AWGBase):
         except (TypeError, AttributeError):
             logger.info( "Improper waveform!" )
             self.waveform = AWGWaveform()
-            self.eqnbox.setText(self.waveform.equation)
+            self.equationEdit.setText(self.waveform.equation)
             self.setWaveform(self.waveform)
             
     def setDevice(self, devicestr=None):
@@ -207,7 +207,7 @@ class AWGUi(AWGForm, AWGBase):
     
     def checkSettingsSavable(self, savable=None):
         if not isinstance(savable, bool):
-            currentText = str(self.comboBox.currentText())
+            currentText = str(self.settingsComboBox.currentText())
             try:
                 if currentText is None or currentText=="":
                     savable = False
@@ -227,7 +227,7 @@ class AWGUi(AWGForm, AWGBase):
     
     def setWaveform(self, waveform):
         self.waveform = waveform
-        self.eqnbox.setText(self.waveform.equation)
+        self.equationEdit.setText(self.waveform.equation)
         self.tableModel.setWaveform(waveform)
         self.replot()
 
@@ -238,25 +238,25 @@ class AWGUi(AWGForm, AWGBase):
         self.config[self.configname+'parameters'] = self.parameters
 
     def onSave(self):
-        self.settingsName = str(self.comboBox.currentText())
+        self.settingsName = str(self.settingsComboBox.currentText())
         if self.settingsName != '':
             if self.settingsName not in self.settingsDict:
-                if self.comboBox.findText(self.settingsName)==-1:
-                    self.comboBox.addItem(self.settingsName)
+                if self.settingsComboBox.findText(self.settingsName)==-1:
+                    self.settingsComboBox.addItem(self.settingsName)
             self.settingsDict[self.settingsName] = copy.deepcopy(self.waveform)
         self.checkSettingsSavable(savable=False)
 
     def onRemove(self):
-        name = str(self.comboBox.currentText())
+        name = str(self.settingsComboBox.currentText())
         if name != '':
             if name in self.settingsDict:
                 self.settingsDict.pop(name)
-            idx = self.comboBox.findText(name)
+            idx = self.settingsComboBox.findText(name)
             if idx>=0:
-                self.comboBox.removeItem(idx)
+                self.settingsComboBox.removeItem(idx)
                 
     def onReload(self):
-        self.onLoad( self.comboBox.currentText() )
+        self.onLoad( self.settingsComboBox.currentText() )
        
     def onLoad(self,name):
         self.settingsName = str(name)
@@ -271,7 +271,7 @@ class AWGUi(AWGForm, AWGBase):
             self.onSave()
         
     def onEvalEqn(self):
-        self.waveform.equation = str(self.eqnbox.text())
+        self.waveform.equation = str(self.equationEdit.text())
         self.refreshWF()
         
         self.varDictChanged.emit(self.varDict())

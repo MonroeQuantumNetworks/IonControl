@@ -50,6 +50,7 @@ from gui.StashButton import StashButtonControl
 import ctypes
 import locket
 import scan.EvaluationAlgorithms #@UnusedImport
+import Experiment_rc
 
 setID = ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID
 if __name__=='__main__': #imports that aren't just definitions
@@ -233,10 +234,13 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         if self.AWGEnabled:
             self.AWGUi = AWGUi(self.pulser, self.config, self.globalVariablesUi.globalDict)
             self.AWGUi.setupUi(self.AWGUi)
-            self.AWGUiDock = QtGui.QDockWidget("AWG")
-            self.AWGUiDock.setWidget(self.AWGUi)
-            self.AWGUiDock.setObjectName("_AWGUi")
-            self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.AWGUiDock)
+            AWGIcon = QtGui.QIcon()
+            AWGPixmap = QtGui.QPixmap(":/other/icons/AWG.png")
+            AWGIcon.addPixmap(AWGPixmap)
+            self.actionAWG = QtGui.QAction(AWGIcon, "AWG", self)
+            self.toolBar.addAction(self.actionAWG)
+            self.menuWindows.addAction(self.actionAWG)
+            self.actionAWG.triggered.connect(self.onAWG)
             self.AWGUi.varDictChanged.connect( partial(self.scanExperiment.updateScanTarget, 'AWG') )
             self.scanExperiment.updateScanTarget( 'AWG', self.AWGUi.varDict() )
             self.globalVariablesUi.valueChanged.connect( self.AWGUi.evaluate )
@@ -288,8 +292,8 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
 #        self.tabifyDockWidget( self.DDS9910DockWidget, self.globalVariablesDock )
         self.tabifyDockWidget( self.DACDockWidget, self.globalVariablesDock )
         self.tabifyDockWidget( self.globalVariablesDock, self.valueHistoryDock )
-        if self.AWGEnabled:
-            self.tabifyDockWidget( self.valueHistoryDock, self.AWGUiDock )
+        # if self.AWGEnabled:
+        #     self.tabifyDockWidget( self.valueHistoryDock, self.AWGUiDock )
         self.triggerDockWidget.hide()
         self.preferencesUiDock.hide()
 
@@ -326,8 +330,8 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.todoListDock.setWidget(self.todoList)
         self.todoListDock.setObjectName("_todoList")
         self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.todoListDock)
-        if self.AWGEnabled: self.tabifyDockWidget(self.AWGUiDock, self.todoListDock)
-        else: self.tabifyDockWidget(self.valueHistoryDock, self.todoListDock)
+        #if self.AWGEnabled: self.tabifyDockWidget(self.AWGUiDock, self.todoListDock)
+        self.tabifyDockWidget(self.valueHistoryDock, self.todoListDock)
 
         for name, widget in self.tabDict.iteritems():
             if hasattr( widget, 'scanConfigurationListChanged' ) and widget.scanConfigurationListChanged is not None:
@@ -483,7 +487,12 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.scriptingWindow.show()
         self.scriptingWindow.setWindowState(QtCore.Qt.WindowActive)
         self.scriptingWindow.raise_()
-        
+
+    def onAWG(self):
+        self.AWGUi.show()
+        self.AWGUi.setWindowState(QtCore.Qt.WindowActive)
+        self.AWGUi.raise_()
+
     def onMeasurementLog(self):
         self.measurementLog.show()
         self.measurementLog.setWindowState(QtCore.Qt.WindowActive)
@@ -647,6 +656,8 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.measurementLog.close()
         if self.voltagesEnabled:
             self.voltageControlWindow.close()
+        if self.AWGEnabled:
+            self.AWGUi.close()
         numTempAreas = len(self.scanExperiment.area.tempAreas)
         for i in range(numTempAreas):
             if len(self.scanExperiment.area.tempAreas) > 0:
