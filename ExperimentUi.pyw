@@ -119,10 +119,10 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.loggerDock.hide()
 
         logger = logging.getLogger()
-        self.toolBar.addWidget(ExceptionLogButton())
+        self.exceptionToolBar.addWidget(ExceptionLogButton())
 
         self.warningLogButton = LogButton(messageIcon=":/petersIcons/icons/Warning.png", messageName="warnings")
-        self.toolBar.addWidget(self.warningLogButton)
+        self.exceptionToolBar.addWidget(self.warningLogButton)
         qtWarningButtonHandler.textWritten.connect(self.warningLogButton.addMessage)
 
         # Setup Console Dockwidget
