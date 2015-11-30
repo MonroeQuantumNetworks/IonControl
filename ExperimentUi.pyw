@@ -51,6 +51,8 @@ import ctypes
 import locket
 import scan.EvaluationAlgorithms #@UnusedImport
 import Experiment_rc
+from AWG.AWGUi import AWGUi
+from AWG import AWGDevices
 
 setID = ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID
 if __name__=='__main__': #imports that aren't just definitions
@@ -141,11 +143,6 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         if self.project.isEnabled('software', 'Memory Profiler'):
             self.memoryProfiler = MemoryProfiler(self)
 
-        #determine if AWG software is enabled and import class if it is
-        self.AWGEnabled = self.project.isEnabled('software', 'AWG')
-        if self.AWGEnabled:
-            from AWG.AWGUi import AWGUi
-
         #determine if Voltages software is enabled and import class if it is
         softwareVoltages = self.project.software.get('Voltages')
         self.voltagesEnabled = self.project.isEnabled('software', 'Voltages')
@@ -231,19 +228,37 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.preferencesUiDock.setObjectName("_preferencesUi")
         self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.preferencesUiDock)
 
-        if self.AWGEnabled:
-            self.AWGUi = AWGUi(self.pulser, self.config, self.globalVariablesUi.globalDict)
-            self.AWGUi.setupUi(self.AWGUi)
+        #AWGs
+        enabledAWGDict = {displayName:className for displayName,className in AWGDevices.AWGDeviceDict.iteritems()
+                          if self.project.isEnabled('hardware', displayName)}
+        self.AWGUiDict = dict()
+        if enabledAWGDict:
             AWGIcon = QtGui.QIcon()
             AWGPixmap = QtGui.QPixmap(":/other/icons/AWG.png")
             AWGIcon.addPixmap(AWGPixmap)
-            self.actionAWG = QtGui.QAction(AWGIcon, "AWG", self)
-            self.toolBar.addAction(self.actionAWG)
-            self.menuWindows.addAction(self.actionAWG)
-            self.actionAWG.triggered.connect(self.onAWG)
-            self.AWGUi.varDictChanged.connect( partial(self.scanExperiment.updateScanTarget, 'AWG') )
-            self.scanExperiment.updateScanTarget( 'AWG', self.AWGUi.varDict() )
-            self.globalVariablesUi.valueChanged.connect( self.AWGUi.evaluate )
+            AWGButton = QtGui.QToolButton()
+            AWGButton.setIcon(AWGIcon)
+            self.toolBar.addWidget(AWGButton)
+            if len(enabledAWGDict) > 1:
+                menu = QtGui.QMenu("AWG")
+                AWGButton.setMenu(menu)
+                AWGButton.setPopupMode(QtGui.QToolButton.InstantPopup)
+                menu.setIcon(AWGIcon)
+                self.menuWindows.addMenu(menu)
+            for displayName, className in enabledAWGDict.iteritems():
+                awgUi = AWGUi(getattr(AWGDevices, className), self.config, self.globalVariablesUi.globalDict)
+                self.AWGUiDict[displayName] = awgUi
+                awgUi.setupUi(awgUi)
+                awgUi.varDictChanged.connect( partial(self.scanExperiment.updateScanTarget, displayName) )
+                self.scanExperiment.updateScanTarget( displayName, awgUi.varDict() )
+                self.globalVariablesUi.valueChanged.connect( awgUi.evaluate )
+                action = QtGui.QAction(AWGIcon, displayName, self)
+                action.triggered.connect(partial(self.onAWG, displayName))
+                if len(enabledAWGDict) > 1:
+                    menu.addAction(action)
+                else:
+                    self.menuWindows.addAction(action)
+                    AWGButton.clicked.connect(action.trigger)
 
         self.pulserParameterUi = PulserParameterUi(self.pulser, self.config, self.globalVariablesUi.globalDict)
         self.pulserParameterUi.setupUi()
@@ -292,8 +307,6 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
 #        self.tabifyDockWidget( self.DDS9910DockWidget, self.globalVariablesDock )
         self.tabifyDockWidget( self.DACDockWidget, self.globalVariablesDock )
         self.tabifyDockWidget( self.globalVariablesDock, self.valueHistoryDock )
-        # if self.AWGEnabled:
-        #     self.tabifyDockWidget( self.valueHistoryDock, self.AWGUiDock )
         self.triggerDockWidget.hide()
         self.preferencesUiDock.hide()
 
@@ -330,7 +343,6 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.todoListDock.setWidget(self.todoList)
         self.todoListDock.setObjectName("_todoList")
         self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.todoListDock)
-        #if self.AWGEnabled: self.tabifyDockWidget(self.AWGUiDock, self.todoListDock)
         self.tabifyDockWidget(self.valueHistoryDock, self.todoListDock)
 
         for name, widget in self.tabDict.iteritems():
@@ -488,10 +500,11 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.scriptingWindow.setWindowState(QtCore.Qt.WindowActive)
         self.scriptingWindow.raise_()
 
-    def onAWG(self):
-        self.AWGUi.show()
-        self.AWGUi.setWindowState(QtCore.Qt.WindowActive)
-        self.AWGUi.raise_()
+    def onAWG(self, displayName):
+        awgUi = self.AWGUiDict[displayName]
+        awgUi.show()
+        awgUi.setWindowState(QtCore.Qt.WindowActive)
+        awgUi.raise_()
 
     def onMeasurementLog(self):
         self.measurementLog.show()
@@ -656,8 +669,8 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.measurementLog.close()
         if self.voltagesEnabled:
             self.voltageControlWindow.close()
-        if self.AWGEnabled:
-            self.AWGUi.close()
+        for awgUi in self.AWGUiDict.values():
+            awgUi.close()
         numTempAreas = len(self.scanExperiment.area.tempAreas)
         for i in range(numTempAreas):
             if len(self.scanExperiment.area.tempAreas) > 0:
@@ -697,8 +710,8 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.valueHistoryUi.saveConfig()
         self.ExternalParametersUi.saveConfig()
         self.pulserParameterUi.saveConfig()
-        if self.AWGEnabled:
-            self.AWGUi.saveConfig()
+        for awgUi in self.AWGUiDict.values():
+            awgUi.saveConfig()
         
     def onProjectSelection(self):
         ui = ProjectInfoUi(self.project)

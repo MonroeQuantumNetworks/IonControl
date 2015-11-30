@@ -12,22 +12,21 @@ import logging
 
 from modules.magnitude import Magnitude
 from modules.Observable import Observable
+from ProjectConfig.Project import getProject
 
 class AWGDeviceBase(object):
-    """
-    base class for AWG Devices
-    """
-    className = "Generic AWG"
-    _waveform = None
-    enabled = False
-    
+    """base class for AWG Devices"""
+    displayName = "Generic AWG"
+
     # parent should be the AWGUi, which we read whether or not to modify the internal scan as well
-    def __init__(self, name, waveform, parent=None):
+    def __init__(self, waveform, parent=None):
         self.open()
-        self.name = name
         self.parent = parent
         self.varDict = dict()
+        self.enabled = False
+        self._waveform = None
         self.waveform = waveform
+        self.project = getProject()
 
     @property
     def waveform(self):
@@ -42,11 +41,6 @@ class AWGDeviceBase(object):
     def scanParam(self):
         return (self.parent.parameters.setScanParam, str(self.parent.parameters.scanParam))
 
-    def setValue(self, channel, v, continuous):
-        self._waveform.vars[channel]['value'] = v
-        self.program(continuous)
-        return v
-
     def isEnabled(self):
         return self.parent.parameters.enabled
     
@@ -60,9 +54,9 @@ class AWGDeviceBase(object):
         raise NotImplementedError("Method must be implemented by specific AWG device class!")
  
 class ChaseDA12000(AWGDeviceBase):
-    className = "Chase DA12000 AWG"
-    _dllName = "DA12000_DLL64.dll"
- 
+    """Class for programming a ChaseDA12000 AWG"""
+    displayName = "Chase DA12000 AWG"
+
     class SEGMENT(Structure):
         _fields_ = [("SegmentNum", c_ulong),
                     ("SegmentPtr", POINTER(c_ulong)),
@@ -72,49 +66,56 @@ class ChaseDA12000(AWGDeviceBase):
                     ("EndingPadVal", c_ulong), # Not used
                     ("TrigEn", c_ulong),
                     ("NextSegNum", c_ulong)]
-    
-    try:
-        da = WinDLL (_dllName)
-        enabled = True
-    except Exception:
-        logging.getLogger(__name__).info("{0} unavailable. Unable to open {1}.".format(className, _dllName))
-        enabled = False
+
+    def __init__(self, waveform, parent=None):
+        super(ChaseDA12000, self).__init__(waveform, parent)
+        if not self.project.isEnabled('hardware', self.displayName):
+            self.enabled = False
+        else:
+            dllName = self.project.hardware[self.displayName]['DLL']
+            try:
+                self.lib = WinDLL(dllName)
+                self.enabled = True
+            except Exception:
+                logging.getLogger(__name__).info("{0} unavailable. Unable to open {1}.".format(self.displayName, dllName))
+                self.enabled = False
 
     def open(self):
         logger = logging.getLogger(__name__)
         try:
-            ChaseDA12000.da.da12000_Open(1)
+            self.lib.da12000_Open(1)
             self.enabled = True
         except Exception:
-            logger.info("Unable to open {0}.".format(self.className))
+            logger.info("Unable to open {0}.".format(self.displayName))
             self.enabled = False
     
     def program(self, continuous):
         logger = logging.getLogger(__name__)
         if self.enabled:
-            pts = self._waveform.evaluate()
+            pts = self.waveform.evaluate()
             logger.info("writing " + str(len(pts)) + " points to AWG")
             seg_pts = (c_ulong * len(pts))(*pts)
-            seg0 = ChaseDA12000.SEGMENT(0, seg_pts, len(pts), 0, 2048, 2048, 1, 0)
-            seg = (ChaseDA12000.SEGMENT*1)(seg0)
+            seg0 = self.SEGMENT(0, seg_pts, len(pts), 0, 2048, 2048, 1, 0)
+            seg = (self.SEGMENT*1)(seg0)
 
-            ChaseDA12000.da.da12000_CreateSegments(1, 1, 1, seg)
-            ChaseDA12000.da.da12000_SetTriggerMode(1, 1 if continuous else 2, 0)
+            self.lib.da12000_CreateSegments(1, 1, 1, seg)
+            self.lib.da12000_SetTriggerMode(1, 1 if continuous else 2, 0)
         else:
-            logger.warning("{0} unavailable. Unable to program.".format(self.className)) 
+            logger.warning("{0} unavailable. Unable to program.".format(self.displayName))
 
     def close(self):
         if self.enabled:
-            ChaseDA12000.da.da12000_Close(1)
+            self.lib.da12000_Close(1)
         
 class DummyAWG(AWGDeviceBase):
-    className = "Dummy AWG"
+    displayName = "Dummy AWG"
     
     def open(self): pass
     def close(self): pass
     def program(self, continuous): pass
-        
-        
-AWGDeviceList = [ChaseDA12000,
-                 DummyAWG
-                 ]
+
+
+AWGDeviceDict = {
+    ChaseDA12000.displayName : ChaseDA12000.__name__,
+    DummyAWG.displayName : DummyAWG.__name__
+}

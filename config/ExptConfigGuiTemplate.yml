@@ -14,10 +14,6 @@ software:
     description: Interface for controlling a set of voltages
     fields:
       hardware: role
-  &A AWG:
-    description: Interface for using an arbitrary waveform generator
-    fields:
-      hardware: role
   Timestamps:
     description: Interface for reading and plotting the timestamps of TTL pulses
   Memory Profiler:
@@ -51,13 +47,12 @@ hardware:
     fields:
       name: str
       configFile: path
-  Chase AWG:
-    description: Arbitrary Waveform Generator from Chase Scientific Company
-    role: *A
+  Chase DA12000 AWG:
+    description: Arbitrary Waveform Generator DA12000 from Chase Scientific Company
     fields:
-      name: str
-      instrument: str
-      DLL: str
+      DLL: path
+  Dummy AWG:
+    description: AWG interface that doesn't do anything (i.e. without any corresponding hardware)
   Conex Motion:
     description: Conex motorized actuators from Newport Corporation
   APT Motion:

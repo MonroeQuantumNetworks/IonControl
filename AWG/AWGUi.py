@@ -9,7 +9,6 @@ from PyQt4.Qt import QString
 import PyQt4.uic
 from sympy.parsing.sympy_parser import parse_expr
 
-from AWG.AWGDevices import ChaseDA12000, AWGDeviceList
 from AWG.AWGTableModel import AWGTableModel
 from externalParameter.InstrumentSettings import InstrumentSettings
 from externalParameter.persistence import DBPersist
@@ -28,7 +27,7 @@ AWGForm, AWGBase = PyQt4.uic.loadUiType(uipath)
 class AWGWaveform(object):
     expression = Expression()
     def __init__(self):
-        self.__equation = "t"
+        self.__equation = "sin(w*t)"
         self.__points = 64
         self.stack = []
         self.vars = dict()
@@ -98,30 +97,32 @@ class Parameters(object):
 class AWGUi(AWGForm, AWGBase):
     varDictChanged = QtCore.pyqtSignal(object)
     analysisNamesChanged = QtCore.pyqtSignal(object)
-    def __init__(self, pulser, config, globalDict, parent = None):
+    def __init__(self, deviceClass, config, globalDict, parent=None):
         AWGBase.__init__(self, parent)
         AWGForm.__init__(self)
         self.config = config
-        self.configname = 'AWGUi.'
+
+        self.configname = 'AWGUi.' + deviceClass.displayName
         self.persistence = DBPersist()
         self.globalDict = globalDict
         self.parameters = self.config.get(self.configname+"parameters", Parameters())
-            
-    def setupUi(self,parent):
-        logger = logging.getLogger(__name__)
-        AWGForm.setupUi(self,parent)
-        
-        # History and Dictionary
-        self.saveButton.clicked.connect( self.onSave )
-        self.removeButton.clicked.connect( self.onRemove )
-        self.reloadButton.clicked.connect( self.onReload )
-        
-        # Persistence
+        self.parameters.device = deviceClass.displayName
         try:
             self.waveform = self.config.get(self.configname+'waveform', AWGWaveform())
         except (TypeError, AttributeError):
             logger.warn( "Unable to read scan control settings. Setting to new scan." )
             self.waveform = AWGWaveform()
+        self.device = deviceClass(self.waveform, parent=self)
+
+    def setupUi(self,parent):
+        logger = logging.getLogger(__name__)
+        AWGForm.setupUi(self,parent)
+        self.setWindowTitle(self.device.displayName)
+        
+        # History and Dictionary
+        self.saveButton.clicked.connect( self.onSave )
+        self.removeButton.clicked.connect( self.onRemove )
+        self.reloadButton.clicked.connect( self.onReload )
         
         self.settingsDict = self.config.get(self.configname+'dict',dict())
         self.settingsName = self.config.get(self.configname+'settingsName',None)
@@ -131,16 +132,6 @@ class AWGUi(AWGForm, AWGBase):
             self.settingsComboBox.setCurrentIndex( self.settingsComboBox.findText(self.settingsName) )
         self.settingsComboBox.currentIndexChanged[QtCore.QString].connect( self.onLoad )
         self.settingsComboBox.lineEdit().editingFinished.connect( self.checkSettingsSavable )
-        
-        # Devices
-        self.deviceComboBox.clear()
-        self.deviceComboBox.addItems([device.className for device in AWGDeviceList])
-        self.deviceComboBox.currentIndexChanged['QString'].connect(self.setDevice)
-        
-        if not hasattr(self.parameters, 'device'): self.parameters.device = 'Dummy AWG'
-        self.setDevice()
-        self.deviceComboBox.setCurrentIndex([i for i,dev in enumerate(AWGDeviceList) \
-                                             if dev.className == self.parameters.device][0])
         
         # Table
         self.tableModel = AWGTableModel(self.waveform, self.globalDict)
@@ -197,17 +188,6 @@ class AWGUi(AWGForm, AWGBase):
 
         self.checkSettingsSavable()
             
-    def setDevice(self, devicestr=None):
-        logger = logging.getLogger(__name__)
-        if devicestr != None: self.parameters.device = str(devicestr) # in case devicestr is a QString, e.g. from the event listener
-        try:
-            self.device = (device(None, self.waveform, parent=self) \
-                           for device in AWGDeviceList if device.className == self.parameters.device).next()
-        except StopIteration:
-            logger.warn("Could not find awg with string \"%s\", reverting to dummy AWG!", self.parameters.device)
-            self.parameters.device = 'Dummy AWG'
-            self.device = AWGDeviceList[self.parameters.device](None, self.waveform, parent=self)
-    
     def checkSettingsSavable(self, savable=None):
         if not isinstance(savable, bool):
             currentText = str(self.settingsComboBox.currentText())
@@ -275,7 +255,7 @@ class AWGUi(AWGForm, AWGBase):
         
     def onEvalEqn(self):
         self.tableModel.beginResetModel()
-	self.waveform.equation = str(self.equationEdit.text())
+        self.waveform.equation = str(self.equationEdit.text())
         self.refreshWF()
         self.varDictChanged.emit(self.varDict())
         self.checkSettingsSavable()
@@ -318,15 +298,13 @@ class AWGUi(AWGForm, AWGBase):
         
     def replot(self):
         logger = logging.getLogger(__name__)
-        evalError = False
-        try:
-            waveform = self.waveform.evaluate()
-        except (MagnitudeError, NameError, IndexError) as e:
-            logger.warning(e)
-            evalError = True
-        if self.parameters.plotEnabled and not evalError:
-            self.plot.getItem(0,0).clear()
-            self.plot.getItem(0,0).plot(waveform)
+        if self.parameters.plotEnabled:
+            try:
+                waveform = self.waveform.evaluate()
+                self.plot.getItem(0,0).clear()
+                self.plot.getItem(0,0).plot(waveform)
+            except (MagnitudeError, NameError, IndexError) as e:
+                logger.warning(e.__class__.__name__ + ": " + str(e))
 
     def evaluate(self, name):
         self.tableModel.evaluate(name)
