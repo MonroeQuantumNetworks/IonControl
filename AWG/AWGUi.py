@@ -154,6 +154,7 @@ class AWGUi(AWGForm, AWGBase):
         self.plot.setTimeAxis(False)
         self.infoLayout.addWidget(self.plot)
         self.plotCheckbox.setChecked(self.parameters.plotEnabled)
+        self.plot.setVisible(self.parameters.plotEnabled)
         self.plotCheckbox.stateChanged.connect(self.onPlotCheckbox)
 
         # Buttons
@@ -193,6 +194,8 @@ class AWGUi(AWGForm, AWGBase):
             self.waveform = AWGWaveform()
             self.equationEdit.setText(self.waveform.equation)
             self.setWaveform(self.waveform)
+
+        self.checkSettingsSavable()
             
     def setDevice(self, devicestr=None):
         logger = logging.getLogger(__name__)
@@ -271,12 +274,13 @@ class AWGUi(AWGForm, AWGBase):
             self.onSave()
         
     def onEvalEqn(self):
-        self.waveform.equation = str(self.equationEdit.text())
+        self.tableModel.beginResetModel()
+	self.waveform.equation = str(self.equationEdit.text())
         self.refreshWF()
-        
         self.varDictChanged.emit(self.varDict())
         self.checkSettingsSavable()
-        
+        self.tableModel.endResetModel()
+
     def onValue(self, var, value):
         self.refreshWF()
         
