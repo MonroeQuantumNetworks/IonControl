@@ -189,7 +189,7 @@ class DDSUi(DDSForm, DDSBase):
         self.ad9912.reset(mask)
         
     def evaluate(self, name):
-        for setting in enumerate(self.ddsChannels):
+        for setting in self.ddsChannels:
             if setting.evaluateFrequency( self.globalDict ):
                 self.ad9912.setFrequency(setting.channel, setting.frequency)
             if setting.evaluatePhase( self.globalDict ):
