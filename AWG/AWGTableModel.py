@@ -19,12 +19,19 @@ class AWGTableModel(QtCore.QAbstractTableModel):
         self.globalDict = globalDict
         self.defaultBG = QtGui.QColor(QtCore.Qt.white)
         self.textBG = QtGui.QColor(QtCore.Qt.green).lighter(175)
-        
+
+        self.defaultFontName = "Segoe UI"
+        self.defaultFontSize = 9
+        self.normalFont = QtGui.QFont(self.defaultFontName,self.defaultFontSize,QtGui.QFont.Normal)
+        self.boldFont = QtGui.QFont(self.defaultFontName,self.defaultFontSize,QtGui.QFont.Bold)
+
         self.dataLookup = {
-            (QtCore.Qt.DisplayRole, 0): lambda row: self.waveform.vars.keys()[row],
-            (QtCore.Qt.DisplayRole, 1): lambda row: str(self.waveform.vars.values()[row]['value']),
-            (QtCore.Qt.EditRole, 1): lambda row: firstNotNone( self.waveform.vars.values()[row]['text'], str(self.waveform.vars.values()[row]['value'])),
-            (QtCore.Qt.BackgroundColorRole,1): lambda row: self.defaultBG if self.waveform.vars.values()[row]['text'] is None else self.textBG,
+            (QtCore.Qt.DisplayRole, 0): lambda row: self.waveform.vars.keyAt(row),
+            (QtCore.Qt.DisplayRole, 1): lambda row: str(self.waveform.vars.at(row)['value']),
+            (QtCore.Qt.FontRole, 0): lambda row: self.boldFont if self.waveform.vars.keyAt(row)=='Duration' else self.normalFont,
+            (QtCore.Qt.FontRole, 1): lambda row: self.boldFont if self.waveform.vars.keyAt(row)=='Duration' else self.normalFont,
+            (QtCore.Qt.EditRole, 1): lambda row: firstNotNone( self.waveform.vars.at(row)['text'], str(self.waveform.vars.at(row)['value'])),
+            (QtCore.Qt.BackgroundColorRole, 1): lambda row: self.defaultBG if self.waveform.vars.at(row)['text'] is None else self.textBG
         }
         self.setDataLookup =  { 
             (QtCore.Qt.EditRole,1): self.setValue,
@@ -32,12 +39,12 @@ class AWGTableModel(QtCore.QAbstractTableModel):
         }
         
     def setValue(self, index, value):
-        self.waveform.vars[self.waveform.vars.keys()[index.row()]]['value'] = value
-        self.valueChanged.emit(self.waveform.vars.keys()[index.row()], value)
+        self.waveform.vars[self.waveform.vars.keyAt(index.row())]['value'] = value
+        self.valueChanged.emit(self.waveform.vars.keyAt(index.row()), value)
         return True
     
     def setText(self, index, value):
-        self.waveform.vars[self.waveform.vars.keys()[index.row()]]['text'] = value
+        self.waveform.vars[self.waveform.vars.keyAt(index.row())]['text'] = value
         return True
     
     def rowCount(self, parent=QtCore.QModelIndex()): 
@@ -76,6 +83,6 @@ class AWGTableModel(QtCore.QAbstractTableModel):
             if expr is not None:
                 value = Expression().evaluateAsMagnitude(expr, self.globalDict)
                 self.waveform.vars[key]['value'] = value   # set saved value to make this new value the default
-                itemPos = self.createIndex(self.waveform.vars.keys().index(key),1)
+                itemPos = self.createIndex(self.waveform.vars.index(key),1)
                 self.dataChanged.emit(itemPos, itemPos)
                 self.valueChanged.emit(key, value)

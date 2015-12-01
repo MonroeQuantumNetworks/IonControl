@@ -14,6 +14,7 @@ from externalParameter.InstrumentSettings import InstrumentSettings
 from externalParameter.persistence import DBPersist
 from modules.Expression import Expression
 from modules.firstNotNone import firstNotNone
+from modules.SequenceDict import SequenceDict
 from modules.magnitude import mg, MagnitudeError
 import numpy as np
 import sympy as sp
@@ -30,7 +31,7 @@ class AWGWaveform(object):
         self.__equation = "sin(w*t)"
         self.__points = 64
         self.stack = []
-        self.vars = dict()
+        self.vars = SequenceDict()
        
     @property
     def points(self):
@@ -50,12 +51,12 @@ class AWGWaveform(object):
         oldvars = self.vars
         self.__equation = equation
         self.stack = self.expression._parse_expression(self.__equation)
-        self.vars = dict((i,  {'value': oldvars[i]['value'] if oldvars.has_key(i) else mg(0),
-                               'text': oldvars[i]['text'] if oldvars.has_key(i) else None}) for i in self.expression.findDependencies(
-                        self.stack))
+        self.vars = SequenceDict( [(i,  {'value': oldvars[i]['value'] if oldvars.has_key(i) else mg(0),
+                   'text': oldvars[i]['text'] if oldvars.has_key(i) else None}) for i in self.expression.findDependencies(self.stack)] )
         self.vars.pop('t')
         self.vars['Duration'] = {'value': oldvars['Duration']['value'] if oldvars.has_key('Duration') else mg(1, 'us'), 'text': None}
-    
+        self.vars.sort(key = lambda val: -1 if val[0]=='Duration' else ord( str(val[0])[0] ))
+
     def evaluate(self):
         if not self.vars.has_key('Duration'): self.vars['Duration'] = {'value': mg(1, 'us'), 'text': None}
         self.points = int(self.vars['Duration']['value'].ounit('ns').toval())
