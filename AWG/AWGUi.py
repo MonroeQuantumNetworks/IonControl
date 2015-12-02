@@ -56,8 +56,7 @@ class AWGUi(AWGForm, AWGBase):
         self.settingsDict = self.config.get(self.configname+'.settingsDict', dict())
         self.settingsName = self.config.get(self.configname+'.settingsName', '')
         self.settings = copy.deepcopy(self.settingsDict[self.settingsName]) if self.settingsName in self.settingsDict else Settings()
-        self.device = deviceClass(self.settings.waveform, parent=self)
-        self.settings.waveform = self.device.waveform
+        self.device = deviceClass(self.settings, parent=self)
         self.pulseProgramUi = pulseProgramUi
 
     def setupUi(self,parent):
@@ -65,11 +64,10 @@ class AWGUi(AWGForm, AWGBase):
         AWGForm.setupUi(self,parent)
         self.setWindowTitle(self.device.displayName)
 
-        # History and Dictionary
+        # Settings control
         self.saveButton.clicked.connect( self.onSave )
         self.removeButton.clicked.connect( self.onRemove )
         self.reloadButton.clicked.connect( self.onReload )
-
         self.settingsModel = QtGui.QStringListModel()
         self.settingsComboBox.setModel(self.settingsModel)
         self.settingsModel.setStringList( sorted(self.settingsDict.keys()) )
@@ -184,7 +182,7 @@ class AWGUi(AWGForm, AWGBase):
 
     def refreshWaveform(self):
         self.tableModel.beginResetModel()
-        self.device.waveform = self.settings.waveform
+        self.device.settings = self.settings
         self.tableModel.waveform = self.settings.waveform
         self.tableModel.endResetModel()
 
@@ -242,7 +240,7 @@ class AWGUi(AWGForm, AWGBase):
         logger = logging.getLogger(__name__)
         if self.settings.plotEnabled:
             try:
-                waveform = self.device.waveform.evaluate()
+                waveform = self.settings.waveform.evaluate()
                 self.plot.getItem(0,0).clear()
                 self.plot.getItem(0,0).plot(waveform, pen=solidBluePen)
             except (MagnitudeError, NameError, IndexError) as e:

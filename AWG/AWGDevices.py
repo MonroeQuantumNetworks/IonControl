@@ -16,14 +16,16 @@ from AWG.AWGWaveform import AWGWaveform
 class AWGDeviceBase(object):
     """base class for AWG Devices"""
     # parent should be the AWGUi, which we read whether or not to modify the internal scan as well
-    def __init__(self, waveform, parent=None):
+    def __init__(self, settings, parent=None):
         self.open()
         self.parent = parent
         self.enabled = False
-        self.waveform = waveform if waveform else AWGWaveform('A*sin(w*t+phi) + offset', self.sampleRate, self.maxSamples, self.maxAmplitude)
-        self.waveform.sampleRate = self.sampleRate
-        self.waveform.maxSamples = self.maxSamples
-        self.waveform.maxAmplitude = self.maxAmplitude
+        self.settings = settings
+        if not self.settings.waveform:
+            self.settings.waveform = AWGWaveform('A*sin(w*t+phi) + offset', self.sampleRate, self.maxSamples, self.maxAmplitude)
+        self.settings.waveform.sampleRate = self.sampleRate
+        self.settings.waveform.maxSamples = self.maxSamples
+        self.settings.waveform.maxAmplitude = self.maxAmplitude
         self.project = getProject()
         new_mag('sample', 1/self.sampleRate)
         new_mag('samples', 1/self.sampleRate)
@@ -63,8 +65,8 @@ class ChaseDA12000(AWGDeviceBase):
                     ("TrigEn", c_ulong),
                     ("NextSegNum", c_ulong)]
 
-    def __init__(self, waveform, parent=None):
-        super(ChaseDA12000, self).__init__(waveform, parent)
+    def __init__(self, settings, parent=None):
+        super(ChaseDA12000, self).__init__(settings, parent)
         if not self.project.isEnabled('hardware', self.displayName):
             self.enabled = False
         else:
@@ -88,7 +90,7 @@ class ChaseDA12000(AWGDeviceBase):
     def program(self, continuous):
         logger = logging.getLogger(__name__)
         if self.enabled:
-            pts = self.waveform.evaluate()
+            pts = self.settings.waveform.evaluate()
             logger.info("writing " + str(len(pts)) + " points to AWG")
             seg_pts = (c_ulong * len(pts))(*pts)
             seg0 = self.SEGMENT(0, seg_pts, len(pts), 0, 2048, 2048, 1, 0)
