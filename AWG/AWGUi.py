@@ -25,18 +25,16 @@ class Settings(object):
         self.setScanParam = False
         self.scanParam = ""
         self.plotEnabled = True
-        self.continuous = False
-        self.programOnScanStart = False
         self.waveform = None
+        self.deviceSettings = dict()
 
     def __setstate__(self, state):
         self.__dict__ = state
         self.__dict__.setdefault('plotEnabled', True)
-        self.__dict__.setdefault('continuous', False)
-        self.__dict__.setdefault('programOnScanStart', False)
         self.__dict__.setdefault('waveform', None)
+        self.__dict__.setdefault('deviceSettings', dict())
 
-    stateFields = ['setScanParam', 'scanParam', 'plotEnabled', 'continuous', 'programOnScanStart', 'waveform']
+    stateFields = ['setScanParam', 'scanParam', 'plotEnabled', 'waveform', 'deviceSettings']
 
     def __eq__(self,other):
         return tuple(getattr(self,field) for field in self.stateFields)==tuple(getattr(other,field) for field in self.stateFields)
@@ -74,7 +72,10 @@ class AWGUi(AWGForm, AWGBase):
         self.settingsComboBox.setCurrentIndex( self.settingsComboBox.findText(self.settingsName) )
         self.settingsComboBox.currentIndexChanged[str].connect( self.onLoad )
         self.settingsComboBox.lineEdit().editingFinished.connect( self.onComboBoxEditingFinished )
-        
+
+        #programming options widget
+        self.programmingOptionsTreeWidget.setParameters( self.device.parameter() )
+
         # Table
         self.tableModel = AWGTableModel(self.settings.waveform, self.globalDict)
         self.tableView.setModel( self.tableModel )
@@ -84,9 +85,7 @@ class AWGUi(AWGForm, AWGBase):
         
         # Graph and equation
         self.equationEdit.setText(self.settings.waveform.equation)
-        self.plot = CoordinatePlotWidget(self, name="Plot")
         self.plot.setTimeAxis(False)
-        self.infoLayout.addWidget(self.plot)
         self.plotCheckbox.setChecked(self.settings.plotEnabled)
         self.plot.setVisible(self.settings.plotEnabled)
         self.plotCheckbox.stateChanged.connect(self.onPlotCheckbox)
@@ -94,12 +93,7 @@ class AWGUi(AWGForm, AWGBase):
         # Buttons
         self.evalButton.clicked.connect(self.onEvalEqn)
         self.equationEdit.returnPressed.connect(self.onEvalEqn)
-        self.programButton.clicked.connect(self.onProgram)
-        self.triggerButton.clicked.connect(self.onTrigger)
-        self.programOnScanCheckbox.stateChanged.connect(self.onProgramOnScan)
-        self.programOnScanCheckbox.setChecked(self.settings.programOnScanStart)
-        self.onProgramOnScan(self.settings.programOnScanStart)
-        
+
         # Context Menu
         self.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
         self.autoSaveAction = QtGui.QAction( "auto save" , self)
@@ -108,10 +102,6 @@ class AWGUi(AWGForm, AWGBase):
         self.saveButton.setEnabled( not self.autoSave )
         self.autoSaveAction.triggered.connect( self.onAutoSave )
         self.addAction( self.autoSaveAction )
-        
-        # continuous check box
-        self.continuousCheckBox.setChecked(self.settings.continuous )
-        self.continuousCheckBox.stateChanged.connect( self.onContinuousCheckBox )
         
         # Set scan param
         self.pulseProgramUi.pulseProgramChanged.connect(self.setPulseProgramVariables)
@@ -156,7 +146,11 @@ class AWGUi(AWGForm, AWGBase):
         name = str(self.settingsComboBox.currentText())
         if name in self.settingsDict:
             self.settingsDict.pop(name)
-            self.settingsName = self.settingsDict.keys()[0] if self.settingsDict else ''
+            if self.settingsDict:
+                self.settingsName = self.settingsDict.keys()[0]
+                self.onLoad(self.settingsName)
+            else:
+                self.settingsName = ''
             with BlockSignals(self.settingsComboBox) as w:
                 self.settingsModel.setStringList( sorted(self.settingsDict.keys()) )
                 w.setCurrentIndex(w.findText(self.settingsName))
@@ -171,11 +165,10 @@ class AWGUi(AWGForm, AWGBase):
             self.settingsName = name
             self.settings = copy.deepcopy(self.settingsDict[self.settingsName])
             self.refreshWaveform()
+            self.programmingOptionsTreeWidget.setParameters( self.device.parameter() )
             self.plotCheckbox.setChecked(self.settings.plotEnabled)
             self.setScanParam.setChecked(self.settings.setScanParam)
             self.scanParamComboBox.setCurrentIndex(self.scanParamComboBox.findText(self.settings.scanParam))
-            self.continuousCheckBox.setChecked(self.settings.continuous)
-            self.programOnScanCheckbox.setChecked(self.settings.programOnScanStart)
             self.saveButton.setEnabled(False)
             self.replot()
             self.saveIfNecessary()
@@ -215,27 +208,6 @@ class AWGUi(AWGForm, AWGBase):
         self.settings.scanParam = parameter
         self.saveIfNecessary()
         
-    def onProgramOnScan(self, checked):
-        if checked:
-            self.settings.programOnScanStart = True
-            self.programOnScanCheckbox.setText("Auto AWG program enabled")
-            self.programOnScanCheckbox.setStyleSheet('background-color: rgb(85, 255, 127);')
-        else:
-            self.settings.programOnScanStart = False
-            self.programOnScanCheckbox.setText("Auto AWG program disabled")
-            self.programOnScanCheckbox.setStyleSheet('background-color: rgb(255, 166, 168);')
-        self.saveIfNecessary()
-        
-    def onContinuousCheckBox(self, checked):
-        self.settings.continuous = checked
-        self.saveIfNecessary()
-        
-    def onProgram(self):
-        self.device.program(self.settings.continuous)
-
-    def onTrigger(self):
-        self.device.trigger()
-
     def replot(self):
         logger = logging.getLogger(__name__)
         if self.settings.plotEnabled:

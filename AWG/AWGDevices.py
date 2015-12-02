@@ -12,6 +12,9 @@ import logging
 from modules.magnitude import mg, Magnitude, new_mag
 from ProjectConfig.Project import getProject
 from AWG.AWGWaveform import AWGWaveform
+from pyqtgraph.parametertree.Parameter import Parameter
+from PyQt4 import QtCore
+from functools import partial
 
 class AWGDeviceBase(object):
     """base class for AWG Devices"""
@@ -32,6 +35,31 @@ class AWGDeviceBase(object):
 
     def scanParam(self):
         return self.parent.settings.setScanParam, str(self.parent.settings.scanParam)
+
+    def paramDef(self):
+        """return the parameter definition used by pyqtgraph parametertree to show the gui"""
+        self.settings.deviceSettings.setdefault('programOnScanStart', False)
+        return [
+            {'name': 'Program on scan start', 'type': 'bool', 'value': self.settings.deviceSettings['programOnScanStart'], 'tip': "", 'key': 'programOnScanStart'},
+            {'name': 'Program now', 'type': 'action', 'key':'program'},
+            {'name': 'Trigger now', 'type': 'action', 'key':'trigger'}
+        ]
+
+    def parameter(self):
+        # re-create the parameters each time to prevent a exception that says the signal is not connected
+        self._parameter = Parameter.create(name='Programming Options', type='group', children=self.paramDef())
+        self._parameter.sigTreeStateChanged.connect(self.update, QtCore.Qt.UniqueConnection)
+        return self._parameter
+
+    def update(self, param, changes):
+        """update the parameter, called by the signal of pyqtgraph parametertree"""
+        for param, change, data in changes:
+            if change=='value':
+                self.settings.deviceSettings[param.opts['key']] = data
+                self.parent.saveIfNecessary()
+            elif change=='activated':
+                getattr( self, param.opts['key'] )()
+
 
     #functions and attributes that must be defined by inheritors
     def open(self): raise NotImplementedError("'open' method must be implemented by specific AWG device class")
@@ -77,6 +105,15 @@ class ChaseDA12000(AWGDeviceBase):
             except Exception:
                 logging.getLogger(__name__).info("{0} unavailable. Unable to open {1}.".format(self.displayName, dllName))
                 self.enabled = False
+
+    def paramDef(self):
+        """return the parameter definition used by pyqtgraph parametertree to show the gui"""
+        self.settings.deviceSettings.setdefault('continuous', False)
+        paramList = [
+            {'name': 'Run continuously', 'type': 'bool', 'value': self.settings.deviceSettings['continuous'], 'tip': "Restart sequence at sequence end, continuously (no trigger)", 'key': 'continuous'}
+        ]
+        paramList.extend( super(ChaseDA12000, self).paramDef() )
+        return paramList
 
     def open(self):
         logger = logging.getLogger(__name__)

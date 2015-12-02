@@ -18,7 +18,7 @@
     <normaloff>:/other/icons/AWG.png</normaloff>:/other/icons/AWG.png</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QVBoxLayout" name="verticalLayout_2">
+   <layout class="QVBoxLayout" name="verticalLayout">
     <item>
      <layout class="QHBoxLayout" name="horizontalLayout_2">
       <item>
@@ -124,11 +124,23 @@
      </layout>
     </item>
     <item>
-     <layout class="QVBoxLayout" name="infoLayout">
-      <item>
-       <widget class="QTableView" name="tableView"/>
-      </item>
-     </layout>
+     <widget class="QSplitter" name="splitter">
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
+      </property>
+      <widget class="QTableView" name="tableView"/>
+      <widget class="CoordinatePlotWidget" name="plot"/>
+      <widget class="ParameterTree" name="programmingOptionsTreeWidget">
+       <attribute name="headerVisible">
+        <bool>false</bool>
+       </attribute>
+       <column>
+        <property name="text">
+         <string notr="true">1</string>
+        </property>
+       </column>
+      </widget>
+     </widget>
     </item>
     <item>
      <widget class="QCheckBox" name="plotCheckbox">
@@ -141,77 +153,21 @@
      <layout class="QHBoxLayout" name="horizontalLayout">
       <item>
        <widget class="QCheckBox" name="setScanParam">
+        <property name="toolTip">
+         <string>If Duration is scanned, the specified pulse program parameter will be scanned in concert</string>
+        </property>
         <property name="layoutDirection">
          <enum>Qt::LeftToRight</enum>
         </property>
         <property name="text">
-         <string>Set scan parameter from duration</string>
+         <string>Set scan parameter from Duration</string>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="QLineEdit" name="scanParam">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-       </widget>
+       <widget class="QComboBox" name="scanParamComboBox"/>
       </item>
      </layout>
-    </item>
-    <item>
-     <widget class="QGroupBox" name="programmingOptions">
-      <property name="title">
-       <string>Programming Options</string>
-      </property>
-      <layout class="QVBoxLayout" name="verticalLayout">
-       <item>
-        <widget class="QCheckBox" name="continuousCheckBox">
-         <property name="toolTip">
-          <string>sequence restarts immediately on completion, without a trigger</string>
-         </property>
-         <property name="layoutDirection">
-          <enum>Qt::LeftToRight</enum>
-         </property>
-         <property name="text">
-          <string>Run continuous (no trigger)</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QCheckBox" name="programOnScanCheckbox">
-         <property name="styleSheet">
-          <string notr="true"/>
-         </property>
-         <property name="text">
-          <string>Program AWG on scan start</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QPushButton" name="programButton">
-         <property name="toolTip">
-          <string/>
-         </property>
-         <property name="text">
-          <string>Program now</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QPushButton" name="triggerButton">
-         <property name="toolTip">
-          <string/>
-         </property>
-         <property name="text">
-          <string>Trigger now</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </widget>
     </item>
    </layout>
   </widget>
@@ -227,6 +183,18 @@
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ParameterTree</class>
+   <extends>QTreeWidget</extends>
+   <header>pyqtgraph.parametertree</header>
+  </customwidget>
+  <customwidget>
+   <class>CoordinatePlotWidget</class>
+   <extends>QGraphicsView</extends>
+   <header>uiModules.CoordinatePlotWidget</header>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="Experiment.qrc"/>
  </resources>
