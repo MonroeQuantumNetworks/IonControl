@@ -13,6 +13,7 @@ from modules.magnitude import mg, MagnitudeError
 from uiModules.CoordinatePlotWidget import CoordinatePlotWidget
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 from modules.PyqtUtility import BlockSignals
+from modules.PyqtUtility import updateComboBoxItems
 from trace.pens import solidBluePen
 
 import os
@@ -45,7 +46,7 @@ class Settings(object):
 
 class AWGUi(AWGForm, AWGBase):
     varDictChanged = QtCore.pyqtSignal(object)
-    def __init__(self, deviceClass, config, globalDict, parent=None):
+    def __init__(self, deviceClass, config, globalDict, pulseProgramUi, parent=None):
         AWGBase.__init__(self, parent)
         AWGForm.__init__(self)
         self.config = config
@@ -57,12 +58,13 @@ class AWGUi(AWGForm, AWGBase):
         self.settings = copy.deepcopy(self.settingsDict[self.settingsName]) if self.settingsName in self.settingsDict else Settings()
         self.device = deviceClass(self.settings.waveform, parent=self)
         self.settings.waveform = self.device.waveform
+        self.pulseProgramUi = pulseProgramUi
 
     def setupUi(self,parent):
         logger = logging.getLogger(__name__)
         AWGForm.setupUi(self,parent)
         self.setWindowTitle(self.device.displayName)
-        
+
         # History and Dictionary
         self.saveButton.clicked.connect( self.onSave )
         self.removeButton.clicked.connect( self.onRemove )
@@ -114,11 +116,13 @@ class AWGUi(AWGForm, AWGBase):
         self.continuousCheckBox.stateChanged.connect( self.onContinuousCheckBox )
         
         # Set scan param
+        self.pulseProgramUi.pulseProgramChanged.connect(self.setPulseProgramVariables)
+        self.setPulseProgramVariables()
         self.setScanParam.setChecked(self.settings.setScanParam )
-        self.setScanParam.stateChanged.connect( self.onSetScanParamCheck )
-        self.scanParam.setEnabled(self.settings.setScanParam)
-        self.scanParam.setText(self.settings.scanParam)
-        self.scanParam.textChanged.connect(self.onScanParam)
+        self.setScanParam.stateChanged.connect(self.onSetScanParam)
+        self.scanParamComboBox.setCurrentIndex(self.scanParamComboBox.findText(self.settings.scanParam))
+        self.scanParamComboBox.setEnabled(self.settings.setScanParam)
+        self.scanParamComboBox.currentIndexChanged[str].connect(self.onScanParam)
 
         self.replot()
 
@@ -171,7 +175,7 @@ class AWGUi(AWGForm, AWGBase):
             self.refreshWaveform()
             self.plotCheckbox.setChecked(self.settings.plotEnabled)
             self.setScanParam.setChecked(self.settings.setScanParam)
-            self.scanParam.setText(self.settings.scanParam)
+            self.scanParamComboBox.setCurrentIndex(self.scanParamComboBox.findText(self.settings.scanParam))
             self.continuousCheckBox.setChecked(self.settings.continuous)
             self.programOnScanCheckbox.setChecked(self.settings.programOnScanStart)
             self.saveButton.setEnabled(False)
@@ -202,17 +206,15 @@ class AWGUi(AWGForm, AWGBase):
         self.saveIfNecessary()
         self.replot()
         
-    def onSetScanParamCheck(self, state):
-        if state == QtCore.Qt.Checked:
-            self.scanParam.setEnabled(True)
-            self.settings.setScanParam = True
-        else:
-            self.scanParam.setEnabled(False)
-            self.settings.setScanParam = False
+    def onSetScanParam(self, state):
+        checked = state==QtCore.Qt.Checked
+        self.scanParamComboBox.setEnabled(checked)
+        self.settings.setScanParam = checked
         self.saveIfNecessary()
         
-    def onScanParam(self, text):
-        self.settings.scanParam = text
+    def onScanParam(self, parameter):
+        parameter = str(parameter)
+        self.settings.scanParam = parameter
         self.saveIfNecessary()
         
     def onProgramOnScan(self, checked):
@@ -257,3 +259,6 @@ class AWGUi(AWGForm, AWGBase):
             self.replot()
         self.plot.setVisible(checked)
         self.saveIfNecessary()
+
+    def setPulseProgramVariables(self):
+        updateComboBoxItems(self.scanParamComboBox, [var.name for var in sorted(self.pulseProgramUi.pulseProgram.variabledict.values()) if var.type=='parameter'])

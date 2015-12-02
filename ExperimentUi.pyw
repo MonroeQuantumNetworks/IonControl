@@ -246,7 +246,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
                 menu.setIcon(AWGIcon)
                 self.menuWindows.addMenu(menu)
             for displayName, className in enabledAWGDict.iteritems():
-                awgUi = AWGUi(getattr(AWGDevices, className), self.config, self.globalVariablesUi.globalDict)
+                awgUi = AWGUi(getattr(AWGDevices, className), self.config, self.globalVariablesUi.globalDict, self.scanExperiment.pulseProgramUi)
                 self.AWGUiDict[displayName] = awgUi
                 awgUi.setupUi(awgUi)
                 awgUi.varDictChanged.connect( partial(self.scanExperiment.updateScanTarget, displayName) )
