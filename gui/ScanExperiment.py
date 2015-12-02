@@ -373,7 +373,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                     # don't scan over scanParam if not a duration scan. instead override scanParam if necessary and program the AWG
                     if not (self.context.scan.scanMode == 0 and self.context.scan.scanTarget == "AWG" and self.context.scan.scanParameter == "Duration"):
                         if setScanParam:
-                            override = {scanParam: AWGdevice._waveform.vars['Duration']['value']}
+                            override = {scanParam: AWGdevice.waveform.varDict['Duration']['value']}
                             scanParam = None
                         AWGdevice.program(False)
             

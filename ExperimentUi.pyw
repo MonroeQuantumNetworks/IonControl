@@ -250,7 +250,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
                 self.AWGUiDict[displayName] = awgUi
                 awgUi.setupUi(awgUi)
                 awgUi.varDictChanged.connect( partial(self.scanExperiment.updateScanTarget, displayName) )
-                self.scanExperiment.updateScanTarget( displayName, awgUi.varDict() )
+                self.scanExperiment.updateScanTarget( displayName, awgUi.settings.waveform.varDimensionDict )
                 self.globalVariablesUi.valueChanged.connect( awgUi.evaluate )
                 action = QtGui.QAction(AWGIcon, displayName, self)
                 action.triggered.connect(partial(self.onAWG, displayName))

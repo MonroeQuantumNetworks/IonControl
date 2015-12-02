@@ -9,53 +9,49 @@ it must inherit AWGDeviceBase and implement open, program, and close.
 
 from ctypes import *
 import logging
-
-from modules.magnitude import Magnitude
-from modules.Observable import Observable
+from modules.magnitude import mg, Magnitude, new_mag
 from ProjectConfig.Project import getProject
+from AWG.AWGWaveform import AWGWaveform
 
 class AWGDeviceBase(object):
     """base class for AWG Devices"""
-    displayName = "Generic AWG"
-
     # parent should be the AWGUi, which we read whether or not to modify the internal scan as well
     def __init__(self, waveform, parent=None):
         self.open()
         self.parent = parent
-        self.varDict = dict()
         self.enabled = False
-        self._waveform = None
-        self.waveform = waveform
+        self.waveform = waveform if waveform else AWGWaveform('A*sin(w*t+phi) + offset', self.sampleRate, self.maxSamples, self.maxAmplitude)
+        self.waveform.sampleRate = self.sampleRate
+        self.waveform.maxSamples = self.maxSamples
+        self.waveform.maxAmplitude = self.maxAmplitude
         self.project = getProject()
-
-    @property
-    def waveform(self):
-        return self._waveform
-
-    @waveform.setter
-    def waveform(self, waveform):
-        self._waveform = waveform
-        self.varDict = {k: "" if (not isinstance(v['value'], Magnitude)) or v['value'].dimensionless() else \
-                      str(v['value']).split(" ")[1] for (k, v) in self._waveform.vars.iteritems()}
+        new_mag('sample', 1/self.sampleRate)
+        new_mag('samples', 1/self.sampleRate)
 
     def scanParam(self):
-        return (self.parent.parameters.setScanParam, str(self.parent.parameters.scanParam))
+        return self.parent.settings.setScanParam, str(self.parent.settings.scanParam)
 
-    def isEnabled(self):
-        return self.parent.parameters.enabled
-    
-    def open(self):
-        raise NotImplementedError("Method must be implemented by specific AWG device class!")
-    
-    def program(self, continuous):
-        raise NotImplementedError("Method must be implemented by specific AWG device class!")
-        
-    def close(self):
-        raise NotImplementedError("Method must be implemented by specific AWG device class!")
- 
+    #functions and attributes that must be defined by inheritors
+    def open(self): raise NotImplementedError("'open' method must be implemented by specific AWG device class")
+    def program(self, continuous): raise NotImplementedError("'program' method must be implemented by specific AWG device class")
+    def trigger(self): raise NotImplementedError("'trigger' method must be implemented by specific AWG device class")
+    def close(self): raise NotImplementedError("'close' method must be implemented by specific AWG device class")
+    @property
+    def displayName(self): raise NotImplementedError("'displayName' field must be defined by specific AWG device class")
+    @property
+    def sampleRate(self): raise NotImplementedError("'sampleRate' field must be defined by specific AWG device class")
+    @property
+    def maxSamples(self): raise NotImplementedError("'maxSamples' field must be defined by specific AWG device class")
+    @property
+    def maxAmplitude(self): raise NotImplementedError("'maxAmplitude' field must be defined by specific AWG device class")
+
+
 class ChaseDA12000(AWGDeviceBase):
     """Class for programming a ChaseDA12000 AWG"""
     displayName = "Chase DA12000 AWG"
+    sampleRate = mg(1, 'GHz')
+    maxSamples = 4000000
+    maxAmplitude = 4095
 
     class SEGMENT(Structure):
         _fields_ = [("SegmentNum", c_ulong),
@@ -103,16 +99,23 @@ class ChaseDA12000(AWGDeviceBase):
         else:
             logger.warning("{0} unavailable. Unable to program.".format(self.displayName))
 
+    def trigger(self):
+        pass #need to put code for triggering here
+
     def close(self):
         if self.enabled:
             self.lib.da12000_Close(1)
         
 class DummyAWG(AWGDeviceBase):
     displayName = "Dummy AWG"
+    sampleRate = mg(1, 'GHz')
+    maxSamples = 4000000
+    maxAmplitude = 4095
     
     def open(self): pass
     def close(self): pass
     def program(self, continuous): pass
+    def trigger(self): pass
 
 
 AWGDeviceDict = {

@@ -26,12 +26,12 @@ class AWGTableModel(QtCore.QAbstractTableModel):
         self.boldFont = QtGui.QFont(self.defaultFontName,self.defaultFontSize,QtGui.QFont.Bold)
 
         self.dataLookup = {
-            (QtCore.Qt.DisplayRole, 0): lambda row: self.waveform.vars.keyAt(row),
-            (QtCore.Qt.DisplayRole, 1): lambda row: str(self.waveform.vars.at(row)['value']),
-            (QtCore.Qt.FontRole, 0): lambda row: self.boldFont if self.waveform.vars.keyAt(row)=='Duration' else self.normalFont,
-            (QtCore.Qt.FontRole, 1): lambda row: self.boldFont if self.waveform.vars.keyAt(row)=='Duration' else self.normalFont,
-            (QtCore.Qt.EditRole, 1): lambda row: firstNotNone( self.waveform.vars.at(row)['text'], str(self.waveform.vars.at(row)['value'])),
-            (QtCore.Qt.BackgroundColorRole, 1): lambda row: self.defaultBG if self.waveform.vars.at(row)['text'] is None else self.textBG
+            (QtCore.Qt.DisplayRole, 0): lambda row: self.waveform.varDict.keyAt(row),
+            (QtCore.Qt.DisplayRole, 1): lambda row: str(self.waveform.varDict.at(row)['value']),
+            (QtCore.Qt.FontRole, 0): lambda row: self.boldFont if self.waveform.varDict.keyAt(row)=='Duration' else self.normalFont,
+            (QtCore.Qt.FontRole, 1): lambda row: self.boldFont if self.waveform.varDict.keyAt(row)=='Duration' else self.normalFont,
+            (QtCore.Qt.EditRole, 1): lambda row: firstNotNone( self.waveform.varDict.at(row)['text'], str(self.waveform.varDict.at(row)['value'])),
+            (QtCore.Qt.BackgroundColorRole, 1): lambda row: self.defaultBG if self.waveform.varDict.at(row)['text'] is None else self.textBG
         }
         self.setDataLookup =  { 
             (QtCore.Qt.EditRole,1): self.setValue,
@@ -39,16 +39,20 @@ class AWGTableModel(QtCore.QAbstractTableModel):
         }
         
     def setValue(self, index, value):
-        self.waveform.vars[self.waveform.vars.keyAt(index.row())]['value'] = value
-        self.valueChanged.emit(self.waveform.vars.keyAt(index.row()), value)
+        row = index.row()
+        name = self.waveform.varDict.keyAt(row)
+        var = self.waveform.varDict.at(row)
+        var['value'] = value
+        self.valueChanged.emit(name, value)
         return True
     
     def setText(self, index, value):
-        self.waveform.vars[self.waveform.vars.keyAt(index.row())]['text'] = value
+        row = index.row()
+        self.waveform.varDict.at(row)['text'] = value
         return True
     
     def rowCount(self, parent=QtCore.QModelIndex()): 
-        return len(self.waveform.vars) 
+        return len(self.waveform.varDict)
         
     def columnCount(self, parent=QtCore.QModelIndex()): 
         return 2
@@ -57,12 +61,7 @@ class AWGTableModel(QtCore.QAbstractTableModel):
         if index.isValid():
             return self.dataLookup.get((role, index.column()), lambda row: None)(index.row())
         return None
-    
-    def setWaveform(self, waveform):
-        self.beginResetModel()
-        self.waveform = waveform
-        self.endResetModel()
-        
+
     def setData(self, index, value, role):
         return self.setDataLookup.get((role,index.column()), lambda index, value: False )(index, value)
         
@@ -78,11 +77,11 @@ class AWGTableModel(QtCore.QAbstractTableModel):
         return None  # QtCore.QVariant()
     
     def evaluate(self, name):
-        for (key,value) in self.waveform.vars.iteritems():
-            expr = value['text']
+        for (varName, varValueTextDict) in self.waveform.varDict.iteritems():
+            expr = varValueTextDict['text']
             if expr is not None:
                 value = Expression().evaluateAsMagnitude(expr, self.globalDict)
-                self.waveform.vars[key]['value'] = value   # set saved value to make this new value the default
-                itemPos = self.createIndex(self.waveform.vars.index(key),1)
-                self.dataChanged.emit(itemPos, itemPos)
-                self.valueChanged.emit(key, value)
+                self.waveform.varDict[varName]['value'] = value   # set saved value to make this new value the default
+                modelIndex = self.createIndex(self.waveform.varDict.index(varName),1)
+                self.dataChanged.emit(modelIndex, modelIndex)
+                self.valueChanged.emit(varName, value)
