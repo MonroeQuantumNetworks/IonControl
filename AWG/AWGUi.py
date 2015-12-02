@@ -13,6 +13,7 @@ from modules.magnitude import mg, MagnitudeError
 from uiModules.CoordinatePlotWidget import CoordinatePlotWidget
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 from modules.PyqtUtility import BlockSignals
+from trace.pens import solidBluePen
 
 import os
 uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\AWG.ui')
@@ -241,7 +242,7 @@ class AWGUi(AWGForm, AWGBase):
             try:
                 waveform = self.device.waveform.evaluate()
                 self.plot.getItem(0,0).clear()
-                self.plot.getItem(0,0).plot(waveform)
+                self.plot.getItem(0,0).plot(waveform, pen=solidBluePen)
             except (MagnitudeError, NameError, IndexError) as e:
                 logger.warning(e.__class__.__name__ + ": " + str(e))
 
