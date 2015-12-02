@@ -72,7 +72,10 @@ class DDSUi(DDSForm, DDSBase):
     def __init__(self,config,pulser,globalDict,parent=None):
         DDSBase.__init__(self,parent)
         DDSForm.__init__(self)
-        self.channelInfo = sorted(pulser.pulserConfiguration().ddsChannels.values(), key=lambda x: x.channel)
+        if pulser.pulserConfiguration():
+            self.channelInfo = sorted(pulser.pulserConfiguration().ddsChannels.values(), key=lambda x: x.channel)
+        else:
+            self.channelInfo = []
         self.numChannels = len(self.channelInfo)
         self.config = config
         self.ad9912 = Ad9912.Ad9912(pulser)
