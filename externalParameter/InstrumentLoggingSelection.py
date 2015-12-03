@@ -9,7 +9,7 @@ from pyqtgraph.parametertree import ParameterTree
 
 class InstrumentLoggingSelection( SelectionUi ):
     def __init__(self, config, classdict, instancename="ExternalParameterSelection.ParametersSequence", plotNames=None, parent=None, instrumentLoggingHandler=None ):
-        super(InstrumentLoggingSelection, self).__init__(config, classdict, instancename, parent)
+        super(InstrumentLoggingSelection, self).__init__(config, dict(), classdict, instancename, parent)
         self.instrumentLoggingHandler = instrumentLoggingHandler
         self.current = None
         
