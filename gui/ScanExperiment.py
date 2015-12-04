@@ -48,7 +48,7 @@ from uiModules.CoordinatePlotWidget import CoordinatePlotWidget
 from modules import WeakMethod
 from modules.SceneToPrint import SceneToPrint
 from collections import defaultdict
-from gui.ScanMethods import ScanMethodsDict, ScanException
+from gui.ScanMethods import ScanMethodsDict, ScanException, ExternalScanMethod
 from gui.ScanGenerators import GeneratorList
 from modules.magnitude import is_magnitude
 from persist.MeasurementLog import  Measurement, Parameter, Result
@@ -59,6 +59,7 @@ from PyQt4.QtGui import QApplication
 from ProjectConfig.Project import getProject
 from copy import copy
 from modules import InkscapeConversion
+from AWG import AWGDevices
 
 uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\ScanExperiment.ui')
 ScanExperimentForm, ScanExperimentBase = PyQt4.uic.loadUiType(uipath)
@@ -344,7 +345,11 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.context.scan = self.scanControlWidget.getScan()
         self.context.evaluation = self.evaluationControlWidget.getEvaluation()
         self.displayUi.setNames( [evaluation.name for evaluation in self.context.evaluation.evalList ])
-        self.context.scanMethod = ScanMethodsDict[self.context.scan.scanTarget](self)
+        if self.context.scan.scanTarget in ScanMethodsDict:
+            self.context.scanMethod = ScanMethodsDict[self.context.scan.scanTarget](self)
+        else:
+            self.context.scanMethod = ExternalScanMethod(self)
+            self.context.scanMethod.name = self.context.scan.scanTarget
         self.progressUi.setStarting()
         self.ppStartSignal.emit()
         if self.callWhenDoneAdjusting is None:
@@ -361,28 +366,15 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.context.startTime = time.time()
             self.pulserHardware.ppStop()
             
-            override = dict()
-            scanParam = None
+            target = self.scanControlWidget.settings.scanTarget
+            if target in AWGDevices.AWGDeviceDict and self.project.isEnabled('hardware', target):
+                AWGdevice = self.scanTargetDict[target]["Duration"].device
+                if AWGdevice.settings.deviceSettings.programOnScanStart:
+                    logging.getLogger(__name__).info("Programming AWG")
+                    AWGdevice.program()
+            self.context.PulseProgramBinary = self.pulseProgramUi.getPulseProgramBinary()
+            self.context.generator = GeneratorList[self.context.scan.scanMode](self.context.scan)
 
-            AWGEnabled = self.project.isEnabled('software', 'AWG')
-            if AWGEnabled:
-                AWGdevice = self.scanTargetDict["AWG"]["Duration"].device
-                if AWGdevice.parent.parameters.enabled and self.context.scan.scanMode == 0: # 0 = Parameter Scan
-                    logging.getLogger(__name__).info("AWG active!")
-                    (setScanParam, scanParam) = AWGdevice.scanParam()
-                    # don't scan over scanParam if not a duration scan. instead override scanParam if necessary and program the AWG
-                    if not (self.context.scan.scanMode == 0 and self.context.scan.scanTarget == "AWG" and self.context.scan.scanParameter == "Duration"):
-                        if setScanParam:
-                            override = {scanParam: AWGdevice.waveform.varDict['Duration']['value']}
-                            scanParam = None
-                        AWGdevice.program(False)
-            
-            self.context.PulseProgramBinary = self.pulseProgramUi.getPulseProgramBinary(override=override) # also overwrites the current variable values
-            if self.context.scan.scanMode == 0:
-                self.context.generator = GeneratorList[self.context.scan.scanMode](self.context.scan, scanParam=scanParam)
-            else:
-                self.context.generator = GeneratorList[self.context.scan.scanMode](self.context.scan)
-            
             (mycode, data) = self.context.generator.prepare(self.pulseProgramUi, self.context.scanMethod.maxUpdatesToWrite )
             if self.pulseProgramUi.writeRam and self.pulseProgramUi.ramData:
                 data = self.pulseProgramUi.ramData #Overwrites anything set above by the gate sequence ui
