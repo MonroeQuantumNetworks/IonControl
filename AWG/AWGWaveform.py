@@ -58,12 +58,6 @@ class AWGWaveform(object):
         self.varDict.sort(key = lambda val: -1 if val[0]=='Duration' else ord( str(val[0])[0] ))
 
     @property
-    def varDimensionDict(self):
-        """dict of form var:dimension"""
-        return {varName: "" if (not isinstance(varValueTextDict['value'], Magnitude)) or varValueTextDict['value'].dimensionless() else \
-              str(varValueTextDict['value']).split(" ")[1] for (varName, varValueTextDict) in self.varDict.iteritems()}
-
-    @property
     def varMagnitudeDict(self):
         """dict of form var:magnitude"""
         return {varName:varValueTextDict['value'] for varName, varValueTextDict in self.varDict.iteritems()}

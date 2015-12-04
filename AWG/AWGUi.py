@@ -175,7 +175,7 @@ class AWGUi(AWGForm, AWGBase):
         self.tableModel.beginResetModel()
         self.settings.waveform.equation = str(self.equationEdit.text())
         self.replot()
-        self.varDictChanged.emit(self.settings.waveform.varDimensionDict)
+        self.varDictChanged.emit(self.device.varAsOutputChannelDict)
         self.saveIfNecessary()
         self.tableModel.endResetModel()
 

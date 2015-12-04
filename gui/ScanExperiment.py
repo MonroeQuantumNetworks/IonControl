@@ -369,8 +369,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             target = self.scanControlWidget.settings.scanTarget
             if target in AWGDevices.AWGDeviceDict and self.project.isEnabled('hardware', target):
                 AWGdevice = self.scanTargetDict[target]["Duration"].device
-                if AWGdevice.settings.deviceSettings.programOnScanStart:
-                    logging.getLogger(__name__).info("Programming AWG")
+                if AWGdevice.settings.deviceSettings['programOnScanStart']:
+                    logging.getLogger(__name__).info("Programming {0}".format(target))
                     AWGdevice.program()
             self.context.PulseProgramBinary = self.pulseProgramUi.getPulseProgramBinary()
             self.context.generator = GeneratorList[self.context.scan.scanMode](self.context.scan)

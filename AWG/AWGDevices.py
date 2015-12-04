@@ -15,6 +15,7 @@ from AWG.AWGWaveform import AWGWaveform
 from pyqtgraph.parametertree.Parameter import Parameter
 from PyQt4 import QtCore
 from functools import partial
+from AWG.VarAsOutputChannel import VarAsOutputChannel
 
 class AWGDeviceBase(object):
     """base class for AWG Devices"""
@@ -32,6 +33,14 @@ class AWGDeviceBase(object):
         self.project = getProject()
         new_mag('sample', 1/self.sampleRate)
         new_mag('samples', 1/self.sampleRate)
+        self._varAsOutputChannelDict = dict()
+
+    @property
+    def varAsOutputChannelDict(self):
+        for name in self.settings.waveform.varDict:
+            if name not in self._varAsOutputChannelDict:
+                self._varAsOutputChannelDict[name] = VarAsOutputChannel(self, name)
+        return self._varAsOutputChannelDict
 
     def paramDef(self):
         """return the parameter definition used by pyqtgraph parametertree to show the gui"""
@@ -60,7 +69,7 @@ class AWGDeviceBase(object):
 
     #functions and attributes that must be defined by inheritors
     def open(self): raise NotImplementedError("'open' method must be implemented by specific AWG device class")
-    def program(self, continuous): raise NotImplementedError("'program' method must be implemented by specific AWG device class")
+    def program(self): raise NotImplementedError("'program' method must be implemented by specific AWG device class")
     def trigger(self): raise NotImplementedError("'trigger' method must be implemented by specific AWG device class")
     def close(self): raise NotImplementedError("'close' method must be implemented by specific AWG device class")
     @property
@@ -121,7 +130,7 @@ class ChaseDA12000(AWGDeviceBase):
             logger.info("Unable to open {0}.".format(self.displayName))
             self.enabled = False
     
-    def program(self, continuous):
+    def program(self):
         logger = logging.getLogger(__name__)
         if self.enabled:
             pts = self.settings.waveform.evaluate()
@@ -131,7 +140,7 @@ class ChaseDA12000(AWGDeviceBase):
             seg = (self.SEGMENT*1)(seg0)
 
             self.lib.da12000_CreateSegments(1, 1, 1, seg)
-            self.lib.da12000_SetTriggerMode(1, 1 if continuous else 2, 0)
+            self.lib.da12000_SetTriggerMode(1, 1 if self.settings.deviceSettings['continuous'] else 2, 0)
         else:
             logger.warning("{0} unavailable. Unable to program.".format(self.displayName))
 
@@ -150,7 +159,7 @@ class DummyAWG(AWGDeviceBase):
     
     def open(self): pass
     def close(self): pass
-    def program(self, continuous): pass
+    def program(self): pass
     def trigger(self): pass
 
 
