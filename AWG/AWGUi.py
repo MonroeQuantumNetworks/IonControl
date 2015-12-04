@@ -52,7 +52,7 @@ class AWGUi(AWGForm, AWGBase):
         self.settingsDict = self.config.get(self.configname+'.settingsDict', dict())
         self.settingsName = self.config.get(self.configname+'.settingsName', '')
         self.settings = copy.deepcopy(self.settingsDict[self.settingsName]) if self.settingsName in self.settingsDict else Settings()
-        self.device = deviceClass(self.settings, parent=self)
+        self.device = deviceClass(self.settings, self.globalDict, self)
 
     def setupUi(self,parent):
         logger = logging.getLogger(__name__)

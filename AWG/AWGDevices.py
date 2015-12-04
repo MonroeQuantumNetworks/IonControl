@@ -19,12 +19,12 @@ from AWG.VarAsOutputChannel import VarAsOutputChannel
 
 class AWGDeviceBase(object):
     """base class for AWG Devices"""
-    # parent should be the AWGUi, which we read whether or not to modify the internal scan as well
-    def __init__(self, settings, parent=None):
+    def __init__(self, settings, globalDict, awgUi):
         self.open()
-        self.parent = parent
+        self.awgUi = awgUi
         self.enabled = False
         self.settings = settings
+        self.globalDict = globalDict
         if not self.settings.waveform:
             self.settings.waveform = AWGWaveform('A*sin(w*t+phi) + offset', self.sampleRate, self.maxSamples, self.maxAmplitude)
         self.settings.waveform.sampleRate = self.sampleRate
@@ -39,7 +39,7 @@ class AWGDeviceBase(object):
     def varAsOutputChannelDict(self):
         for name in self.settings.waveform.varDict:
             if name not in self._varAsOutputChannelDict:
-                self._varAsOutputChannelDict[name] = VarAsOutputChannel(self, name)
+                self._varAsOutputChannelDict[name] = VarAsOutputChannel(self.awgUi, name, self.globalDict)
         return self._varAsOutputChannelDict
 
     def paramDef(self):
@@ -62,7 +62,7 @@ class AWGDeviceBase(object):
         for param, change, data in changes:
             if change=='value':
                 self.settings.deviceSettings[param.opts['key']] = data
-                self.parent.saveIfNecessary()
+                self.awgUi.saveIfNecessary()
             elif change=='activated':
                 getattr( self, param.opts['key'] )()
 
@@ -99,8 +99,8 @@ class ChaseDA12000(AWGDeviceBase):
                     ("TrigEn", c_ulong),
                     ("NextSegNum", c_ulong)]
 
-    def __init__(self, settings, parent=None):
-        super(ChaseDA12000, self).__init__(settings, parent)
+    def __init__(self, settings, awgUi=None):
+        super(ChaseDA12000, self).__init__(settings, awgUi)
         if not self.project.isEnabled('hardware', self.displayName):
             self.enabled = False
         else:

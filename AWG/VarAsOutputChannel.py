@@ -11,19 +11,24 @@ class VarAsOutputChannel(object):
 
     The AWG variables are not external parameter output channels, but the external parameter scan method the scan parameter
     to have several specific methods and attributes (as OutputChannel does). This class provides those attributes."""
-    def __init__(self, device, name):
-        self.device = device
+    def __init__(self, awgUi, name, globalDict):
+        self.awgUi = awgUi
         self.name = name
         self.useExternalValue = False
         self.savedValue = None
+        self.globalDict = globalDict
 
     @property
     def value(self):
-        return self.device.settings.waveform.varDict[self.name]['value']
+        return self.awgUi.settings.waveform.varDict[self.name]['value']
 
     @property
     def strValue(self):
-        return self.device.settings.waveform.varDict[self.name]['text']
+        return self.awgUi.settings.waveform.varDict[self.name]['text']
+
+    @property
+    def device(self):
+        return self.awgUi.device
 
     def saveValue(self, overwrite=True):
         """save current value"""
@@ -34,8 +39,11 @@ class VarAsOutputChannel(object):
     def setValue(self, targetValue):
         """set the variable to targetValue"""
         if targetValue is not None:
-            self.device.settings.waveform.varDict[self.name]['value'] = targetValue
-            self.device.program()
+            self.awgUi.settings.waveform.varDict[self.name]['value'] = targetValue
+            modelIndex = self.awgUi.tableModel.createIndex(self.awgUi.settings.waveform.varDict.index(self.name),1)
+            self.awgUi.tableModel.dataChanged.emit(modelIndex, modelIndex)
+            self.awgUi.replot()
+            self.awgUi.device.program()
         return True
 
     def restoreValue(self):

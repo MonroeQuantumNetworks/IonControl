@@ -31,7 +31,8 @@ class AWGTableModel(QtCore.QAbstractTableModel):
             (QtCore.Qt.FontRole, 0): lambda row: self.boldFont if self.waveform.varDict.keyAt(row)=='Duration' else self.normalFont,
             (QtCore.Qt.FontRole, 1): lambda row: self.boldFont if self.waveform.varDict.keyAt(row)=='Duration' else self.normalFont,
             (QtCore.Qt.EditRole, 1): lambda row: firstNotNone( self.waveform.varDict.at(row)['text'], str(self.waveform.varDict.at(row)['value'])),
-            (QtCore.Qt.BackgroundColorRole, 1): lambda row: self.defaultBG if self.waveform.varDict.at(row)['text'] is None else self.textBG
+            (QtCore.Qt.BackgroundColorRole, 1): lambda row: self.defaultBG if self.waveform.varDict.at(row)['text'] is None else self.textBG,
+            (QtCore.Qt.ToolTipRole, 1): lambda row: self.waveform.varDict.at(row)['text'] if self.waveform.varDict.at(row)['text'] else None
         }
         self.setDataLookup =  { 
             (QtCore.Qt.EditRole,1): self.setValue,
