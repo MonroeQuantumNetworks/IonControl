@@ -33,9 +33,6 @@ class AWGDeviceBase(object):
         new_mag('sample', 1/self.sampleRate)
         new_mag('samples', 1/self.sampleRate)
 
-    def scanParam(self):
-        return self.parent.settings.setScanParam, str(self.parent.settings.scanParam)
-
     def paramDef(self):
         """return the parameter definition used by pyqtgraph parametertree to show the gui"""
         self.settings.deviceSettings.setdefault('programOnScanStart', False)
@@ -139,7 +136,7 @@ class ChaseDA12000(AWGDeviceBase):
             logger.warning("{0} unavailable. Unable to program.".format(self.displayName))
 
     def trigger(self):
-        pass #need to put code for triggering here
+        self.lib.da12000_SetSoftTrigger(1)
 
     def close(self):
         if self.enabled:
