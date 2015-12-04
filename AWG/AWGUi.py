@@ -205,3 +205,15 @@ class AWGUi(AWGForm, AWGBase):
         self.plot.setVisible(checked)
         self.saveIfNecessary()
 
+
+if __name__ == '__main__':
+    from AWGDevices import DummyAWG
+    import sys
+    import Experiment_rc
+    from ProjectConfig.Project import Project
+    app = QtGui.QApplication(sys.argv)
+    Project()
+    ui = AWGUi(DummyAWG, dict(), dict())
+    ui.setupUi(ui)
+    ui.show()
+    sys.exit(app.exec_())
