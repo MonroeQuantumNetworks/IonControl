@@ -149,26 +149,6 @@
       </property>
      </widget>
     </item>
-    <item>
-     <layout class="QHBoxLayout" name="horizontalLayout">
-      <item>
-       <widget class="QCheckBox" name="setScanParam">
-        <property name="toolTip">
-         <string>If Duration is scanned, the specified pulse program parameter will be scanned in concert</string>
-        </property>
-        <property name="layoutDirection">
-         <enum>Qt::LeftToRight</enum>
-        </property>
-        <property name="text">
-         <string>Set scan parameter from Duration</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QComboBox" name="scanParamComboBox"/>
-      </item>
-     </layout>
-    </item>
    </layout>
   </widget>
   <widget class="QMenuBar" name="menubar">
