@@ -22,8 +22,6 @@ AWGForm, AWGBase = PyQt4.uic.loadUiType(uipath)
 
 class Settings(object):
     def __init__(self):
-        self.setScanParam = False
-        self.scanParam = ""
         self.plotEnabled = True
         self.waveform = None
         self.deviceSettings = dict()
@@ -34,7 +32,7 @@ class Settings(object):
         self.__dict__.setdefault('waveform', None)
         self.__dict__.setdefault('deviceSettings', dict())
 
-    stateFields = ['setScanParam', 'scanParam', 'plotEnabled', 'waveform', 'deviceSettings']
+    stateFields = ['plotEnabled', 'waveform', 'deviceSettings']
 
     def __eq__(self,other):
         return tuple(getattr(self,field) for field in self.stateFields)==tuple(getattr(other,field) for field in self.stateFields)
@@ -44,7 +42,7 @@ class Settings(object):
 
 class AWGUi(AWGForm, AWGBase):
     varDictChanged = QtCore.pyqtSignal(object)
-    def __init__(self, deviceClass, config, globalDict, pulseProgramUi, parent=None):
+    def __init__(self, deviceClass, config, globalDict, parent=None):
         AWGBase.__init__(self, parent)
         AWGForm.__init__(self)
         self.config = config
@@ -55,7 +53,6 @@ class AWGUi(AWGForm, AWGBase):
         self.settingsName = self.config.get(self.configname+'.settingsName', '')
         self.settings = copy.deepcopy(self.settingsDict[self.settingsName]) if self.settingsName in self.settingsDict else Settings()
         self.device = deviceClass(self.settings, parent=self)
-        self.pulseProgramUi = pulseProgramUi
 
     def setupUi(self,parent):
         logger = logging.getLogger(__name__)
@@ -103,15 +100,6 @@ class AWGUi(AWGForm, AWGBase):
         self.autoSaveAction.triggered.connect( self.onAutoSave )
         self.addAction( self.autoSaveAction )
         
-        # Set scan param
-        self.pulseProgramUi.pulseProgramChanged.connect(self.setPulseProgramVariables)
-        self.setPulseProgramVariables()
-        self.setScanParam.setChecked(self.settings.setScanParam )
-        self.setScanParam.stateChanged.connect(self.onSetScanParam)
-        self.scanParamComboBox.setCurrentIndex(self.scanParamComboBox.findText(self.settings.scanParam))
-        self.scanParamComboBox.setEnabled(self.settings.setScanParam)
-        self.scanParamComboBox.currentIndexChanged[str].connect(self.onScanParam)
-
         self.replot()
 
     def onComboBoxEditingFinished(self):
@@ -167,8 +155,6 @@ class AWGUi(AWGForm, AWGBase):
             self.refreshWaveform()
             self.programmingOptionsTreeWidget.setParameters( self.device.parameter() )
             self.plotCheckbox.setChecked(self.settings.plotEnabled)
-            self.setScanParam.setChecked(self.settings.setScanParam)
-            self.scanParamComboBox.setCurrentIndex(self.scanParamComboBox.findText(self.settings.scanParam))
             self.saveButton.setEnabled(False)
             self.replot()
             self.saveIfNecessary()
@@ -197,17 +183,6 @@ class AWGUi(AWGForm, AWGBase):
         self.saveIfNecessary()
         self.replot()
         
-    def onSetScanParam(self, state):
-        checked = state==QtCore.Qt.Checked
-        self.scanParamComboBox.setEnabled(checked)
-        self.settings.setScanParam = checked
-        self.saveIfNecessary()
-        
-    def onScanParam(self, parameter):
-        parameter = str(parameter)
-        self.settings.scanParam = parameter
-        self.saveIfNecessary()
-        
     def replot(self):
         logger = logging.getLogger(__name__)
         if self.settings.plotEnabled:
@@ -230,5 +205,3 @@ class AWGUi(AWGForm, AWGBase):
         self.plot.setVisible(checked)
         self.saveIfNecessary()
 
-    def setPulseProgramVariables(self):
-        updateComboBoxItems(self.scanParamComboBox, [var.name for var in sorted(self.pulseProgramUi.pulseProgram.variabledict.values()) if var.type=='parameter'])
