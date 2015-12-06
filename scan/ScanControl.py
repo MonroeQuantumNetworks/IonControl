@@ -43,6 +43,7 @@ class Scan:
     def __init__(self):
         # Scan
         self.scanParameter = None
+        self.parallelInternalScanParameter = "None"
         self.scanTarget = None
         self.start = 0
         self.stop = 0
@@ -89,6 +90,7 @@ class Scan:
         self.__dict__.setdefault('saveRawData', False)
         self.__dict__.setdefault('rawFilename', "")
         self.__dict__.setdefault('maxPoints', 0)
+        self.__dict__.setdefault('parallelInternalScanParameter', "None")
 
     def __eq__(self,other):
         try:
@@ -105,10 +107,10 @@ class Scan:
         
     stateFields = ['scanParameter', 'scanTarget', 'scantype', 'scanMode', 'filename', 'histogramFilename',
                    'autoSave', 'histogramSave', 'xUnit', 'xExpression', 'loadPP', 'loadPPName',
-                   'gateSequenceSettings', 'scanSegmentList', 'saveRawData', 'rawFilename', 'maxPoints']
+                   'gateSequenceSettings', 'scanSegmentList', 'saveRawData', 'rawFilename', 'maxPoints', 'parallelInternalScanParameter']
 
     documentationList = ['scanParameter', 'scanTarget', 'scantype', 'scanMode',
-                         'xUnit', 'xExpression', 'loadPP', 'loadPPName']
+                         'xUnit', 'xExpression', 'loadPP', 'loadPPName', 'parallelInternalScanParameter']
         
     def exportXml(self, element, attrib=dict()):
         myElement = ElementTree.SubElement(element, self.XMLTagName, attrib=attrib )
@@ -216,6 +218,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.comboBox.lineEdit().editingFinished.connect( self.checkSettingsSavable ) 
         # update connections
         self.comboBoxParameter.currentIndexChanged[QtCore.QString].connect( self.onCurrentTextChanged )
+        self.parallelInternalScanComboBox.currentIndexChanged[QtCore.QString].connect(self.onCurrentParallelScanChanged)
         self.scanTypeCombo.currentIndexChanged[int].connect( functools.partial(self.onCurrentIndexChanged,'scantype') )
         self.autoSaveCheckBox.stateChanged.connect( functools.partial(self.onStateChanged,'autoSave') )
         self.saveRawCheckBox.stateChanged.connect( functools.partial(self.onStateChanged,'saveRawData') )
@@ -254,6 +257,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
             self.filenameEdit.setDisabled(True)
         else:
             self.filenameEdit.setDisabled(False)
+        self.parallelInternalScanComboBox.setVisible(self.parameters.currentScanTarget != "Internal")
 
     def onExportXml(self, element=None, writeToFile=True):
         root = element if element is not None else ElementTree.Element('ScanList')
@@ -324,6 +328,8 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         elif self.comboBoxScanTarget.count()>0:
             self.settings.scanTarget = str( self.comboBoxScanTarget.currentText() )
             self.settings.scanParameter = self.doChangeScanTarget(self.settings.scanTarget, None)
+        if self.settings.parallelInternalScanParameter:
+            updateComboBoxItems(self.parallelInternalScanComboBox, self.scanTargetDict.get('Internal'), self.settings.parallelInternalScanParameter)
         filename = getattr(self.settings,'filename','')
         self.filenameEdit.setText(filename if filename else '')
         self.rawFilenameEdit.setText( getattr(self.settings,'rawFilename','') )
@@ -412,7 +418,11 @@ class ScanControl(ScanControlForm, ScanControlBase ):
     def onCurrentTextChanged(self, text):        
         self.settings.scanParameter = str(text)        
         self.checkSettingsSavable()
-    
+
+    def onCurrentParallelScanChanged(self, text):
+        self.settings.parallelInternalScanParameter = str(text)
+        self.checkSettingsSavable()
+
     def onCurrentIndexChanged(self, attribute, index):        
         setattr( self.settings, attribute, index )        
         self.checkSettingsSavable()
@@ -434,6 +444,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.maxPointsLabel.setVisible( index==1 )
         self.maxPointsBox.setVisible( index==1 )
         self.checkSettingsSavable()
+        self.parallelInternalScanComboBox.setEnabled(index==0)
     
     def onValueChanged(self, attribute, value):        
         setattr( self.settings, attribute, MagnitudeUtilit.mg(value) )        
@@ -454,18 +465,27 @@ class ScanControl(ScanControlForm, ScanControlBase ):
             self.comboBoxParameter.setCurrentIndex(self.comboBoxParameter.findText(self.settings.scanParameter) )
         elif self.comboBoxParameter.count()>0:  # if scanParameter is None set it to the current selection
             self.settings.scanParameter = str(self.comboBoxParameter.currentText())
+        if self.settings.parallelInternalScanParameter:   # TODO:
+            self.parallelInternalScanComboBox.setCurrentIndex(self.parallelInternalScanComboBox.findText(self.settings.parallelInternalScanParameter))
         if self.gateSequenceUi:
             self.gateSequenceUi.setVariables(variabledict)
         self.checkSettingsSavable()
             
     def updateScanTarget(self, target, scannames):
-        self.scanTargetDict[target] = scannames
+        if target=="Internal":
+            extended = ["None"]
+            extended.extend(sorted(scannames))
+        else:
+            extended = sorted(scannames)
+        self.scanTargetDict[target] = extended
         updateComboBoxItems( self.comboBoxScanTarget, self.scanTargetDict.keys(), self.parameters.currentScanTarget )
         self.parameters.currentScanTarget = firstNotNone(self.parameters.currentScanTarget, target)
         if target==self.parameters.currentScanTarget:
-            self.settings.scanParameter = str(updateComboBoxItems( self.comboBoxParameter, sorted(scannames), self.settings.scanParameter ))
+            self.settings.scanParameter = str(updateComboBoxItems( self.comboBoxParameter, self.scanTargetDict[target], self.settings.scanParameter ))
         if not self.settings.scanTarget:
             self.settings.scanTarget = self.parameters.currentScanTarget
+        if target=="Internal":
+            updateComboBoxItems(self.parallelInternalScanComboBox, self.scanTargetDict[target], self.settings.parallelInternalScanParameter)
 
     def onChangeScanTarget(self, name):
         """ called on currentIndexChanged[QString] signal of ComboBox"""
@@ -477,6 +497,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
             self.settings.scanParameter = cachedParam
             self.settings.scanTarget = name
             self.parameters.currentScanTarget = name
+        self.parallelInternalScanComboBox.setVisible(name!="Internal")
         self.checkSettingsSavable()
 
     def doChangeScanTarget(self, name, scanParameter):
