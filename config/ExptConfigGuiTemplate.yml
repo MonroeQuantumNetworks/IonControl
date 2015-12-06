@@ -45,6 +45,17 @@ hardware:
       device: ok_fpga
       bitFile: path
       uploadOnStartup: bool
+  "Opal Kelly FPGA: Auxilliary Pulser":
+    description: An auxilliary pulser
+    fields:
+        device: ok_fpga
+        bitFile: path
+        uploadOnStartup: bool
+        DAC: bool
+        DDS: bool
+        PulserParameters: bool
+        Shutters: bool
+    singleInstance: false
   NI DAC Chassis:
     description: DAC system from National Instruments used to output voltages
     role: *V
