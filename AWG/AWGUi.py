@@ -53,6 +53,9 @@ class AWGUi(AWGForm, AWGBase):
         self.settingsName = self.config.get(self.configname+'.settingsName', '')
         self.settings = copy.deepcopy(self.settingsDict[self.settingsName]) if self.settingsName in self.settingsDict else Settings()
         self.device = deviceClass(self.settings, self.globalDict, self)
+        for settings in self.settingsDict.values():
+            #make sure deviceProperties are consistent, e.g. if the device properties were changed since the waveform was pickled
+            settings.waveform.devicePropertiesDict = self.device.devicePropertiesDict
 
     def setupUi(self,parent):
         logger = logging.getLogger(__name__)

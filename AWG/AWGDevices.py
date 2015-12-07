@@ -3,8 +3,20 @@ Created on Jul 2, 2015
 
 @author: Geoffrey Ji
 
-AWG Devices are defined here. If a new AWG needs to be added, 
-it must inherit AWGDeviceBase and implement open, program, and close.
+AWG Devices are defined here. If a new AWG needs to be added,
+it must inherit AWGDeviceBase and implement:
+
+- __init__
+   to initialize whatever libraries it needs
+
+- open, program, trigger, and close
+   to interface with the AWG
+
+- devicePropertiesDict
+   To specify fixed properties of the AWG device (e.g. sampleRate, maxSamples, etc.) see existing AWGs for examples
+
+- paramDef
+   To define dynamic properties and actions of the AWG, which are shown in the GUI and can be modified in the program.
 '''
 
 from ctypes import *
@@ -17,6 +29,7 @@ from PyQt4 import QtCore
 from functools import partial
 from AWG.VarAsOutputChannel import VarAsOutputChannel
 
+
 class AWGDeviceBase(object):
     """base class for AWG Devices"""
     def __init__(self, settings, globalDict, awgUi):
@@ -26,13 +39,12 @@ class AWGDeviceBase(object):
         self.settings = settings
         self.globalDict = globalDict
         if not self.settings.waveform:
-            self.settings.waveform = AWGWaveform('A*sin(w*t+phi) + offset', self.sampleRate, self.maxSamples, self.maxAmplitude)
-        self.settings.waveform.sampleRate = self.sampleRate
-        self.settings.waveform.maxSamples = self.maxSamples
-        self.settings.waveform.maxAmplitude = self.maxAmplitude
+            self.settings.waveform = AWGWaveform('A*sin(w*t+phi) + offset', self.devicePropertiesDict)
+        self.settings.waveform.devicePropertiesDict = self.devicePropertiesDict #make sure these match
         self.project = getProject()
-        new_mag('sample', 1/self.sampleRate)
-        new_mag('samples', 1/self.sampleRate)
+        sample = 1/self.devicePropertiesDict['sampleRate']
+        new_mag('sample', sample)
+        new_mag('samples', sample)
         self._varAsOutputChannelDict = dict()
 
     @property
@@ -66,28 +78,28 @@ class AWGDeviceBase(object):
             elif change=='activated':
                 getattr( self, param.opts['key'] )()
 
-
     #functions and attributes that must be defined by inheritors
     def open(self): raise NotImplementedError("'open' method must be implemented by specific AWG device class")
     def program(self): raise NotImplementedError("'program' method must be implemented by specific AWG device class")
     def trigger(self): raise NotImplementedError("'trigger' method must be implemented by specific AWG device class")
     def close(self): raise NotImplementedError("'close' method must be implemented by specific AWG device class")
     @property
-    def displayName(self): raise NotImplementedError("'displayName' field must be defined by specific AWG device class")
+    def devicePropertiesDict(self): raise NotImplementedError("'devicePropertiesDict' must be set by specific AWG device class")
     @property
-    def sampleRate(self): raise NotImplementedError("'sampleRate' field must be defined by specific AWG device class")
-    @property
-    def maxSamples(self): raise NotImplementedError("'maxSamples' field must be defined by specific AWG device class")
-    @property
-    def maxAmplitude(self): raise NotImplementedError("'maxAmplitude' field must be defined by specific AWG device class")
-
+    def displayName(self): raise NotImplementedError("'displayName' must be set by specific AWG device class")
 
 class ChaseDA12000(AWGDeviceBase):
     """Class for programming a ChaseDA12000 AWG"""
     displayName = "Chase DA12000 AWG"
-    sampleRate = mg(1, 'GHz')
-    maxSamples = 4000000
-    maxAmplitude = 4095
+    devicePropertiesDict = dict(
+        sampleRate = mg(1, 'GHz'), #rate at which the samples programmed are output by the AWG
+        minSamples = 128, #minimum number of samples to program
+        maxSamples = 4000000, #maximum number of samples to program
+        sampleChunkSize = 64, #number of samples must be a multiple of sampleCnunkSize
+        padValue = 2047, #the waveform will be padded with this number ot make it a multiple of sampleChunkSize, or to make it the length of minSamples
+        minAmplitude = 0, #minimum amplitude value (raw)
+        maxAmplitude = 4095 #maximum amplitude value (raw)
+    )
 
     class SEGMENT(Structure):
         _fields_ = [("SegmentNum", c_ulong),
@@ -145,17 +157,25 @@ class ChaseDA12000(AWGDeviceBase):
             logger.warning("{0} unavailable. Unable to program.".format(self.displayName))
 
     def trigger(self):
-        self.lib.da12000_SetSoftTrigger(1)
+        if self.enabled:
+            self.lib.da12000_SetSoftTrigger(1)
 
     def close(self):
         if self.enabled:
             self.lib.da12000_Close(1)
-        
+
+
 class DummyAWG(AWGDeviceBase):
     displayName = "Dummy AWG"
-    sampleRate = mg(1, 'GHz')
-    maxSamples = 4000000
-    maxAmplitude = 4095
+    devicePropertiesDict = dict(
+        sampleRate = mg(1, 'GHz'), #rate at which the samples programmed are output by the AWG
+        minSamples = 128, #minimum number of samples to program
+        maxSamples = 4000000, #maximum number of samples to program
+        sampleChunkSize = 64, #number of samples must be a multiple of sampleCnunkSize
+        padValue = 2047, #the waveform will be padded with this number ot make it a multiple of sampleChunkSize, or to make it the length of minSamples
+        minAmplitude = 0, #minimum amplitude value (raw)
+        maxAmplitude = 4095 #maximum amplitude value (raw)
+    )
     
     def open(self): pass
     def close(self): pass

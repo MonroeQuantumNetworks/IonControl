@@ -15,23 +15,49 @@ import math
 
 class AWGWaveform(object):
     expression = Expression() #This has to be a class attribute rather than an instance attribute, so that deepcopy works on a waveform
-    def __init__(self, equation, sampleRate, maxSamples, maxAmplitude):
-        self.sampleRate = sampleRate
-        self.maxSamples = maxSamples
-        self.maxAmplitude = maxAmplitude
+    def __init__(self, equation, devicePropertiesDict):
+        self.devicePropertiesDict = devicePropertiesDict
         self.varDict = SequenceDict()
         self.equation = equation #this sets _equation, stack and varDict
 
     def __setstate__(self, state):
         self.__dict__ = state
 
-    stateFields = ['sampleRate', 'maxSamples', 'maxAmplitude', 'equation', 'varDict']
+    stateFields = ['devicePropertiesDict', 'equation', 'varDict']
 
     def __eq__(self,other):
         return tuple(getattr(self,field) for field in self.stateFields)==tuple(getattr(other,field) for field in self.stateFields)
 
     def __ne__(self, other):
         return not self == other
+
+    @property
+    def sampleRate(self):
+        return self.devicePropertiesDict['sampleRate']
+
+    @property
+    def minSamples(self):
+        return self.devicePropertiesDict['minSamples']
+
+    @property
+    def maxSamples(self):
+        return self.devicePropertiesDict['maxSamples']
+
+    @property
+    def sampleChunkSize(self):
+        return self.devicePropertiesDict['sampleChunkSize']
+
+    @property
+    def padValue(self):
+        return self.devicePropertiesDict['padValue']
+
+    @property
+    def minAmplitude(self):
+        return self.devicePropertiesDict['minAmplitude']
+
+    @property
+    def maxAmplitude(self):
+        return self.devicePropertiesDict['maxAmplitude']
 
     @property
     def stepsize(self):
@@ -68,8 +94,14 @@ class AWGWaveform(object):
         return {varName:varValueTextDict['value'].to_base_units().val for varName, varValueTextDict in self.varDict.iteritems()}
 
     def evaluate(self):
-        if not self.varDict.has_key('Duration'):
-            self.varDict['Duration'] = {'value': mg(1, 'us'), 'text': None}
+        """Evaluate the waveform.
+
+        Returns:
+            sampleList: list of values to program to the AWG.
+        """
+        self.varDict.setdefault('Duration', {'value': mg(1, 'us'), 'text': None}) #varDict should always have a duration
+
+        #calculate number of samples
         numSamples = self.varDict['Duration']['value']*self.sampleRate
         numSamples = int( numSamples.toval() ) #convert to float, then to integer
         numSamples = min(numSamples, self.maxSamples) #cap at maxSamples
@@ -83,11 +115,22 @@ class AWGWaveform(object):
         varValueDict.pop('Duration')
         varValueDict['t'] = sympy.Symbol('t')
 
-        sympyExpr = parse_expr(self.equation, varValueDict)
-        func = sympy.lambdify(varValueDict['t'], sympyExpr, "numpy")
-        func = numpy.vectorize(func, otypes=[numpy.int])
+        sympyExpr = parse_expr(self.equation, varValueDict) #parse the equation
+        func = sympy.lambdify(varValueDict['t'], sympyExpr, "numpy") #make into a python function
+        func = numpy.vectorize(func, otypes=[numpy.int]) #vectorize the function and set output to integers
         step = self.stepsize.toval(ounit='s')
-        res = func( numpy.arange(numSamples)*step )
-        numpy.clip(res, 0, self.maxAmplitude, out=res)
-        res = res.tolist() + [2047]*(64+64*int(math.ceil(numSamples/64.0)) - numSamples)
-        return res
+        sampleList = func( numpy.arange(numSamples)*step ) #apply the function to each time step value
+
+        #make sampleList match what the AWG device can program
+        numpy.clip(sampleList, self.minAmplitude, self.maxAmplitude, out=sampleList) #clip between minAmplitude and maxAmplitude
+        if numSamples < self.minSamples:
+            extraNumSamples = self.minSamples - numSamples #make sure there are at least minSamples
+            if self.minSamples % self.sampleChunkSize != 0: #This should always be False if minSamples and sampleChunkSize are internally consistent
+                extraNumSamples += self.sampleChunkSize - (self.minSamples % self.sampleChunkSize)
+        elif numSamples % self.sampleChunkSize != 0:
+            extraNumSamples = self.sampleChunkSize - (numSamples % self.sampleChunkSize)
+        else:
+            extraNumSamples = 0
+        sampleList = numpy.pad(sampleList, (0,extraNumSamples), 'constant', constant_values = self.padValue)
+        sampleList = sampleList.tolist()
+        return sampleList
