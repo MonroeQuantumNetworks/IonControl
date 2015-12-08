@@ -13,7 +13,31 @@ it must inherit AWGDeviceBase and implement:
    to interface with the AWG
 
 - devicePropertiesDict
-   To specify fixed properties of the AWG device (e.g. sampleRate, maxSamples, etc.) see existing AWGs for examples
+   To specify fixed properties of the AWG device. Required keys:
+
+   - sampleRate (magnitude)
+      rate at which the samples programmed are output by the AWG (e.g. mg(1, 'GHz'))
+
+    - minSamples (int)
+       minimum number of samples to program
+
+    - maxSamples (int)
+       maximum number of samples to program
+
+    - sampleChunkSize (int)
+       number of samples must be a multiple of sampleChunkSize
+
+    - padValue (int)
+       the waveform will be padded with this number to make it a multiple of sampleChunkSize, or to make it the length of minSamples
+
+    - minAmplitude (int)
+       minimum amplitude value (raw)
+
+    - maxAmplitude (int)
+       maximum amplitude value (raw)
+
+    - numChannels (int)
+       Number of channels
 
 - paramDef
    To define dynamic properties and actions of the AWG, which are shown in the GUI and can be modified in the program.
@@ -21,6 +45,8 @@ it must inherit AWGDeviceBase and implement:
 
 from ctypes import *
 import logging
+import sys
+import inspect
 from modules.magnitude import mg, Magnitude, new_mag
 from ProjectConfig.Project import getProject
 from AWG.AWGWaveform import AWGWaveform
@@ -182,8 +208,16 @@ class DummyAWG(AWGDeviceBase):
     def program(self): pass
     def trigger(self): pass
 
+def isAWGDevice(obj):
+    """Determine if obj is an AWG device.
+    returns True if obj inherits from AWGDeviceBase, but is not itself AWGDeviceBase"""
+    try:
+        inheritance = inspect.getmro(obj)
+        return True if AWGDeviceBase in inheritance and AWGDeviceBase!=inheritance[0] else False
+    except:
+        return False
 
-AWGDeviceDict = {
-    ChaseDA12000.displayName : ChaseDA12000.__name__,
-    DummyAWG.displayName : DummyAWG.__name__
-}
+#Extract the AWG device classes
+current_module = sys.modules[__name__]
+AWGDeviceClasses = inspect.getmembers(current_module, isAWGDevice)
+AWGDeviceDict = {cls.displayName:clsName for clsName, cls in AWGDeviceClasses}
