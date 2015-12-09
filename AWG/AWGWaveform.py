@@ -11,53 +11,44 @@ import numpy
 import sympy
 from sympy.parsing.sympy_parser import parse_expr
 import math
-
+import logging
 
 class AWGWaveform(object):
-    expression = Expression() #This has to be a class attribute rather than an instance attribute, so that deepcopy works on a waveform
-    def __init__(self, equation, devicePropertiesDict):
-        self.devicePropertiesDict = devicePropertiesDict
-        self.varDict = SequenceDict()
-        self.equation = equation #this sets _equation, stack and varDict
-
-    def __setstate__(self, state):
-        self.__dict__ = state
-
-    stateFields = ['devicePropertiesDict', 'equation', 'varDict']
-
-    def __eq__(self,other):
-        return tuple(getattr(self,field) for field in self.stateFields)==tuple(getattr(other,field) for field in self.stateFields)
-
-    def __ne__(self, other):
-        return not self == other
+    def __init__(self, channel, settings):
+        self.settings = settings
+        self.channel = channel
+        self.expression = Expression()
+        self.durationName = 'Duration (Channel {0})'.format(self.channel)
+        self.dependencies = set()
+        self.updateDependencies()
 
     @property
     def sampleRate(self):
-        return self.devicePropertiesDict['sampleRate']
+        return self.settings.deviceProperties['sampleRate']
 
     @property
     def minSamples(self):
-        return self.devicePropertiesDict['minSamples']
+        return self.settings.deviceProperties['minSamples']
 
     @property
     def maxSamples(self):
-        return self.devicePropertiesDict['maxSamples']
+        return self.settings.deviceProperties['maxSamples']
 
     @property
     def sampleChunkSize(self):
-        return self.devicePropertiesDict['sampleChunkSize']
+        return self.settings.deviceProperties['sampleChunkSize']
 
     @property
     def padValue(self):
-        return self.devicePropertiesDict['padValue']
+        return self.settings.deviceProperties['padValue']
 
     @property
     def minAmplitude(self):
-        return self.devicePropertiesDict['minAmplitude']
+        return self.settings.deviceProperties['minAmplitude']
 
     @property
     def maxAmplitude(self):
-        return self.devicePropertiesDict['maxAmplitude']
+        return self.settings.deviceProperties['maxAmplitude']
 
     @property
     def stepsize(self):
@@ -65,33 +56,17 @@ class AWGWaveform(object):
 
     @property
     def equation(self):
-        return self._equation
+        return self.settings.channelSettingsList[self.channel]['equation']
 
-    @equation.setter
-    def equation(self, equation):
-        self._equation = equation
-        oldvars = self.varDict
+    def updateDependencies(self):
+        logger = logging.getLogger(__name__)
         self.stack = self.expression._parse_expression(self.equation)
-        dependencies = self.expression.findDependencies(self.stack)
-        self.varDict = SequenceDict( [(varname,
-                                                {'value': oldvars[varname]['value'] if oldvars.has_key(varname) else mg(0),
-                                                 'text': oldvars[varname]['text'] if oldvars.has_key(varname) else None})
-                                               for varname in dependencies]
-                                              )
-        self.varDict.pop('t')
-        self.varDict['Duration'] = {'value': oldvars['Duration']['value'] if oldvars.has_key('Duration') else mg(1, 'us'),
-                                             'text': oldvars['Duration']['text'] if oldvars.has_key('Duration') else None}
-        self.varDict.sort(key = lambda val: -1 if val[0]=='Duration' else ord( str(val[0])[0] ))
-
-    @property
-    def varMagnitudeDict(self):
-        """dict of form var:magnitude"""
-        return {varName:varValueTextDict['value'] for varName, varValueTextDict in self.varDict.iteritems()}
-
-    @property
-    def varValueDict(self):
-        """dict of the form var:value"""
-        return {varName:varValueTextDict['value'].to_base_units().val for varName, varValueTextDict in self.varDict.iteritems()}
+        self.dependencies = self.expression.findDependencies(self.stack)
+        self.dependencies.remove('t')
+        for varname in self.dependencies:
+            if varname.startswith('Duration'):
+                logger.exception("Equation variables cannot start with 'Duration'")
+        self.dependencies.add(self.durationName)
 
     def evaluate(self):
         """Evaluate the waveform.
@@ -99,20 +74,18 @@ class AWGWaveform(object):
         Returns:
             sampleList: list of values to program to the AWG.
         """
-        self.varDict.setdefault('Duration', {'value': mg(1, 'us'), 'text': None}) #varDict should always have a duration
-
         #calculate number of samples
-        numSamples = self.varDict['Duration']['value']*self.sampleRate
+        numSamples = self.settings.varDict[self.durationName]['value']*self.sampleRate
         numSamples = int( numSamples.toval() ) #convert to float, then to integer
         numSamples = min(numSamples, self.maxSamples) #cap at maxSamples
 
         # first test expression with dummy variable to see if units match up, so user is warned otherwise
-        self.expression.variabledict = self.varMagnitudeDict
+        self.expression.variabledict = {varName:varValueTextDict['value'] for varName, varValueTextDict in self.settings.varDict.iteritems()}
         self.expression.variabledict.update({'t':mg(1, 'us')})
         self.expression.evaluateWithStack(self.stack[:])
 
-        varValueDict = self.varValueDict
-        varValueDict.pop('Duration')
+        varValueDict = {varName:varValueTextDict['value'].to_base_units().val for varName, varValueTextDict in self.settings.varDict.iteritems()}
+        varValueDict.pop(self.durationName)
         varValueDict['t'] = sympy.Symbol('t')
 
         sympyExpr = parse_expr(self.equation, varValueDict) #parse the equation

@@ -13,9 +13,9 @@ class AWGTableModel(QtCore.QAbstractTableModel):
     headerDataLookup = ["Variable", "Value"]
     valueChanged = QtCore.pyqtSignal( object, object )
     
-    def __init__(self, waveform, globalDict, parent=None, *args):
+    def __init__(self, settings, globalDict, parent=None, *args):
         QtCore.QAbstractTableModel.__init__(self, parent, *args)
-        self.waveform = waveform
+        self.settings = settings
         self.globalDict = globalDict
         self.defaultBG = QtGui.QColor(QtCore.Qt.white)
         self.textBG = QtGui.QColor(QtCore.Qt.green).lighter(175)
@@ -26,13 +26,13 @@ class AWGTableModel(QtCore.QAbstractTableModel):
         self.boldFont = QtGui.QFont(self.defaultFontName,self.defaultFontSize,QtGui.QFont.Bold)
 
         self.dataLookup = {
-            (QtCore.Qt.DisplayRole, self.column.variable): lambda row: self.waveform.varDict.keyAt(row),
-            (QtCore.Qt.DisplayRole, self.column.value): lambda row: str(self.waveform.varDict.at(row)['value']),
-            (QtCore.Qt.FontRole, self.column.variable): lambda row: self.boldFont if self.waveform.varDict.keyAt(row)=='Duration' else self.normalFont,
-            (QtCore.Qt.FontRole, self.column.value): lambda row: self.boldFont if self.waveform.varDict.keyAt(row)=='Duration' else self.normalFont,
-            (QtCore.Qt.EditRole, self.column.value): lambda row: firstNotNone( self.waveform.varDict.at(row)['text'], str(self.waveform.varDict.at(row)['value'])),
-            (QtCore.Qt.BackgroundColorRole, self.column.value): lambda row: self.defaultBG if self.waveform.varDict.at(row)['text'] is None else self.textBG,
-            (QtCore.Qt.ToolTipRole, self.column.value): lambda row: self.waveform.varDict.at(row)['text'] if self.waveform.varDict.at(row)['text'] else None
+            (QtCore.Qt.DisplayRole, self.column.variable): lambda row: self.settings.varDict.keyAt(row),
+            (QtCore.Qt.DisplayRole, self.column.value): lambda row: str(self.settings.varDict.at(row)['value']),
+            (QtCore.Qt.FontRole, self.column.variable): lambda row: self.boldFont if self.settings.varDict.keyAt(row).startswith('Duration') else self.normalFont,
+            (QtCore.Qt.FontRole, self.column.value): lambda row: self.boldFont if self.settings.varDict.keyAt(row).startswith('Duration') else self.normalFont,
+            (QtCore.Qt.EditRole, self.column.value): lambda row: firstNotNone( self.settings.varDict.at(row)['text'], str(self.settings.varDict.at(row)['value'])),
+            (QtCore.Qt.BackgroundColorRole, self.column.value): lambda row: self.defaultBG if self.settings.varDict.at(row)['text'] is None else self.textBG,
+            (QtCore.Qt.ToolTipRole, self.column.value): lambda row: self.settings.varDict.at(row)['text'] if self.settings.varDict.at(row)['text'] else None
         }
         self.setDataLookup =  { 
             (QtCore.Qt.EditRole,self.column.value): self.setValue,
@@ -41,19 +41,19 @@ class AWGTableModel(QtCore.QAbstractTableModel):
         
     def setValue(self, index, value):
         row = index.row()
-        name = self.waveform.varDict.keyAt(row)
-        var = self.waveform.varDict.at(row)
+        name = self.settings.varDict.keyAt(row)
+        var = self.settings.varDict.at(row)
         var['value'] = value
         self.valueChanged.emit(name, value)
         return True
     
     def setText(self, index, value):
         row = index.row()
-        self.waveform.varDict.at(row)['text'] = value
+        self.settings.varDict.at(row)['text'] = value
         return True
     
     def rowCount(self, parent=QtCore.QModelIndex()): 
-        return len(self.waveform.varDict)
+        return len(self.settings.varDict)
         
     def columnCount(self, parent=QtCore.QModelIndex()): 
         return 2
@@ -78,11 +78,11 @@ class AWGTableModel(QtCore.QAbstractTableModel):
         return None  # QtCore.QVariant()
     
     def evaluate(self, name):
-        for (varName, varValueTextDict) in self.waveform.varDict.iteritems():
+        for (varName, varValueTextDict) in self.settings.varDict.iteritems():
             expr = varValueTextDict['text']
             if expr is not None:
                 value = Expression().evaluateAsMagnitude(expr, self.globalDict)
-                self.waveform.varDict[varName]['value'] = value   # set saved value to make this new value the default
-                modelIndex = self.createIndex(self.waveform.varDict.index(varName),self.column.value)
+                self.settings.varDict[varName]['value'] = value   # set saved value to make this new value the default
+                modelIndex = self.createIndex(self.settings.varDict.index(varName), self.column.value)
                 self.dataChanged.emit(modelIndex, modelIndex)
                 self.valueChanged.emit(varName, value)

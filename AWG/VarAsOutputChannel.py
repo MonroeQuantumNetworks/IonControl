@@ -20,11 +20,11 @@ class VarAsOutputChannel(object):
 
     @property
     def value(self):
-        return self.awgUi.settings.waveform.varDict[self.name]['value']
+        return self.awgUi.settings.varDict[self.name]['value']
 
     @property
     def strValue(self):
-        return self.awgUi.settings.waveform.varDict[self.name]['text']
+        return self.awgUi.settings.varDict[self.name]['text']
 
     @property
     def device(self):
@@ -39,11 +39,12 @@ class VarAsOutputChannel(object):
     def setValue(self, targetValue):
         """set the variable to targetValue"""
         if targetValue is not None:
-            self.awgUi.settings.waveform.varDict[self.name]['value'] = targetValue
-            modelIndex = self.awgUi.tableModel.createIndex(self.awgUi.settings.waveform.varDict.index(self.name),1)
+            self.awgUi.settings.varDict[self.name]['value'] = targetValue
+            modelIndex = self.awgUi.tableModel.createIndex(self.awgUi.settings.varDict.index(self.name), self.awgUi.tableModel.column.value)
             self.awgUi.tableModel.dataChanged.emit(modelIndex, modelIndex)
-            self.awgUi.replot()
-            self.awgUi.device.program()
+            for channelUi in self.awgUi.awgChannelUiList:
+                channelUi.replot()
+            self.device.program()
         return True
 
     def restoreValue(self):

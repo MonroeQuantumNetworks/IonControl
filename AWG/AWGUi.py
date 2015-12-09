@@ -1,44 +1,53 @@
-from cgitb import text
 import copy
 import logging
-import time
-
-from PyQt4 import QtGui, QtCore
-from PyQt4.Qt import QString
-import PyQt4.uic
-
-from AWG.AWGTableModel import AWGTableModel
-from modules.firstNotNone import firstNotNone
-from modules.magnitude import mg, MagnitudeError
-from uiModules.CoordinatePlotWidget import CoordinatePlotWidget
-from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
-from modules.PyqtUtility import BlockSignals
-from modules.PyqtUtility import updateComboBoxItems
-from trace.pens import solidBluePen
-
 import os
-uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\AWG.ui')
-AWGForm, AWGBase = PyQt4.uic.loadUiType(uipath)
+import itertools
+
+import PyQt4.uic
+from PyQt4 import QtGui, QtCore
+from pyqtgraph.dockarea import DockArea, Dock
+
+from AWG.AWGChannelUi import AWGChannelUi
+from AWG.AWGTableModel import AWGTableModel
+from AWG.VarAsOutputChannel import VarAsOutputChannel
+from modules.PyqtUtility import BlockSignals
+from modules.SequenceDict import SequenceDict
+from modules.magnitude import mg
+from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
+
+AWGuipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\AWG.ui')
+AWGForm, AWGBase = PyQt4.uic.loadUiType(AWGuipath)
 
 class Settings(object):
+    """Settings associated with AWGUi. Each entry in the settings menu has a corresponding Settings object.
+
+    Attributes:
+       deviceSettings(dict): dynamic settings of the device, controlled by the parameterTree widget. Elements are defined
+          in the device's 'paramDef' function
+       channelSettingsList (list of dicts): each element corresponds to a channel of the AWG. Each element is a dict,
+          with keys 'equation' and 'plotEnabled'
+    """
+    saveIfNecessary = None
+    stateFields = {'channelSettingsList':list(),
+                   'deviceSettings':dict(),
+                   'deviceProperties':dict(),
+                   'varDict':SequenceDict()
+                   }
     def __init__(self):
-        self.plotEnabled = True
-        self.waveform = None
-        self.deviceSettings = dict()
+        [setattr(self, field, copy.copy(fieldDefault)) for field, fieldDefault in self.stateFields.iteritems()]
 
     def __setstate__(self, state):
         self.__dict__ = state
-        self.__dict__.setdefault('plotEnabled', True)
-        self.__dict__.setdefault('waveform', None)
-        self.__dict__.setdefault('deviceSettings', dict())
-
-    stateFields = ['plotEnabled', 'waveform', 'deviceSettings']
 
     def __eq__(self,other):
-        return tuple(getattr(self,field) for field in self.stateFields)==tuple(getattr(other,field) for field in self.stateFields)
+        return tuple(getattr(self,field,None) for field in self.stateFields.keys())==tuple(getattr(other,field,None) for field in self.stateFields.keys())
 
     def __ne__(self, other):
         return not self == other
+
+    def update(self, other):
+        [setattr(self, field, getattr(other, field)) for field in self.stateFields.keys() if hasattr(other, field)]
+
 
 class AWGUi(AWGForm, AWGBase):
     varDictChanged = QtCore.pyqtSignal(object)
@@ -51,16 +60,31 @@ class AWGUi(AWGForm, AWGBase):
         self.autoSave = self.config.get(self.configname+'.autoSave', True)
         self.settingsDict = self.config.get(self.configname+'.settingsDict', dict())
         self.settingsName = self.config.get(self.configname+'.settingsName', '')
-        self.settings = copy.deepcopy(self.settingsDict[self.settingsName]) if self.settingsName in self.settingsDict else Settings()
-        self.device = deviceClass(self.settings, self.globalDict, self)
-        for settings in self.settingsDict.values():
-            #make sure deviceProperties are consistent, e.g. if the device properties were changed since the waveform was pickled
-            settings.waveform.devicePropertiesDict = self.device.devicePropertiesDict
+        Settings.saveIfNecessary = self.saveIfNecessary
+        self.settings = Settings() #we always run settings through the constructor
+        if self.settingsName in self.settingsDict:
+            self.settings.update(self.settingsDict[self.settingsName])
+        self.settings.deviceProperties = deviceClass.deviceProperties
+        self.device = deviceClass(self.settings, self.globalDict)
 
     def setupUi(self,parent):
         logger = logging.getLogger(__name__)
         AWGForm.setupUi(self,parent)
         self.setWindowTitle(self.device.displayName)
+
+        self._varAsOutputChannelDict = dict()
+        self.area = DockArea()
+        self.splitter.insertWidget(0, self.area)
+        self.awgChannelUiList = []
+        for channel in range(self.device.deviceProperties['numChannels']):
+            awgChannelUi = AWGChannelUi(channel, self.settings, parent=self)
+            awgChannelUi.setupUi(awgChannelUi)
+            awgChannelUi.dependenciesChanged.connect(self.onDependenciesChanged)
+            self.awgChannelUiList.append(awgChannelUi)
+            dock = Dock("AWG Channel {0}".format(channel))
+            dock.addWidget(awgChannelUi)
+            self.area.addDock(dock, 'right')
+        self.refreshVarDict()
 
         # Settings control
         self.saveButton.clicked.connect( self.onSave )
@@ -77,22 +101,11 @@ class AWGUi(AWGForm, AWGBase):
         self.programmingOptionsTreeWidget.setParameters( self.device.parameter() )
 
         # Table
-        self.tableModel = AWGTableModel(self.settings.waveform, self.globalDict)
-        self.tableView.setModel( self.tableModel )
-        self.tableModel.valueChanged.connect( self.onValue )
+        self.tableModel = AWGTableModel(self.settings, self.globalDict)
+        self.tableView.setModel(self.tableModel)
+        self.tableModel.valueChanged.connect(self.onValue)
         self.delegate = MagnitudeSpinBoxDelegate(self.globalDict)
-        self.tableView.setItemDelegateForColumn(1,self.delegate)
-        
-        # Graph and equation
-        self.equationEdit.setText(self.settings.waveform.equation)
-        self.plot.setTimeAxis(False)
-        self.plotCheckbox.setChecked(self.settings.plotEnabled)
-        self.plot.setVisible(self.settings.plotEnabled)
-        self.plotCheckbox.stateChanged.connect(self.onPlotCheckbox)
-
-        # Buttons
-        self.evalButton.clicked.connect(self.onEvalEqn)
-        self.equationEdit.returnPressed.connect(self.onEvalEqn)
+        self.tableView.setItemDelegateForColumn(self.tableModel.column.value, self.delegate)
 
         # Context Menu
         self.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
@@ -102,8 +115,22 @@ class AWGUi(AWGForm, AWGBase):
         self.saveButton.setEnabled( not self.autoSave )
         self.autoSaveAction.triggered.connect( self.onAutoSave )
         self.addAction( self.autoSaveAction )
-        
-        self.replot()
+
+        #Restore GUI state
+        dockAreaState = self.config.get(self.configname+'.dockAreaState')
+        mainWindowState = self.config.get(self.configname+'.mainWindowState')
+        splitterState = self.config.get(self.configname+'.splitterState')
+        try:
+            if mainWindowState:
+                self.restoreState(mainWindowState)
+            if splitterState:
+                self.splitter.restoreState(splitterState)
+            if dockAreaState:
+                self.area.restoreState(dockAreaState)
+        except Exception as e:
+            logger.warning("Error on restoring GUI state in AWGUi {0}: {1}".format(self.device.displayName, e))
+
+        self.saveIfNecessary()
 
     def onComboBoxEditingFinished(self):
         self.settingsName = str(self.settingsComboBox.currentText())
@@ -129,6 +156,9 @@ class AWGUi(AWGForm, AWGBase):
         self.saveButton.setEnabled(False)
 
     def saveConfig(self):
+        self.config[self.configname+'.mainWindowState'] = self.saveState()
+        self.config[self.configname+'.dockAreaState'] = self.area.saveState()
+        self.config[self.configname+'.splitterState'] = self.splitter.saveState()
         self.config[self.configname+'.settingsDict'] = self.settingsDict
         self.config[self.configname+'.settingsName'] = self.settingsName
         self.config[self.configname+'.autoSave'] = self.autoSave
@@ -154,19 +184,18 @@ class AWGUi(AWGForm, AWGBase):
         name = str(name)
         if name in self.settingsDict:
             self.settingsName = name
-            self.settings = copy.deepcopy(self.settingsDict[self.settingsName])
-            self.refreshWaveform()
+            self.tableModel.beginResetModel()
+            self.settings.update(self.settingsDict[self.settingsName])
+            self.tableModel.endResetModel()
             self.programmingOptionsTreeWidget.setParameters( self.device.parameter() )
-            self.plotCheckbox.setChecked(self.settings.plotEnabled)
             self.saveButton.setEnabled(False)
-            self.replot()
-            self.saveIfNecessary()
-
-    def refreshWaveform(self):
-        self.tableModel.beginResetModel()
-        self.device.settings = self.settings
-        self.tableModel.waveform = self.settings.waveform
-        self.tableModel.endResetModel()
+            for channelUi in self.awgChannelUiList:
+                equation = self.settings.channelSettingsList[channelUi.channel]['equation']
+                channelUi.equationEdit.setText(equation)
+                channelUi.equation = equation
+                channelUi.plotCheckbox.setChecked(self.settings.channelSettingsList[channelUi.channel]['plotEnabled'])
+                channelUi.replot()
+            self.saveButton.setEnabled(False)
 
     def onAutoSave(self, checked):
         self.autoSave = checked
@@ -174,49 +203,53 @@ class AWGUi(AWGForm, AWGBase):
         if checked:
             self.onSave()
 
-    def onEvalEqn(self):
-        self.tableModel.beginResetModel()
-        self.settings.waveform.equation = str(self.equationEdit.text())
-        self.replot()
-        self.varDictChanged.emit(self.device.varAsOutputChannelDict)
+    def onValue(self, var=None, value=None):
         self.saveIfNecessary()
-        self.tableModel.endResetModel()
-
-    def onValue(self, var, value):
-        self.saveIfNecessary()
-        self.replot()
+        for channelUi in self.awgChannelUiList:
+            channelUi.replot()
         
-    def replot(self):
-        logger = logging.getLogger(__name__)
-        if self.settings.plotEnabled:
-            try:
-                waveform = self.settings.waveform.evaluate()
-                self.plot.getItem(0,0).clear()
-                self.plot.getItem(0,0).plot(waveform, pen=solidBluePen)
-            except (MagnitudeError, NameError, IndexError) as e:
-                logger.warning(e.__class__.__name__ + ": " + str(e))
-
     def evaluate(self, name):
         self.tableModel.evaluate(name)
 
-    def onPlotCheckbox(self, checked):
-        self.settings.plotEnabled = checked
-        if not checked:
-            self.plot.getItem(0,0).clear()
-        elif checked:
-            self.replot()
-        self.plot.setVisible(checked)
+    def refreshVarDict(self):
+        allDependencies = set()
+        [allDependencies.update(channelUi.waveform.dependencies) for channelUi in self.awgChannelUiList]
+        default = lambda varname:{'value':mg(1, 'us'), 'text':None} if varname.startswith('Duration') else {'value':mg(0), 'text':None}
+        deletions = [varname for varname in self.settings.varDict if varname not in allDependencies]
+        [self.settings.varDict.pop(varname) for varname in deletions] #remove all values that aren't dependencies anymore
+        [self.settings.varDict.setdefault(varname, default(varname)) for varname in allDependencies] #add missing values
+        self.settings.varDict.sort(key = lambda val: -1 if val[0].startswith('Duration') else ord( str(val[0])[0] ))
+        self.varDictChanged.emit(self.varAsOutputChannelDict)
+        for channelUi in self.awgChannelUiList:
+            channelUi.replot()
+
+    def onDependenciesChanged(self, channel):
+        self.tableModel.beginResetModel()
+        self.refreshVarDict()
+        self.tableModel.endResetModel()
         self.saveIfNecessary()
 
+    @QtCore.pyqtProperty(dict)
+    def varAsOutputChannelDict(self):
+        for name in self.settings.varDict:
+            if name not in self._varAsOutputChannelDict:
+                self._varAsOutputChannelDict[name] = VarAsOutputChannel(self, name, self.globalDict)
+        return self._varAsOutputChannelDict
+
+    def close(self):
+        self.saveConfig()
+        super(AWGUi, self).close()
 
 if __name__ == '__main__':
     from AWGDevices import DummyAWG
     import sys
-    import Experiment_rc
     from ProjectConfig.Project import Project
+    from persist import configshelve
     app = QtGui.QApplication(sys.argv)
-    Project()
-    ui = AWGUi(DummyAWG, dict(), dict())
-    ui.setupUi(ui)
-    ui.show()
-    sys.exit(app.exec_())
+    project = Project()
+    guiConfigFile = os.path.join(project.projectDir, '.gui-config\\ExperimentUi.config.db')
+    with configshelve.configshelve(project.guiConfigFile) as config:
+        ui = AWGUi(DummyAWG, config, dict())
+        ui.setupUi(ui)
+        ui.show()
+        sys.exit(app.exec_())
