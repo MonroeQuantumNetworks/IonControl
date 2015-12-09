@@ -14,6 +14,7 @@ from modules.PyqtUtility import BlockSignals
 from modules.SequenceDict import SequenceDict
 from modules.magnitude import mg
 from modules.GuiAppearance import saveGuiState, restoreGuiState
+from modules.enum import enum
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 
 AWGuipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\AWG.ui')
@@ -28,6 +29,7 @@ class Settings(object):
        channelSettingsList (list of dicts): each element corresponds to a channel of the AWG. Each element is a dict,
           with keys 'equation' and 'plotEnabled'
     """
+    waveformModes = enum('equation', 'table')
     saveIfNecessary = None
     stateFields = {'channelSettingsList':list(),
                    'deviceSettings':dict(),
@@ -39,6 +41,9 @@ class Settings(object):
 
     def __setstate__(self, state):
         self.__dict__ = state
+        for channelSettings in self.channelSettingsList:
+            channelSettings.setdefault('filename', '')
+            channelSettings.setdefault('waveformMode', self.waveformModes.equation)
 
     def __eq__(self,other):
         return tuple(getattr(self,field,None) for field in self.stateFields.keys())==tuple(getattr(other,field,None) for field in self.stateFields.keys())
@@ -65,7 +70,11 @@ class AWGUi(AWGForm, AWGBase):
             settings.deviceProperties = deviceClass.deviceProperties
             for channel in range(deviceClass.deviceProperties['numChannels']):
                 if channel >= len(settings.channelSettingsList): #create new channels if it's necessary
-                    settings.channelSettingsList.append({'equation' : 'A*sin(w*t+phi) + offset', 'plotEnabled' : True})
+                    settings.channelSettingsList.append({
+                        'equation' : 'A*sin(w*t+phi) + offset',
+                        'waveformMode':Settings.waveformModes.equation,
+                        'filename':'',
+                        'plotEnabled' : True})
         Settings.saveIfNecessary = self.saveIfNecessary
         self.settings = Settings() #we always run settings through the constructor
         if self.settingsName in self.settingsDict:

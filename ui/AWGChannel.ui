@@ -6,14 +6,28 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
-    <height>300</height>
+    <width>587</width>
+    <height>518</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout">
+  <layout class="QVBoxLayout" name="verticalLayout_2">
+   <item>
+    <widget class="QComboBox" name="comboBox">
+     <item>
+      <property name="text">
+       <string>Equation</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Table</string>
+      </property>
+     </item>
+    </widget>
+   </item>
    <item>
     <layout class="QGridLayout" name="gridLayout">
      <item row="0" column="0">
@@ -22,9 +36,6 @@
         <string>Equation</string>
        </property>
       </widget>
-     </item>
-     <item row="0" column="1">
-      <widget class="QLineEdit" name="equationEdit"/>
      </item>
      <item row="0" column="2">
       <widget class="QPushButton" name="evalButton">
@@ -40,7 +51,104 @@
        </property>
       </widget>
      </item>
+     <item row="0" column="1">
+      <widget class="QLineEdit" name="equationEdit"/>
+     </item>
     </layout>
+   </item>
+   <item>
+    <widget class="QFrame" name="tableFrame">
+     <property name="frameShape">
+      <enum>QFrame::StyledPanel</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Raised</enum>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout">
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_2">
+        <item>
+         <widget class="QComboBox" name="filenameComboBox">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="editable">
+           <bool>true</bool>
+          </property>
+          <property name="maxVisibleItems">
+           <number>100</number>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QToolButton" name="removeCurrent">
+          <property name="toolTip">
+           <string>remove Current entry from Combo Box</string>
+          </property>
+          <property name="text">
+           <string>...</string>
+          </property>
+          <property name="icon">
+           <iconset resource="Experiment.qrc">
+            <normaloff>:/openicon/icons/edit-clear-locationbar-rtl.png</normaloff>:/openicon/icons/edit-clear-locationbar-rtl.png</iconset>
+          </property>
+          <property name="autoRaise">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QToolButton" name="loadButton">
+          <property name="text">
+           <string>...</string>
+          </property>
+          <property name="icon">
+           <iconset resource="Experiment.qrc">
+            <normaloff>:/openicon/icons/document-open-5.png</normaloff>:/openicon/icons/document-open-5.png</iconset>
+          </property>
+          <property name="autoRaise">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QToolButton" name="saveButton">
+          <property name="text">
+           <string>...</string>
+          </property>
+          <property name="icon">
+           <iconset resource="Experiment.qrc">
+            <normaloff>:/kde/icons/filesave.png</normaloff>:/kde/icons/filesave.png</iconset>
+          </property>
+          <property name="autoRaise">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QToolButton" name="resetButton">
+          <property name="text">
+           <string>...</string>
+          </property>
+          <property name="icon">
+           <iconset resource="Experiment.qrc">
+            <normaloff>:/openicon/icons/document-revert-5.png</normaloff>:/openicon/icons/document-revert-5.png</iconset>
+          </property>
+          <property name="autoRaise">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <widget class="QTableView" name="tableView"/>
+      </item>
+     </layout>
+    </widget>
    </item>
    <item>
     <widget class="CoordinatePlotWidget" name="plot"/>
@@ -54,6 +162,8 @@
    <header>uiModules.CoordinatePlotWidget</header>
   </customwidget>
  </customwidgets>
- <resources/>
+ <resources>
+  <include location="Experiment.qrc"/>
+ </resources>
  <connections/>
 </ui>
