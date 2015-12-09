@@ -13,6 +13,7 @@ from AWG.VarAsOutputChannel import VarAsOutputChannel
 from modules.PyqtUtility import BlockSignals
 from modules.SequenceDict import SequenceDict
 from modules.magnitude import mg
+from modules.GuiAppearance import saveGuiState, restoreGuiState
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 
 AWGuipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\AWG.ui')
@@ -60,11 +61,15 @@ class AWGUi(AWGForm, AWGBase):
         self.autoSave = self.config.get(self.configname+'.autoSave', True)
         self.settingsDict = self.config.get(self.configname+'.settingsDict', dict())
         self.settingsName = self.config.get(self.configname+'.settingsName', '')
+        for settings in self.settingsDict.values(): #make sure all pickled settings are consistent with device, in case it changed
+            settings.deviceProperties = deviceClass.deviceProperties
+            for channel in range(deviceClass.deviceProperties['numChannels']):
+                if channel >= len(settings.channelSettingsList): #create new channels if it's necessary
+                    settings.channelSettingsList.append({'equation' : 'A*sin(w*t+phi) + offset', 'plotEnabled' : True})
         Settings.saveIfNecessary = self.saveIfNecessary
         self.settings = Settings() #we always run settings through the constructor
         if self.settingsName in self.settingsDict:
             self.settings.update(self.settingsDict[self.settingsName])
-        self.settings.deviceProperties = deviceClass.deviceProperties
         self.device = deviceClass(self.settings, self.globalDict)
 
     def setupUi(self,parent):
@@ -117,26 +122,46 @@ class AWGUi(AWGForm, AWGBase):
         self.addAction( self.autoSaveAction )
 
         #Restore GUI state
+        state = self.config.get(self.configname+'.state')
+        pos = self.config.get(self.configname+'.pos')
+        size = self.config.get(self.configname+'.size')
+        isMaximized = self.config.get(self.configname+'.isMaximized')
         dockAreaState = self.config.get(self.configname+'.dockAreaState')
-        mainWindowState = self.config.get(self.configname+'.mainWindowState')
-        splitterState = self.config.get(self.configname+'.splitterState')
+        guiState = self.config.get(self.configname+".guiState")
         try:
-            if mainWindowState:
-                self.restoreState(mainWindowState)
-            if splitterState:
-                self.splitter.restoreState(splitterState)
+            if pos:
+                self.move(pos)
+            if size:
+                self.resize(size)
+            if isMaximized:
+                self.showMaximized()
+            if state:
+                self.restoreState(state)
+            if guiState:
+                restoreGuiState(self, guiState)
+        except Exception as e:
+            logger.warning("Error on restoring state in AWGUi {0}. Exception occurred: {1}".format(self.device.displayName, e))
+        try:
             if dockAreaState:
                 self.area.restoreState(dockAreaState)
         except Exception as e:
-            logger.warning("Error on restoring GUI state in AWGUi {0}: {1}".format(self.device.displayName, e))
-
+            logger.warning("Cannot restore dock state in AWGUi {0}. Exception occurred: {1}".format(self.device.displayName, e))
+            self.area.deleteLater()
+            self.area = DockArea()
+            self.splitter.insertWidget(0, self.area)
+            for channelUi in self.awgChannelUiList:
+                dock = Dock("AWG Channel {0}".format(channel))
+                dock.addWidget(channelUi)
+                self.area.addDock(dock, 'right')
         self.saveIfNecessary()
 
     def onComboBoxEditingFinished(self):
-        self.settingsName = str(self.settingsComboBox.currentText())
-        if self.settingsName not in self.settingsDict:
-            self.settingsDict[self.settingsName] = copy.deepcopy(self.settings)
-        self.onLoad(self.settingsName)
+        currentText = str(self.settingsComboBox.currentText())
+        if self.settingsName != currentText:
+            self.settingsName = currentText
+            if self.settingsName not in self.settingsDict:
+                self.settingsDict[self.settingsName] = copy.deepcopy(self.settings)
+            self.onLoad(self.settingsName)
 
     def saveIfNecessary(self):
         """save the current settings if autosave is on and something has changed"""
@@ -156,9 +181,13 @@ class AWGUi(AWGForm, AWGBase):
         self.saveButton.setEnabled(False)
 
     def saveConfig(self):
-        self.config[self.configname+'.mainWindowState'] = self.saveState()
+        self.config[self.configname+".guiState"] = saveGuiState(self)
+        self.config[self.configname+'.state'] = self.saveState()
+        self.config[self.configname+'.pos'] = self.pos()
+        self.config[self.configname+'.size'] = self.size()
+        self.config[self.configname+'.isMaximized'] = self.isMaximized()
+        self.config[self.configname+'.isVisible'] = self.isVisible()
         self.config[self.configname+'.dockAreaState'] = self.area.saveState()
-        self.config[self.configname+'.splitterState'] = self.splitter.saveState()
         self.config[self.configname+'.settingsDict'] = self.settingsDict
         self.config[self.configname+'.settingsName'] = self.settingsName
         self.config[self.configname+'.autoSave'] = self.autoSave
@@ -186,16 +215,17 @@ class AWGUi(AWGForm, AWGBase):
             self.settingsName = name
             self.tableModel.beginResetModel()
             self.settings.update(self.settingsDict[self.settingsName])
-            self.tableModel.endResetModel()
             self.programmingOptionsTreeWidget.setParameters( self.device.parameter() )
             self.saveButton.setEnabled(False)
             for channelUi in self.awgChannelUiList:
                 equation = self.settings.channelSettingsList[channelUi.channel]['equation']
                 channelUi.equationEdit.setText(equation)
-                channelUi.equation = equation
+                channelUi.waveform.updateDependencies()
                 channelUi.plotCheckbox.setChecked(self.settings.channelSettingsList[channelUi.channel]['plotEnabled'])
                 channelUi.replot()
+            self.onDependenciesChanged()
             self.saveButton.setEnabled(False)
+            self.tableModel.endResetModel()
 
     def onAutoSave(self, checked):
         self.autoSave = checked
@@ -223,7 +253,7 @@ class AWGUi(AWGForm, AWGBase):
         for channelUi in self.awgChannelUiList:
             channelUi.replot()
 
-    def onDependenciesChanged(self, channel):
+    def onDependenciesChanged(self, channel=None):
         self.tableModel.beginResetModel()
         self.refreshVarDict()
         self.tableModel.endResetModel()
@@ -231,9 +261,11 @@ class AWGUi(AWGForm, AWGBase):
 
     @QtCore.pyqtProperty(dict)
     def varAsOutputChannelDict(self):
-        for name in self.settings.varDict:
-            if name not in self._varAsOutputChannelDict:
-                self._varAsOutputChannelDict[name] = VarAsOutputChannel(self, name, self.globalDict)
+        for varname in self.settings.varDict:
+            if varname not in self._varAsOutputChannelDict:
+                self._varAsOutputChannelDict[varname] = VarAsOutputChannel(self, varname, self.globalDict)
+        deletions = [varname for varname in self._varAsOutputChannelDict if varname not in self.settings.varDict]
+        [self._varAsOutputChannelDict.pop(varname) for varname in deletions] #remove all values that aren't dependencies anymore
         return self._varAsOutputChannelDict
 
     def close(self):

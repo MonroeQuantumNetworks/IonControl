@@ -368,7 +368,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             
             target = self.scanControlWidget.settings.scanTarget
             if target in AWGDevices.AWGDeviceDict and self.project.isEnabled('hardware', target):
-                AWGdevice = self.scanTargetDict[target]["Duration"].device
+                AWGdevice = self.scanTargetDict[target].values()[0].device
                 if AWGdevice.settings.deviceSettings['programOnScanStart']:
                     logging.getLogger(__name__).info("Programming {0}".format(target))
                     AWGdevice.program()

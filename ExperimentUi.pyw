@@ -770,6 +770,12 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
             if voltageControlWindowVisible: self.voltageControlWindow.show()
             else: self.voltageControlWindow.hide()
 
+        if self.AWGUiDict:
+            for awgUi in self.AWGUiDict.values():
+                awgUiVisible = self.config.get(awgUi.configname+'.isVisible', False)
+                if awgUiVisible: awgUi.show()
+                else: awgUi.hide()
+
         self.raise_()
 
     def setupFPGAs(self):
