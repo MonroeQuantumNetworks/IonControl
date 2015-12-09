@@ -192,7 +192,7 @@ class DummyAWG(AWGDeviceBase):
         padValue = 2047, #the waveform will be padded with this number ot make it a multiple of sampleChunkSize, or to make it the length of minSamples
         minAmplitude = 0, #minimum amplitude value (raw)
         maxAmplitude = 4095, #maximum amplitude value (raw)
-        numChannels = 4  #Number of channels
+        numChannels = 2  #Number of channels
     )
     
     def open(self): pass

@@ -60,6 +60,7 @@ class AWGChannelUi(AWGChannelForm, AWGChannelBase):
         self.plotCheckbox.stateChanged.connect(self.onPlotCheckbox)
         self.evalButton.clicked.connect(self.onEquation)
         self.equationEdit.returnPressed.connect(self.onEquation)
+        self.equationEdit.setToolTip("use 't' for time variable")
         self.replot()
 
     def onPlotCheckbox(self, checked):
