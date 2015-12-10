@@ -13,24 +13,27 @@ import sip
 api2 = sip.getapi("QVariant")==2
 
 class AWGSegmentTableModel(QtCore.QAbstractTableModel):
-    segmentChanged = QtCore.pyqtSignal(int, int, int, str) #channel, row, column, value
+    segmentChanged = QtCore.pyqtSignal(int, int, int, object) #channel, row, column, value
     def __init__(self, channel, settings, globalDict, parent=None, *args):
         QtCore.QAbstractTableModel.__init__(self, parent, *args)
         self.channel = channel
         self.settings = settings
         self.globalDict = globalDict
-        self.column = enum('amplitude', 'duration')
+        self.column = enum('enabled', 'amplitude', 'duration')
         self.dataLookup = {
+            (QtCore.Qt.CheckStateRole,self.column.enabled): lambda row: QtCore.Qt.Checked if self.segmentList[row]['enabled'] else QtCore.Qt.Unchecked,
             (QtCore.Qt.DisplayRole, self.column.amplitude): lambda row: self.segmentList[row]['amplitude'],
             (QtCore.Qt.DisplayRole, self.column.duration): lambda row: self.segmentList[row]['duration'],
             (QtCore.Qt.EditRole, self.column.amplitude): lambda row: self.segmentList[row]['amplitude'],
             (QtCore.Qt.EditRole, self.column.duration): lambda row: self.segmentList[row]['duration']
             }
         self.setDataLookup = {
-            (QtCore.Qt.EditRole, self.column.amplitude): lambda index, value: self.setValue(index, value),
-            (QtCore.Qt.EditRole, self.column.duration): lambda index, value: self.setValue(index, value)
+            (QtCore.Qt.CheckStateRole, self.column.enabled): lambda index, value: self.setEnabled(index, value),
+            (QtCore.Qt.EditRole, self.column.amplitude): lambda index, value: self.setValue(index, value, 'amplitude'),
+            (QtCore.Qt.EditRole, self.column.duration): lambda index, value: self.setValue(index, value, 'duration')
             }
         self.flagsLookup = {
+            self.column.enabled: QtCore.Qt.ItemIsEnabled|  QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsSelectable,
             self.column.amplitude: QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsSelectable,
             self.column.duration: QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsSelectable
             }
@@ -42,7 +45,17 @@ class AWGSegmentTableModel(QtCore.QAbstractTableModel):
     def flags(self, index):
         return self.flagsLookup[index.column()]
 
-    def setValue(self, index, value):
+    def setEnabled(self, index, value):
+        row = index.row()
+        column = index.column()
+        enabled = value==QtCore.Qt.Checked
+        self.segmentList[row]['enabled'] = enabled
+        self.dataChanged.emit(index, index)
+        self.segmentChanged.emit(self.channel, row, column, enabled)
+        self.settings.saveIfNecessary()
+        return True
+
+    def setValue(self, index, value, key):
         row = index.row()
         column = index.column()
         strvalue = str((value if api2 else value.toString()) if isinstance(value, QtCore.QVariant) else value)
@@ -53,10 +66,7 @@ class AWGSegmentTableModel(QtCore.QAbstractTableModel):
             logger.warning("'{0}' is not a valid variable name".format(strvalue))
             return False
         else:
-            if column==self.column.amplitude:
-                self.segmentList[row]['amplitude'] = strvalue
-            elif column==self.column.duration:
-                self.segmentList[row]['duration'] = strvalue
+            self.segmentList[row][key] = strvalue
             self.dataChanged.emit(index, index)
             self.segmentChanged.emit(self.channel, row, column, strvalue)
             self.settings.saveIfNecessary()
@@ -66,7 +76,7 @@ class AWGSegmentTableModel(QtCore.QAbstractTableModel):
         return len(self.segmentList)
 
     def columnCount(self, parent=QtCore.QModelIndex()):
-        return 2
+        return 3
 
     def data(self, index, role):
         if index.isValid():
@@ -88,7 +98,10 @@ class AWGSegmentTableModel(QtCore.QAbstractTableModel):
     def addSegment(self):
         row = len(self.segmentList)
         self.beginInsertRows(QtCore.QModelIndex(), row, row)
-        self.segmentList.append({'amplitude':'v{0}'.format(row), 'duration':'t{0}'.format(row)})
+        self.segmentList.append({
+            'enabled':True,
+            'amplitude':'v{0}'.format(row),
+            'duration':'t{0}'.format(row)})
         self.settings.saveIfNecessary()
         self.endInsertRows()
 
