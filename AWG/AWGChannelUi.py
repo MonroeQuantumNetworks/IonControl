@@ -53,14 +53,17 @@ class AWGChannelUi(AWGChannelForm, AWGChannelBase):
 
     def setupUi(self, parent):
         AWGChannelForm.setupUi(self, parent)
+        #equation
         self.equationEdit.setText(self.equation)
+        self.evalButton.clicked.connect(self.onEquation)
+        self.equationEdit.returnPressed.connect(self.onEquation)
+        self.equationEdit.setToolTip("use 't' for time variable")
+
+        #plot
         self.plot.setTimeAxis(False)
         self.plotCheckbox.setChecked(self.plotEnabled)
         self.plot.setVisible(self.plotEnabled)
         self.plotCheckbox.stateChanged.connect(self.onPlotCheckbox)
-        self.evalButton.clicked.connect(self.onEquation)
-        self.equationEdit.returnPressed.connect(self.onEquation)
-        self.equationEdit.setToolTip("use 't' for time variable")
         self.replot()
 
     def onPlotCheckbox(self, checked):

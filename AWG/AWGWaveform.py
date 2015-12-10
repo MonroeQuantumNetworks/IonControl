@@ -4,14 +4,17 @@ Created on 01 Dec 2015 at 10:51 AM
 author: jmizrahi
 """
 
-from modules.Expression import Expression
-from modules.magnitude import mg, Magnitude
-from modules.SequenceDict import SequenceDict
+import logging
+
 import numpy
 import sympy
 from sympy.parsing.sympy_parser import parse_expr
-import math
-import logging
+
+from modules.Expression import Expression
+from modules.magnitude import mg
+from modules.enum import enum
+from uiModules.CategoryTree import CategoryTreeModel
+
 
 class AWGWaveform(object):
     def __init__(self, channel, settings):
