@@ -776,7 +776,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
                 if awgUiVisible: awgUi.show()
                 else: awgUi.hide()
 
-        self.raise_()
+        self.setFocus(True)
 
     def setupFPGAs(self):
         """Setup all Opal Kelly FPGAs"""
