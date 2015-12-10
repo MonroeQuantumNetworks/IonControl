@@ -31,9 +31,9 @@ class Settings(object):
     """
     waveformModes = enum('equation', 'table')
     saveIfNecessary = None
+    deviceProperties = dict()
     stateFields = {'channelSettingsList':list(),
                    'deviceSettings':dict(),
-                   'deviceProperties':dict(),
                    'waveformMode':waveformModes.equation,
                    'filename':'',
                    'varDict':SequenceDict()
@@ -65,15 +65,15 @@ class AWGUi(AWGForm, AWGBase):
         self.autoSave = self.config.get(self.configname+'.autoSave', True)
         self.settingsDict = self.config.get(self.configname+'.settingsDict', dict())
         self.settingsName = self.config.get(self.configname+'.settingsName', '')
+        Settings.deviceProperties = deviceClass.deviceProperties
+        Settings.saveIfNecessary = self.saveIfNecessary
         for settings in self.settingsDict.values(): #make sure all pickled settings are consistent with device, in case it changed
-            settings.deviceProperties = deviceClass.deviceProperties
             for channel in range(deviceClass.deviceProperties['numChannels']):
                 if channel >= len(settings.channelSettingsList): #create new channels if it's necessary
                     settings.channelSettingsList.append({
                         'equation' : 'A*sin(w*t+phi) + offset',
                         'segmentList':[],
                         'plotEnabled':True})
-        Settings.saveIfNecessary = self.saveIfNecessary
         self.settings = Settings() #we always run settings through the constructor
         if self.settingsName in self.settingsDict:
             self.settings.update(self.settingsDict[self.settingsName])
