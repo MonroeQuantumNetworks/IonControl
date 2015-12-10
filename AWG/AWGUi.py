@@ -139,6 +139,15 @@ class AWGUi(AWGForm, AWGBase):
         self.delegate = MagnitudeSpinBoxDelegate(self.globalDict)
         self.tableView.setItemDelegateForColumn(self.tableModel.column.value, self.delegate)
 
+        #File
+        self.filenameComboBox.setCurrentIndex(self.filenameComboBox.findText(self.settings.filename))
+        self.filenameComboBox.currentIndexChanged[str].connect(self.openFile)
+        self.removeFileButton.clicked.connect(self.onRemoveFile)
+        self.newFileButton.clicked.connect(self.onNewFile)
+        self.openFileButton.clicked.connect(self.onOpenFile)
+        self.saveFileButton.clicked.connect(self.onSaveFile)
+        self.reloadFileButton.clicked.connect(self.onReloadFile)
+
         # Context Menu
         self.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
         self.autoSaveAction = QtGui.QAction( "auto save" , self)
@@ -251,6 +260,8 @@ class AWGUi(AWGForm, AWGBase):
             self.saveButton.setEnabled(False)
             with BlockSignals(self.waveformModeComboBox) as w:
                 w.setCurrentIndex(self.settings.waveformMode)
+            with BlockSignals(self.filenameComboBox) as w:
+                w.setCurrentIndex(w.findText(self.settings.filename))
             equationMode = self.settings.waveformMode==self.settings.waveformModes.equation
             self.fileFrame.setEnabled(not equationMode)
             self.fileFrame.setVisible(not equationMode)
@@ -319,6 +330,24 @@ class AWGUi(AWGForm, AWGBase):
             channelUi.segmentView.setEnabled(not equationMode)
             channelUi.segmentView.setVisible(not equationMode)
         self.onDependenciesChanged()
+
+    def onRemoveFile(self):
+        pass
+
+    def onNewFile(self):
+        pass
+
+    def onOpenFile(self):
+        pass
+
+    def openFile(self, filename):
+        pass
+
+    def onSaveFile(self):
+        pass
+
+    def onReloadFile(self):
+        pass
 
     @QtCore.pyqtProperty(dict)
     def varAsOutputChannelDict(self):

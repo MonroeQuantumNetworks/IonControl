@@ -147,7 +147,7 @@
        <item>
         <widget class="QToolButton" name="removeCurrent">
          <property name="toolTip">
-          <string>remove Current entry from Combo Box</string>
+          <string>remove file from list (not from disk)</string>
          </property>
          <property name="text">
           <string>...</string>
