@@ -34,6 +34,8 @@ class Settings(object):
     stateFields = {'channelSettingsList':list(),
                    'deviceSettings':dict(),
                    'deviceProperties':dict(),
+                   'waveformMode':waveformModes.equation,
+                   'filename':'',
                    'varDict':SequenceDict()
                    }
     def __init__(self):
@@ -41,9 +43,6 @@ class Settings(object):
 
     def __setstate__(self, state):
         self.__dict__ = state
-        for channelSettings in self.channelSettingsList:
-            channelSettings.setdefault('filename', '')
-            channelSettings.setdefault('waveformMode', self.waveformModes.equation)
 
     def __eq__(self,other):
         return tuple(getattr(self,field,None) for field in self.stateFields.keys())==tuple(getattr(other,field,None) for field in self.stateFields.keys())
@@ -72,9 +71,8 @@ class AWGUi(AWGForm, AWGBase):
                 if channel >= len(settings.channelSettingsList): #create new channels if it's necessary
                     settings.channelSettingsList.append({
                         'equation' : 'A*sin(w*t+phi) + offset',
-                        'waveformMode':Settings.waveformModes.equation,
-                        'filename':'',
-                        'plotEnabled' : True})
+                        'segmentList':[],
+                        'plotEnabled':True})
         Settings.saveIfNecessary = self.saveIfNecessary
         self.settings = Settings() #we always run settings through the constructor
         if self.settingsName in self.settingsDict:
@@ -85,6 +83,13 @@ class AWGUi(AWGForm, AWGBase):
         logger = logging.getLogger(__name__)
         AWGForm.setupUi(self,parent)
         self.setWindowTitle(self.device.displayName)
+
+        #mode
+        self.waveformModeComboBox.setCurrentIndex(self.settings.waveformMode)
+        self.waveformModeComboBox.currentIndexChanged[int].connect(self.onWaveformModeChanged)
+        equationMode = self.settings.waveformMode==self.settings.waveformModes.equation
+        self.fileFrame.setEnabled(not equationMode)
+        self.fileFrame.setVisible(not equationMode)
 
         self._varAsOutputChannelDict = dict()
         self.area = DockArea()
@@ -98,6 +103,10 @@ class AWGUi(AWGForm, AWGBase):
             dock = Dock("AWG Channel {0}".format(channel))
             dock.addWidget(awgChannelUi)
             self.area.addDock(dock, 'right')
+            awgChannelUi.equationFrame.setEnabled(equationMode)
+            awgChannelUi.equationFrame.setVisible(equationMode)
+            awgChannelUi.segmentFrame.setEnabled(not equationMode)
+            awgChannelUi.segmentFrame.setVisible(not equationMode)
         self.refreshVarDict()
 
         # Settings control
@@ -267,6 +276,17 @@ class AWGUi(AWGForm, AWGBase):
         self.refreshVarDict()
         self.tableModel.endResetModel()
         self.saveIfNecessary()
+
+    def onWaveformModeChanged(self, mode):
+        self.settings.waveformMode = mode
+        equationMode = mode==self.settings.waveformModes.equation
+        self.fileFrame.setEnabled(not equationMode)
+        self.fileFrame.setVisible(not equationMode)
+        for channelUi in self.awgChannelUiList:
+            channelUi.equationFrame.setVisible(equationMode)
+            channelUi.equationFrame.setEnabled(equationMode)
+            channelUi.segmentFrame.setVisible(not equationMode)
+            channelUi.segmentFrame.setEnabled(not equationMode)
 
     @QtCore.pyqtProperty(dict)
     def varAsOutputChannelDict(self):
