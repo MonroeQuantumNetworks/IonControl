@@ -64,6 +64,7 @@ class AWGDeviceBase(object):
         for channel in range(self.deviceProperties['numChannels']):
             if channel >= len(self.settings.channelSettingsList): #create new channels if it's necessary
                 self.settings.channelSettingsList.append({'equation' : 'A*sin(w*t+phi) + offset',
+                                                          'segmentList':[],
                                                           'plotEnabled' : True})
         self.project = getProject()
         sample = 1/self.deviceProperties['sampleRate']

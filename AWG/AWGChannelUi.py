@@ -11,6 +11,7 @@ import PyQt4.uic
 from PyQt4 import QtCore
 
 from AWG.AWGWaveform import AWGWaveform
+from AWG.AWGSegmentTableModel import AWGSegmentTableModel
 from trace.pens import solidBluePen
 
 AWGChanneluipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\AWGChannel.ui')
@@ -24,11 +25,12 @@ class AWGChannelUi(AWGChannelForm, AWGChannelBase):
        channel (int): channel number for this AWGChannel
     """
     dependenciesChanged = QtCore.pyqtSignal(int)
-    def __init__(self, channel, settings, parent=None):
+    def __init__(self, channel, settings, globalDict, parent=None):
         AWGChannelBase.__init__(self, parent)
         AWGChannelForm.__init__(self)
         self.settings = settings
         self.channel = channel
+        self.globalDict = globalDict
         self.waveform = AWGWaveform(channel, settings)
         self.waveform.updateDependencies()
 
@@ -59,6 +61,13 @@ class AWGChannelUi(AWGChannelForm, AWGChannelBase):
         self.equationEdit.returnPressed.connect(self.onEquation)
         self.equationEdit.setToolTip("use 't' for time variable")
 
+        #segment table
+        self.segmentModel = AWGSegmentTableModel(self.channel, self.settings, self.globalDict)
+        self.segmentView.setModel(self.segmentModel)
+        self.segmentModel.segmentChanged.connect(self.onSegmentChanged)
+        self.addSegmentButton.clicked.connect(self.onAddSegment)
+        self.removeSegmentButton.clicked.connect(self.onRemoveSegment)
+
         #plot
         self.plot.setTimeAxis(False)
         self.plotCheckbox.setChecked(self.plotEnabled)
@@ -86,3 +95,16 @@ class AWGChannelUi(AWGChannelForm, AWGChannelBase):
 
     def onEquation(self):
         self.equation = str(self.equationEdit.text())
+
+    def onSegmentChanged(self, channel, row, column, value):
+        pass
+
+    def onAddSegment(self):
+        self.segmentModel.addSegment()
+
+    def onRemoveSegment(self):
+        selectedIndexes = self.segmentView.selectedIndexes()
+        selectedRows = [index.row() for index in selectedIndexes if index.column()==0]
+        selectedRows.sort(reverse=True) #go backwards so the earlier rows don't change their row number
+        for row in selectedRows:
+            self.segmentModel.removeSegment(row)

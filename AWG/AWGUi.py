@@ -96,7 +96,7 @@ class AWGUi(AWGForm, AWGBase):
         self.splitter.insertWidget(0, self.area)
         self.awgChannelUiList = []
         for channel in range(self.device.deviceProperties['numChannels']):
-            awgChannelUi = AWGChannelUi(channel, self.settings, parent=self)
+            awgChannelUi = AWGChannelUi(channel, self.settings, self.globalDict, parent=self)
             awgChannelUi.setupUi(awgChannelUi)
             awgChannelUi.dependenciesChanged.connect(self.onDependenciesChanged)
             self.awgChannelUiList.append(awgChannelUi)
@@ -232,10 +232,20 @@ class AWGUi(AWGForm, AWGBase):
         if name in self.settingsDict:
             self.settingsName = name
             self.tableModel.beginResetModel()
+            [channelUi.segmentModel.beginResetModel() for channelUi in self.awgChannelUiList]
             self.settings.update(self.settingsDict[self.settingsName])
             self.programmingOptionsTreeWidget.setParameters( self.device.parameter() )
             self.saveButton.setEnabled(False)
+            with BlockSignals(self.waveformModeComboBox) as w:
+                w.setCurrentIndex(self.settings.waveformMode)
+            equationMode = self.settings.waveformMode==self.settings.waveformModes.equation
+            self.fileFrame.setEnabled(not equationMode)
+            self.fileFrame.setVisible(not equationMode)
             for channelUi in self.awgChannelUiList:
+                channelUi.equationFrame.setEnabled(equationMode)
+                channelUi.equationFrame.setVisible(equationMode)
+                channelUi.segmentFrame.setEnabled(not equationMode)
+                channelUi.segmentFrame.setVisible(not equationMode)
                 equation = self.settings.channelSettingsList[channelUi.channel]['equation']
                 channelUi.equationEdit.setText(equation)
                 channelUi.waveform.updateDependencies()
@@ -244,6 +254,7 @@ class AWGUi(AWGForm, AWGBase):
             self.onDependenciesChanged()
             self.saveButton.setEnabled(False)
             self.tableModel.endResetModel()
+            [channelUi.segmentModel.endResetModel() for channelUi in self.awgChannelUiList]
 
     def onAutoSave(self, checked):
         self.autoSave = checked
@@ -287,6 +298,7 @@ class AWGUi(AWGForm, AWGBase):
             channelUi.equationFrame.setEnabled(equationMode)
             channelUi.segmentFrame.setVisible(not equationMode)
             channelUi.segmentFrame.setEnabled(not equationMode)
+        self.saveIfNecessary()
 
     @QtCore.pyqtProperty(dict)
     def varAsOutputChannelDict(self):
