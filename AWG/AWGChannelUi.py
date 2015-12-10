@@ -9,10 +9,13 @@ import os
 
 import PyQt4.uic
 from PyQt4 import QtCore
+from pyqtgraph import mkBrush
+from trace.pens import solidBluePen, blue
 
 from AWG.AWGWaveform import AWGWaveform
 from AWG.AWGSegmentTableModel import AWGSegmentTableModel
-from trace.pens import solidBluePen
+
+blueBrush = mkBrush(blue)
 
 AWGChanneluipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\AWGChannel.ui')
 AWGChannelForm, AWGChannelBase = PyQt4.uic.loadUiType(AWGChanneluipath)
@@ -73,6 +76,13 @@ class AWGChannelUi(AWGChannelForm, AWGChannelBase):
         self.plotCheckbox.setChecked(self.plotEnabled)
         self.plot.setVisible(self.plotEnabled)
         self.plotCheckbox.stateChanged.connect(self.onPlotCheckbox)
+        self.styleComboBox.setCurrentIndex(self.settings.channelSettingsList[self.channel]['plotStyle'])
+        self.styleComboBox.currentIndexChanged[int].connect(self.onStyle)
+        self.replot()
+
+    def onStyle(self, style):
+        self.settings.channelSettingsList[self.channel]['plotStyle'] = style
+        self.settings.saveIfNecessary()
         self.replot()
 
     def onPlotCheckbox(self, checked):
@@ -89,7 +99,12 @@ class AWGChannelUi(AWGChannelForm, AWGChannelBase):
             try:
                 points = self.waveform.evaluate()
                 self.plot.getItem(0,0).clear()
-                self.plot.getItem(0,0).plot(points, pen=solidBluePen)
+                if self.settings.channelSettingsList[self.channel]['plotStyle'] == self.settings.plotStyles.lines:
+                    self.plot.getItem(0,0).plot(points, pen=solidBluePen)
+                if self.settings.channelSettingsList[self.channel]['plotStyle'] == self.settings.plotStyles.points:
+                    self.plot.getItem(0,0).plot(points, pen=None, symbol='o', symbolSize=3, symbolPen=solidBluePen, symbolBrush=blueBrush)
+                if self.settings.channelSettingsList[self.channel]['plotStyle'] == self.settings.plotStyles.linespoints:
+                    self.plot.getItem(0,0).plot(points, pen=solidBluePen, symbol='o', symbolSize=3, symbolPen=solidBluePen, symbolBrush=blueBrush)
             except Exception as e:
                 logger.warning(e.__class__.__name__ + ": " + str(e))
 

@@ -30,6 +30,7 @@ class Settings(object):
           with keys 'equation' and 'plotEnabled'
     """
     waveformModes = enum('equation', 'segments')
+    plotStyles = enum('lines', 'points', 'linespoints')
     saveIfNecessary = None
     deviceProperties = dict()
     stateFields = {'channelSettingsList':list(),
@@ -73,7 +74,13 @@ class AWGUi(AWGForm, AWGBase):
                     settings.channelSettingsList.append({
                         'equation' : 'A*sin(w*t+phi) + offset',
                         'segmentList':[],
-                        'plotEnabled':True})
+                        'plotEnabled':True,
+                        'plotStyle':Settings.plotStyles.lines})
+                else:
+                    settings.channelSettingsList[channel].setdefault('equation', 'A*sin(w*t+phi) + offset')
+                    settings.channelSettingsList[channel].setdefault('segmentList', [])
+                    settings.channelSettingsList[channel].setdefault('plotEnabled', True)
+                    settings.channelSettingsList[channel].setdefault('plotStyle', Settings.plotStyles.lines)
         self.settings = Settings() #we always run settings through the constructor
         if self.settingsName in self.settingsDict:
             self.settings.update(self.settingsDict[self.settingsName])
@@ -105,8 +112,10 @@ class AWGUi(AWGForm, AWGBase):
             self.area.addDock(dock, 'right')
             awgChannelUi.equationFrame.setEnabled(equationMode)
             awgChannelUi.equationFrame.setVisible(equationMode)
-            awgChannelUi.segmentFrame.setEnabled(not equationMode)
-            awgChannelUi.segmentFrame.setVisible(not equationMode)
+            awgChannelUi.addRemoveSegmentFrame.setEnabled(not equationMode)
+            awgChannelUi.addRemoveSegmentFrame.setVisible(not equationMode)
+            awgChannelUi.segmentView.setEnabled(not equationMode)
+            awgChannelUi.segmentView.setVisible(not equationMode)
         self.refreshVarDict()
 
         # Settings control
@@ -248,12 +257,16 @@ class AWGUi(AWGForm, AWGBase):
             for channelUi in self.awgChannelUiList:
                 channelUi.equationFrame.setEnabled(equationMode)
                 channelUi.equationFrame.setVisible(equationMode)
-                channelUi.segmentFrame.setEnabled(not equationMode)
-                channelUi.segmentFrame.setVisible(not equationMode)
+                channelUi.addRemoveSegmentFrame.setEnabled(not equationMode)
+                channelUi.addRemoveSegmentFrame.setVisible(not equationMode)
+                channelUi.segmentView.setEnabled(not equationMode)
+                channelUi.segmentView.setVisible(not equationMode)
                 equation = self.settings.channelSettingsList[channelUi.channel]['equation']
                 channelUi.equationEdit.setText(equation)
                 channelUi.waveform.updateDependencies()
                 channelUi.plotCheckbox.setChecked(self.settings.channelSettingsList[channelUi.channel]['plotEnabled'])
+                with BlockSignals(channelUi.styleComboBox) as w:
+                    w.setCurrentIndex(self.settings.channelSettingsList[channelUi.channel]['plotStyle'])
                 channelUi.replot()
             self.onDependenciesChanged()
             self.saveButton.setEnabled(False)
@@ -301,8 +314,10 @@ class AWGUi(AWGForm, AWGBase):
         for channelUi in self.awgChannelUiList:
             channelUi.equationFrame.setVisible(equationMode)
             channelUi.equationFrame.setEnabled(equationMode)
-            channelUi.segmentFrame.setVisible(not equationMode)
-            channelUi.segmentFrame.setEnabled(not equationMode)
+            channelUi.addRemoveSegmentFrame.setVisible(not equationMode)
+            channelUi.addRemoveSegmentFrame.setEnabled(not equationMode)
+            channelUi.segmentView.setEnabled(not equationMode)
+            channelUi.segmentView.setVisible(not equationMode)
         self.onDependenciesChanged()
 
     @QtCore.pyqtProperty(dict)
