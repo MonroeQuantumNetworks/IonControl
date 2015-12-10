@@ -145,7 +145,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QToolButton" name="removeCurrent">
+        <widget class="QToolButton" name="removeFileButton">
          <property name="toolTip">
           <string>remove file from list (not from disk)</string>
          </property>
@@ -162,7 +162,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QToolButton" name="toolButton">
+        <widget class="QToolButton" name="newFileButton">
          <property name="toolTip">
           <string>create new file</string>
          </property>
@@ -179,7 +179,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QToolButton" name="loadButton">
+        <widget class="QToolButton" name="openFileButton">
          <property name="toolTip">
           <string>open file</string>
          </property>
@@ -196,7 +196,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QToolButton" name="saveButton_2">
+        <widget class="QToolButton" name="saveFileButton">
          <property name="toolTip">
           <string>save table to file</string>
          </property>
@@ -207,13 +207,16 @@
           <iconset resource="Experiment.qrc">
            <normaloff>:/kde/icons/filesave.png</normaloff>:/kde/icons/filesave.png</iconset>
          </property>
+         <property name="shortcut">
+          <string>Ctrl+S</string>
+         </property>
          <property name="autoRaise">
           <bool>true</bool>
          </property>
         </widget>
        </item>
        <item>
-        <widget class="QToolButton" name="resetButton">
+        <widget class="QToolButton" name="reloadFileButton">
          <property name="toolTip">
           <string>revert to file</string>
          </property>

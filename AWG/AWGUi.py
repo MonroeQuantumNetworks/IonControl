@@ -2,6 +2,7 @@ import copy
 import logging
 import os
 import itertools
+import yaml
 
 import PyQt4.uic
 from PyQt4 import QtGui, QtCore
@@ -16,6 +17,7 @@ from modules.magnitude import mg
 from modules.GuiAppearance import saveGuiState, restoreGuiState
 from modules.enum import enum
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
+from ProjectConfig.Project import getProject
 
 AWGuipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\AWG.ui')
 AWGForm, AWGBase = PyQt4.uic.loadUiType(AWGuipath)
@@ -66,6 +68,8 @@ class AWGUi(AWGForm, AWGBase):
         self.autoSave = self.config.get(self.configname+'.autoSave', True)
         self.settingsDict = self.config.get(self.configname+'.settingsDict', dict())
         self.settingsName = self.config.get(self.configname+'.settingsName', '')
+        self.recentFiles = self.config.get(self.configname+'.recentFiles', dict()) #dict of form {basename: filename}, where filename has path and basename doesn't
+        self.lastDir = self.config.get(self.configname+'.lastDir', getProject().configDir)
         Settings.deviceProperties = deviceClass.deviceProperties
         Settings.saveIfNecessary = self.saveIfNecessary
         for settings in self.settingsDict.values(): #make sure all pickled settings are consistent with device, in case it changed
@@ -140,8 +144,11 @@ class AWGUi(AWGForm, AWGBase):
         self.tableView.setItemDelegateForColumn(self.tableModel.column.value, self.delegate)
 
         #File
-        self.filenameComboBox.setCurrentIndex(self.filenameComboBox.findText(self.settings.filename))
-        self.filenameComboBox.currentIndexChanged[str].connect(self.openFile)
+        self.filenameModel = QtGui.QStringListModel()
+        self.filenameComboBox.setModel(self.filenameModel)
+        self.filenameModel.setStringList( [basename for basename, filename in self.recentFiles.iteritems() if os.path.exists(filename)] )
+        self.filenameComboBox.setCurrentIndex(self.filenameComboBox.findText(os.path.basename(self.settings.filename)))
+        self.filenameComboBox.currentIndexChanged[str].connect(self.onFilename)
         self.removeFileButton.clicked.connect(self.onRemoveFile)
         self.newFileButton.clicked.connect(self.onNewFile)
         self.openFileButton.clicked.connect(self.onOpenFile)
@@ -231,6 +238,8 @@ class AWGUi(AWGForm, AWGBase):
         self.config[self.configname+'.settingsDict'] = self.settingsDict
         self.config[self.configname+'.settingsName'] = self.settingsName
         self.config[self.configname+'.autoSave'] = self.autoSave
+        self.config[self.configname+'.recentFiles'] = self.recentFiles
+        self.config[self.configname+'.lastDir'] = self.lastDir
 
     def onRemove(self):
         name = str(self.settingsComboBox.currentText())
@@ -261,7 +270,7 @@ class AWGUi(AWGForm, AWGBase):
             with BlockSignals(self.waveformModeComboBox) as w:
                 w.setCurrentIndex(self.settings.waveformMode)
             with BlockSignals(self.filenameComboBox) as w:
-                w.setCurrentIndex(w.findText(self.settings.filename))
+                w.setCurrentIndex(w.findText(os.path.basename(self.settings.filename)))
             equationMode = self.settings.waveformMode==self.settings.waveformModes.equation
             self.fileFrame.setEnabled(not equationMode)
             self.fileFrame.setVisible(not equationMode)
@@ -331,23 +340,95 @@ class AWGUi(AWGForm, AWGBase):
             channelUi.segmentView.setVisible(not equationMode)
         self.onDependenciesChanged()
 
+    def onFilename(self, basename):
+        """filename combo box is changed. Open selected file"""
+        basename = str(basename)
+        filename = self.recentFiles[basename]
+        if os.path.isfile(filename) and filename!=self.settings.filename:
+            self.openFile(filename)
+
     def onRemoveFile(self):
-        pass
+        """Remove file button is clicked. Remove filename from combo box."""
+        text = str(self.filenameComboBox.currentText())
+        index = self.filenameComboBox.findText(text)
+        if text in self.recentFiles:
+            self.recentFiles.pop(text)
+        with BlockSignals(self.filenameComboBox) as w:
+            self.filenameModel.setStringList(self.recentFiles.keys())
+            w.setCurrentIndex(-1)
+            self.onFilename(w.currentText())
 
     def onNewFile(self):
-        pass
+        """New button is clicked. Pop up dialog asking for new name, and create file."""
+        filename = str(QtGui.QFileDialog.getSaveFileName(self, 'New File', self.lastDir,'YAML (*.yml)'))
+        if filename:
+            self.lastDir, basename = os.path.split(filename)
+            self.recentFiles[basename] = filename
+            self.settings.filename = filename
+            with BlockSignals(self.filenameComboBox) as w:
+                self.filenameModel.setStringList(self.recentFiles.keys())
+                w.setCurrentIndex(w.findText(basename))
+            self.onSaveFile()
 
     def onOpenFile(self):
-        pass
+        filename = str(QtGui.QFileDialog.getOpenFileName(self, 'Select File', self.lastDir,'YAML (*.yml)'))
+        if filename:
+            self.openFile(filename)
 
     def openFile(self, filename):
-        pass
+        if os.path.exists(filename):
+            self.lastDir, basename = os.path.split(filename)
+            self.recentFiles[basename] = filename
+            self.settings.filename = filename
+            with BlockSignals(self.filenameComboBox) as w:
+                self.filenameModel.setStringList(self.recentFiles.keys())
+                w.setCurrentIndex(w.findText(basename))
+            with open(filename, 'r') as f:
+                yamldata = yaml.load(f)
+            variables = yamldata.get('variables')
+            channelData = yamldata.get('channelData')
+            self.tableModel.beginResetModel()
+            [channelUi.segmentModel.beginResetModel() for channelUi in self.awgChannelUiList]
+            if channelData:
+                for channel, channelSettings in enumerate(self.settings.channelSettingsList):
+                    if channel < len(channelData):
+                        channelSettings['segmentList'] = channelData[channel]
+            if variables:
+                for varname, vardata in variables.iteritems():
+                    self.settings.varDict.setdefault(varname, dict())
+                    self.settings.varDict[varname]['value'] = mg(vardata['value'], vardata['unit'])
+                    self.settings.varDict[varname]['text'] = vardata['text']
+            for channelUi in self.awgChannelUiList:
+                channelUi.waveform.updateDependencies()
+                channelUi.replot()
+            self.onDependenciesChanged()
+            self.tableModel.endResetModel()
+            [channelUi.segmentModel.endResetModel() for channelUi in self.awgChannelUiList]
+        else:
+            logging.getLogger(__name__).warning("file '{0}' does not exist".format(filename))
+            if filename in self.recentFiles:
+                del self.recentFiles[filename]
+                with BlockSignals(self.filenameComboBox) as w:
+                    self.filenameModel.setStringList(self.recentFiles.keys())
+                    w.setCurrentIndex(-1)
+
+
 
     def onSaveFile(self):
-        pass
+        channelData = [channelSettings['segmentList']
+                    for channelSettings in self.settings.channelSettingsList]
+        yamldata = {'channelData': channelData}
+        variables={varname:
+                             {'value':float(varValueTextDict['value'].toStringTuple()[0]),
+                              'unit':varValueTextDict['value'].toStringTuple()[1],
+                              'text':varValueTextDict['text']}
+                         for varname, varValueTextDict in self.settings.varDict.iteritems()}
+        yamldata.update({'variables':variables})
+        with open(self.settings.filename, 'w') as f:
+            yaml.dump(yamldata, f, default_flow_style=False)
 
     def onReloadFile(self):
-        pass
+        self.openFile(self.settings.filename)
 
     @QtCore.pyqtProperty(dict)
     def varAsOutputChannelDict(self):
