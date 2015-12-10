@@ -87,13 +87,14 @@ class AWGSegmentTableModel(QtCore.QAbstractTableModel):
         return self.setDataLookup.get((role,index.column()), lambda index, value: False )(index, value)
 
     def headerData(self, section, orientation, role):
-        if orientation==QtCore.Qt.Vertical:
-            return str(section)
-        elif orientation==QtCore.Qt.Horizontal and role==QtCore.Qt.DisplayRole:
-            if section==self.column.amplitude:
-                return 'Amplitude'
-            elif section==self.column.duration:
-                return 'Duration'
+        if role==QtCore.Qt.DisplayRole:
+            if orientation==QtCore.Qt.Vertical:
+                return str(section)
+            elif orientation==QtCore.Qt.Horizontal:
+                if section==self.column.amplitude:
+                    return 'Amplitude'
+                elif section==self.column.duration:
+                    return 'Duration'
 
     def addSegment(self):
         row = len(self.segmentList)

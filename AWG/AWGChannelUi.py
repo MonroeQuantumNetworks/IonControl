@@ -96,15 +96,19 @@ class AWGChannelUi(AWGChannelForm, AWGChannelBase):
     def onEquation(self):
         self.equation = str(self.equationEdit.text())
 
-    def onSegmentChanged(self, channel, row, column, value):
-        pass
+    def onSegmentChanged(self, channel=None, row=None, column=None, value=None):
+        self.waveform.updateDependencies()
+        self.dependenciesChanged.emit(self.channel)
+        self.settings.saveIfNecessary()
 
     def onAddSegment(self):
         self.segmentModel.addSegment()
+        self.onSegmentChanged()
 
     def onRemoveSegment(self):
         selectedIndexes = self.segmentView.selectedIndexes()
-        selectedRows = [index.row() for index in selectedIndexes if index.column()==0]
+        selectedRows = list({index.row() for index in selectedIndexes})
         selectedRows.sort(reverse=True) #go backwards so the earlier rows don't change their row number
         for row in selectedRows:
             self.segmentModel.removeSegment(row)
+        self.onSegmentChanged()

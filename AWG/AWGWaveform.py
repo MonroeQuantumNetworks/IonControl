@@ -61,18 +61,43 @@ class AWGWaveform(object):
     def equation(self):
         return self.settings.channelSettingsList[self.channel]['equation']
 
+    @property
+    def segmentList(self):
+        return self.settings.channelSettingsList[self.channel]['segmentList']
+
     def updateDependencies(self):
         logger = logging.getLogger(__name__)
-        self.stack = self.expression._parse_expression(self.equation)
-        self.dependencies = self.expression.findDependencies(self.stack)
-        self.dependencies.remove('t')
-        for varname in self.dependencies:
-            if varname.startswith('Duration'):
-                logger.exception("Equation variables cannot start with 'Duration'")
-        self.dependencies.add(self.durationName)
+        if self.settings.waveformMode==self.settings.waveformModes.equation:
+            self.stack = self.expression._parse_expression(self.equation)
+            self.dependencies = self.expression.findDependencies(self.stack)
+            self.dependencies.remove('t')
+            for varname in self.dependencies:
+                if varname.startswith('Duration'):
+                    logger.exception("Equation variables cannot start with 'Duration'")
+            self.dependencies.add(self.durationName)
+        else:
+            self.dependencies = set()
+            for segment in self.segmentList:
+                self.dependencies.add(segment['amplitude'])
+                self.dependencies.add(segment['duration'])
 
     def evaluate(self):
-        """Evaluate the waveform.
+        """evaluate the waveform based on either the equation or the segment list"""
+        equationMode = self.settings.waveformMode==self.settings.waveformModes.equation
+        return self.evaluateEquation() if equationMode else self.evaluateSegments()
+
+    def evaluateSegments(self):
+        sampleList = numpy.array([])
+        for segment in self.segmentList:
+            if segment['enabled']:
+                amplitude = self.settings.varDict[segment['amplitude']]['value'].to_base_units().val
+                numSamples = self.settings.varDict[segment['duration']]['value']*self.sampleRate
+                numSamples = int( numSamples.toval() ) #convert to float, then to integer
+                sampleList = numpy.append(sampleList, [amplitude]*numSamples)
+        return self.compliantSampleList(sampleList)
+
+    def evaluateEquation(self):
+        """Evaluate the waveform based on the equation.
 
         Returns:
             sampleList: list of values to program to the AWG.
@@ -96,8 +121,18 @@ class AWGWaveform(object):
         func = numpy.vectorize(func, otypes=[numpy.int]) #vectorize the function and set output to integers
         step = self.stepsize.toval(ounit='s')
         sampleList = func( numpy.arange(numSamples)*step ) #apply the function to each time step value
+        return self.compliantSampleList(sampleList)
 
-        #make sampleList match what the AWG device can program
+    def compliantSampleList(self, sampleList):
+        """Make the sample list compliant with the capabilities of the AWG
+        Args:
+            sampleList (numpy array): calculated list of samples, might be impossible for AWG to output
+        Returns:
+            sampleList (python list): output list of samples, within AWG capabilities
+            """
+        numSamples = len(sampleList)
+        if numSamples > self.maxSamples:
+            sampleList = sampleList[:self.maxSamples]
         numpy.clip(sampleList, self.minAmplitude, self.maxAmplitude, out=sampleList) #clip between minAmplitude and maxAmplitude
         if numSamples < self.minSamples:
             extraNumSamples = self.minSamples - numSamples #make sure there are at least minSamples

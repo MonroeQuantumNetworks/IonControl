@@ -29,7 +29,7 @@ class Settings(object):
        channelSettingsList (list of dicts): each element corresponds to a channel of the AWG. Each element is a dict,
           with keys 'equation' and 'plotEnabled'
     """
-    waveformModes = enum('equation', 'table')
+    waveformModes = enum('equation', 'segments')
     saveIfNecessary = None
     deviceProperties = dict()
     stateFields = {'channelSettingsList':list(),
@@ -276,6 +276,7 @@ class AWGUi(AWGForm, AWGBase):
 
     def refreshVarDict(self):
         allDependencies = set()
+        [channelUi.waveform.updateDependencies() for channelUi in self.awgChannelUiList]
         [allDependencies.update(channelUi.waveform.dependencies) for channelUi in self.awgChannelUiList]
         default = lambda varname:{'value':mg(1, 'us'), 'text':None} if varname.startswith('Duration') else {'value':mg(0), 'text':None}
         deletions = [varname for varname in self.settings.varDict if varname not in allDependencies]
@@ -302,7 +303,7 @@ class AWGUi(AWGForm, AWGBase):
             channelUi.equationFrame.setEnabled(equationMode)
             channelUi.segmentFrame.setVisible(not equationMode)
             channelUi.segmentFrame.setEnabled(not equationMode)
-        self.saveIfNecessary()
+        self.onDependenciesChanged()
 
     @QtCore.pyqtProperty(dict)
     def varAsOutputChannelDict(self):
