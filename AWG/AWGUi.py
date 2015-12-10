@@ -146,6 +146,7 @@ class AWGUi(AWGForm, AWGBase):
         isMaximized = self.config.get(self.configname+'.isMaximized')
         dockAreaState = self.config.get(self.configname+'.dockAreaState')
         guiState = self.config.get(self.configname+".guiState")
+        restoreGuiState(self, guiState)
         try:
             if pos:
                 self.move(pos)
@@ -155,8 +156,9 @@ class AWGUi(AWGForm, AWGBase):
                 self.showMaximized()
             if state:
                 self.restoreState(state)
-            if guiState:
-                restoreGuiState(self, guiState)
+            for awgChannelUi in self.awgChannelUiList:
+                channelGuiState = self.config[self.configname+"channel{0}.guiState".format(awgChannelUi.channel)]
+                restoreGuiState(awgChannelUi, channelGuiState)
         except Exception as e:
             logger.warning("Error on restoring state in AWGUi {0}. Exception occurred: {1}".format(self.device.displayName, e))
         try:
@@ -200,6 +202,8 @@ class AWGUi(AWGForm, AWGBase):
 
     def saveConfig(self):
         self.config[self.configname+".guiState"] = saveGuiState(self)
+        for awgChannelUi in self.awgChannelUiList:
+            self.config[self.configname+"channel{0}.guiState".format(awgChannelUi.channel)] = saveGuiState(awgChannelUi)
         self.config[self.configname+'.state'] = self.saveState()
         self.config[self.configname+'.pos'] = self.pos()
         self.config[self.configname+'.size'] = self.size()
