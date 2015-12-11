@@ -414,8 +414,6 @@ class AWGUi(AWGForm, AWGBase):
                     self.filenameModel.setStringList(self.recentFiles.keys())
                     w.setCurrentIndex(-1)
 
-
-
     def onSaveFile(self):
         channelData = [channelSettings['segmentList']
                     for channelSettings in self.settings.channelSettingsList]
@@ -450,11 +448,13 @@ if __name__ == '__main__':
     import sys
     from ProjectConfig.Project import Project
     from persist import configshelve
+    from GlobalVariables.GlobalVariable import GlobalVariablesLookup
     app = QtGui.QApplication(sys.argv)
     project = Project()
     guiConfigFile = os.path.join(project.projectDir, '.gui-config\\ExperimentUi.config.db')
-    with configshelve.configshelve(project.guiConfigFile) as config:
-        ui = AWGUi(DummyAWG, config, dict())
+    with configshelve.configshelve(guiConfigFile) as config:
+        globalDict = GlobalVariablesLookup(config.get('GlobalVariables', dict()))
+        ui = AWGUi(DummyAWG, config, globalDict)
         ui.setupUi(ui)
         ui.show()
         sys.exit(app.exec_())
