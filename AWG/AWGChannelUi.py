@@ -98,6 +98,7 @@ class AWGChannelUi(AWGChannelForm, AWGChannelBase):
         if self.plotEnabled:
             try:
                 points = self.waveform.evaluate()
+                points = points.tolist()
                 self.plot.getItem(0,0).clear()
                 if self.settings.channelSettingsList[self.channel]['plotStyle'] == self.settings.plotStyles.lines:
                     self.plot.getItem(0,0).plot(points, pen=solidBluePen)

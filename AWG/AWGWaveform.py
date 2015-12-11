@@ -43,15 +43,16 @@ class AWGWaveform(object):
 
     @property
     def padValue(self):
-        return self.settings.deviceProperties['padValue']
+        return self.calibrateInvIfNecessary(self.settings.deviceProperties['padValue'])
+
 
     @property
     def minAmplitude(self):
-        return self.settings.deviceProperties['minAmplitude']
+        return self.calibrateInvIfNecessary(self.settings.deviceProperties['minAmplitude'])
 
     @property
     def maxAmplitude(self):
-        return self.settings.deviceProperties['maxAmplitude']
+        return self.calibrateInvIfNecessary(self.settings.deviceProperties['maxAmplitude'])
 
     @property
     def stepsize(self):
@@ -64,6 +65,12 @@ class AWGWaveform(object):
     @property
     def segmentList(self):
         return self.settings.channelSettingsList[self.channel]['segmentList']
+
+    def calibrateInvIfNecessary(self, p):
+        if not self.settings.deviceSettings.get('useCalibration'):
+            return p
+        else:
+            return self.settings.deviceProperties['calibrationInv'](p)
 
     def updateDependencies(self):
         logger = logging.getLogger(__name__)
@@ -118,7 +125,7 @@ class AWGWaveform(object):
 
         sympyExpr = parse_expr(self.equation, varValueDict) #parse the equation
         func = sympy.lambdify(varValueDict['t'], sympyExpr, "numpy") #make into a python function
-        func = numpy.vectorize(func, otypes=[numpy.int]) #vectorize the function and set output to integers
+        func = numpy.vectorize(func, otypes=[numpy.float64]) #vectorize the function
         step = self.stepsize.toval(ounit='s')
         sampleList = func( numpy.arange(numSamples)*step ) #apply the function to each time step value
         return self.compliantSampleList(sampleList)
@@ -128,7 +135,7 @@ class AWGWaveform(object):
         Args:
             sampleList (numpy array): calculated list of samples, might be impossible for AWG to output
         Returns:
-            sampleList (python list): output list of samples, within AWG capabilities
+            sampleList (numpy array): output list of samples, within AWG capabilities
             """
         numSamples = len(sampleList)
         if numSamples > self.maxSamples:
@@ -142,6 +149,5 @@ class AWGWaveform(object):
             extraNumSamples = self.sampleChunkSize - (numSamples % self.sampleChunkSize)
         else:
             extraNumSamples = 0
-        sampleList = numpy.pad(sampleList, (0,extraNumSamples), 'constant', constant_values = self.padValue)
-        sampleList = sampleList.tolist()
+        sampleList = numpy.append(sampleList, [self.padValue]*extraNumSamples)
         return sampleList

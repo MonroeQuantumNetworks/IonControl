@@ -39,6 +39,12 @@ it must inherit AWGDeviceBase and implement:
     - numChannels (int)
        Number of channels
 
+    - calibration (function)
+        function that returns raw amplitude number, given voltage
+
+    - calibrationInv (function)
+        function that returns voltage, given raw amplitude number
+
 - paramDef
    To define dynamic properties and actions of the AWG, which are shown in the GUI and can be modified in the program.
 '''
@@ -46,6 +52,7 @@ it must inherit AWGDeviceBase and implement:
 import inspect
 import logging
 import sys
+import numpy
 from ctypes import *
 
 from PyQt4 import QtCore
@@ -75,7 +82,9 @@ class AWGDeviceBase(object):
     def paramDef(self):
         """return the parameter definition used by pyqtgraph parametertree to show the gui"""
         self.settings.deviceSettings.setdefault('programOnScanStart', False)
+        self.settings.deviceSettings.setdefault('useCalibration', False)
         return [
+            {'name': 'Use calibration', 'type': 'bool', 'value': self.settings.deviceSettings['useCalibration'], 'key':'useCalibration'},
             {'name': 'Program on scan start', 'type': 'bool', 'value': self.settings.deviceSettings['programOnScanStart'], 'tip': "", 'key': 'programOnScanStart'},
             {'name': 'Program now', 'type': 'action', 'key':'program'},
             {'name': 'Trigger now', 'type': 'action', 'key':'trigger'}
@@ -93,6 +102,8 @@ class AWGDeviceBase(object):
             if change=='value':
                 self.settings.deviceSettings[param.opts['key']] = data
                 self.settings.saveIfNecessary()
+                if param.opts['key']=='useCalibration':
+                    self.settings.replot()
             elif change=='activated':
                 getattr( self, param.opts['key'] )()
 
@@ -117,7 +128,9 @@ class ChaseDA12000(AWGDeviceBase):
         padValue = 2047, #the waveform will be padded with this number to make it a multiple of sampleChunkSize, or to make it the length of minSamples
         minAmplitude = 0, #minimum amplitude value (raw)
         maxAmplitude = 4095, #maximum amplitude value (raw)
-        numChannels = 1 #Number of channels
+        numChannels = 1, #Number of channels
+        calibration = lambda voltage: 2047. + 3413.33*voltage, #function that returns raw amplitude number, given voltage
+        calibrationInv = lambda raw: -0.599707 + 0.000292969*raw #function that returns voltage, given raw amplitude number
     )
 
     class SEGMENT(Structure):
@@ -165,6 +178,11 @@ class ChaseDA12000(AWGDeviceBase):
         logger = logging.getLogger(__name__)
         if self.enabled:
             pts = self.settings.channelSettingsList[0]['waveform'].evaluate()
+            if self.settings.deviceSettings.get('useCalibration'):
+                calibration = self.settings.deviceProperties['calibration']
+                calibration = numpy.vectorize(calibration, otypes=[numpy.int])
+                pts = calibration(pts)
+            pts.tolist()
             logger.info("writing " + str(len(pts)) + " points to AWG")
             seg_pts = (c_ulong * len(pts))(*pts)
             seg0 = self.SEGMENT(0, seg_pts, len(pts), 0, 2048, 2048, 1, 0)
@@ -188,13 +206,15 @@ class DummyAWG(AWGDeviceBase):
     displayName = "Dummy AWG"
     deviceProperties = dict(
         sampleRate = mg(1, 'GHz'), #rate at which the samples programmed are output by the AWG
-        minSamples = 128, #minimum number of samples to program
+        minSamples = 1, #minimum number of samples to program
         maxSamples = 4000000, #maximum number of samples to program
-        sampleChunkSize = 64, #number of samples must be a multiple of sampleCnunkSize
+        sampleChunkSize = 1, #number of samples must be a multiple of sampleCnunkSize
         padValue = 2047, #the waveform will be padded with this number ot make it a multiple of sampleChunkSize, or to make it the length of minSamples
         minAmplitude = 0, #minimum amplitude value (raw)
         maxAmplitude = 4095, #maximum amplitude value (raw)
-        numChannels = 2  #Number of channels
+        numChannels = 2,  #Number of channels
+        calibration = lambda voltage: 2047. + 3413.33*voltage, #function that returns raw amplitude number, given voltage
+        calibrationInv = lambda raw: -0.599707 + 0.000292969*raw #function that returns voltage, given raw amplitude number
     )
     
     def open(self): pass

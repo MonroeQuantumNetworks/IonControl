@@ -34,6 +34,7 @@ class Settings(object):
     waveformModes = enum('equation', 'segments')
     plotStyles = enum('lines', 'points', 'linespoints')
     saveIfNecessary = None
+    replot = None
     deviceProperties = dict()
     stateFields = {'channelSettingsList':list(),
                    'deviceSettings':dict(),
@@ -72,6 +73,7 @@ class AWGUi(AWGForm, AWGBase):
         self.lastDir = self.config.get(self.configname+'.lastDir', getProject().configDir)
         Settings.deviceProperties = deviceClass.deviceProperties
         Settings.saveIfNecessary = self.saveIfNecessary
+        Settings.replot = self.replot
         for settings in self.settingsDict.values(): #make sure all pickled settings are consistent with device, in case it changed
             for channel in range(deviceClass.deviceProperties['numChannels']):
                 if channel >= len(settings.channelSettingsList): #create new channels if it's necessary
@@ -217,6 +219,10 @@ class AWGUi(AWGForm, AWGBase):
             else:
                 self.saveButton.setEnabled(True)
 
+    def replot(self):
+        for channelUi in self.awgChannelUiList:
+            channelUi.replot()
+
     def onSave(self):
         self.settingsName = str(self.settingsComboBox.currentText())
         self.settingsDict[self.settingsName] = copy.deepcopy(self.settings)
@@ -245,14 +251,11 @@ class AWGUi(AWGForm, AWGBase):
         name = str(self.settingsComboBox.currentText())
         if name in self.settingsDict:
             self.settingsDict.pop(name)
-            if self.settingsDict:
-                self.settingsName = self.settingsDict.keys()[0]
-                self.onLoad(self.settingsName)
-            else:
-                self.settingsName = ''
+            self.settingsName = self.settingsDict.keys()[0] if self.settingsDict else ''
             with BlockSignals(self.settingsComboBox) as w:
                 self.settingsModel.setStringList( sorted(self.settingsDict.keys()) )
                 w.setCurrentIndex(w.findText(self.settingsName))
+            self.onLoad(self.settingsName)
 
     def onReload(self):
         name = str(self.settingsComboBox.currentText())
@@ -301,9 +304,8 @@ class AWGUi(AWGForm, AWGBase):
 
     def onValue(self, var=None, value=None):
         self.saveIfNecessary()
-        for channelUi in self.awgChannelUiList:
-            channelUi.replot()
-        
+        self.replot()
+
     def evaluate(self, name):
         self.tableModel.evaluate(name)
 
