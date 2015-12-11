@@ -9,8 +9,8 @@ from modules.Expression import Expression
 class VarAsOutputChannel(object):
     """This is a class that makes the AWG parameters work as an external parameter output channel in a parameter scan.
 
-    The AWG variables are not external parameter output channels, but the external parameter scan method the scan parameter
-    to have several specific methods and attributes (as OutputChannel does). This class provides those attributes."""
+    The AWG variables are not external parameter output channels, but the external parameter scan method needs the scan
+    parameter to have several specific methods and attributes (as OutputChannel does). This class provides those attributes."""
     def __init__(self, awgUi, name, globalDict):
         self.awgUi = awgUi
         self.name = name

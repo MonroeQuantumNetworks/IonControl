@@ -10,6 +10,7 @@ from modules.firstNotNone import firstNotNone
 from modules.enum import enum
 
 class AWGTableModel(QtCore.QAbstractTableModel):
+    """Table model for displaying AWG variables"""
     headerDataLookup = ["Variable", "Value"]
     valueChanged = QtCore.pyqtSignal( object, object )
     

@@ -26,6 +26,7 @@ class AWGChannelUi(AWGChannelForm, AWGChannelBase):
     Args:
        settings (Settings): AWG settings
        channel (int): channel number for this AWGChannel
+       globalDict (dict): dictionary of global variables
     """
     dependenciesChanged = QtCore.pyqtSignal(int)
     def __init__(self, channel, settings, globalDict, parent=None):
@@ -52,6 +53,7 @@ class AWGChannelUi(AWGChannelForm, AWGChannelBase):
 
     @equation.setter
     def equation(self, val):
+        """update waveform dependencies whenever the equation is changed"""
         self.settings.channelSettingsList[self.channel]['equation'] = val
         self.waveform.updateDependencies()
         self.dependenciesChanged.emit(self.channel)
@@ -81,11 +83,13 @@ class AWGChannelUi(AWGChannelForm, AWGChannelBase):
         self.replot()
 
     def onStyle(self, style):
+        """plot style is changed. Save settings and replot."""
         self.settings.channelSettingsList[self.channel]['plotStyle'] = style
         self.settings.saveIfNecessary()
         self.replot()
 
     def onPlotCheckbox(self, checked):
+        """Plot checkbox is changed. plot, or unplot and hide plot."""
         self.plotEnabled = checked
         if not checked:
             self.plot.getItem(0,0).clear()
@@ -94,6 +98,7 @@ class AWGChannelUi(AWGChannelForm, AWGChannelBase):
         self.plot.setVisible(checked)
 
     def replot(self):
+        """Plot the waveform"""
         logger = logging.getLogger(__name__)
         if self.plotEnabled:
             try:
@@ -110,18 +115,22 @@ class AWGChannelUi(AWGChannelForm, AWGChannelBase):
                 logger.warning(e.__class__.__name__ + ": " + str(e))
 
     def onEquation(self):
+        """Set equation to match the text box (which also updates the waveform)"""
         self.equation = str(self.equationEdit.text())
 
     def onSegmentChanged(self, channel=None, row=None, column=None, value=None):
+        """Update dependencies if a segment changed"""
         self.waveform.updateDependencies()
         self.dependenciesChanged.emit(self.channel)
         self.settings.saveIfNecessary()
 
     def onAddSegment(self):
+        """Add segment button is clicked."""
         self.segmentModel.addSegment()
         self.onSegmentChanged()
 
     def onRemoveSegment(self):
+        """Remove segment button is clicked."""
         selectedIndexes = self.segmentView.selectedIndexes()
         selectedRows = list({index.row() for index in selectedIndexes})
         selectedRows.sort(reverse=True) #go backwards so the earlier rows don't change their row number

@@ -13,6 +13,7 @@ import sip
 api2 = sip.getapi("QVariant")==2
 
 class AWGSegmentTableModel(QtCore.QAbstractTableModel):
+    """Table model for displaying AWG segments when the AWGUi is in segment mode"""
     segmentChanged = QtCore.pyqtSignal(int, int, int, object) #channel, row, column, value
     def __init__(self, channel, settings, globalDict, parent=None, *args):
         QtCore.QAbstractTableModel.__init__(self, parent, *args)

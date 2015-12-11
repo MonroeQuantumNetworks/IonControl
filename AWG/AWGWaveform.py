@@ -17,6 +17,15 @@ from uiModules.CategoryTree import CategoryTreeModel
 
 
 class AWGWaveform(object):
+    """waveform object for AWG channels. Responsible for parsing and evaluating waveforms.
+
+    Attributes:
+       settings (Settings): main settings
+       channel (int): which channel this waveform belongs to
+       expression (Expression): used for parsing equation
+       durationName (str): the name to use for the duration of this waveform
+       dependencies (set): The variable names that this waveform depends on
+       """
     def __init__(self, channel, settings):
         self.settings = settings
         self.channel = channel
@@ -67,12 +76,14 @@ class AWGWaveform(object):
         return self.settings.channelSettingsList[self.channel]['segmentList']
 
     def calibrateInvIfNecessary(self, p):
+        """Converts raw to volts if useCalibration is True"""
         if not self.settings.deviceSettings.get('useCalibration'):
             return p
         else:
             return self.settings.deviceProperties['calibrationInv'](p)
 
     def updateDependencies(self):
+        """Determine the set of variables that the waveform depends on"""
         logger = logging.getLogger(__name__)
         if self.settings.waveformMode==self.settings.waveformModes.equation:
             self.stack = self.expression._parse_expression(self.equation)
@@ -94,6 +105,11 @@ class AWGWaveform(object):
         return self.evaluateEquation() if equationMode else self.evaluateSegments()
 
     def evaluateSegments(self):
+        """Evaluate the waveform based on the segment table.
+
+        Returns:
+            sampleList: list of values to program to the AWG
+        """
         sampleList = numpy.array([])
         for segment in self.segmentList:
             if segment['enabled']:

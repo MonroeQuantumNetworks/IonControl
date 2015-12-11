@@ -29,7 +29,15 @@ class Settings(object):
        deviceSettings(dict): dynamic settings of the device, controlled by the parameterTree widget. Elements are defined
           in the device's 'paramDef' function
        channelSettingsList (list of dicts): each element corresponds to a channel of the AWG. Each element is a dict,
-          with keys 'equation' and 'plotEnabled'
+          with keys that determine the channel's setting (e.g. 'equation' and 'plotEnabled', etc.)
+       waveformMode (enum): whether the AWG is programmed in equation mode or segment mode
+       filename (str): (segment mode only) the filename from which to save/load AWG segment data
+       varDict (SequenceDict): the list of variables which determine the AWG waveform
+       saveIfNecessary (function): the AWGUi's function that save's the settings
+       replot (function): the AWGUi's function that replots all waveforms
+
+    Note that "deviceProperties" are fixed settings of an AWG device, while "deviceSettings" are settings that can be
+    changed on the fly.
     """
     waveformModes = enum('equation', 'segments')
     plotStyles = enum('lines', 'points', 'linespoints')
@@ -203,6 +211,7 @@ class AWGUi(AWGForm, AWGBase):
         self.saveIfNecessary()
 
     def onComboBoxEditingFinished(self):
+        """a settings name is typed into the combo box"""
         currentText = str(self.settingsComboBox.currentText())
         if self.settingsName != currentText:
             self.settingsName = currentText
@@ -220,10 +229,12 @@ class AWGUi(AWGForm, AWGBase):
                 self.saveButton.setEnabled(True)
 
     def replot(self):
+        """plot all channels"""
         for channelUi in self.awgChannelUiList:
             channelUi.replot()
 
     def onSave(self):
+        """save current settings"""
         self.settingsName = str(self.settingsComboBox.currentText())
         self.settingsDict[self.settingsName] = copy.deepcopy(self.settings)
         with BlockSignals(self.settingsComboBox) as w:
@@ -232,6 +243,7 @@ class AWGUi(AWGForm, AWGBase):
         self.saveButton.setEnabled(False)
 
     def saveConfig(self):
+        """save GUI configuration to config"""
         self.config[self.configname+".guiState"] = saveGuiState(self)
         for awgChannelUi in self.awgChannelUiList:
             self.config[self.configname+"channel{0}.guiState".format(awgChannelUi.channel)] = saveGuiState(awgChannelUi)
@@ -248,6 +260,7 @@ class AWGUi(AWGForm, AWGBase):
         self.config[self.configname+'.lastDir'] = self.lastDir
 
     def onRemove(self):
+        """Remove current settings from combo box"""
         name = str(self.settingsComboBox.currentText())
         if name in self.settingsDict:
             self.settingsDict.pop(name)
@@ -258,10 +271,12 @@ class AWGUi(AWGForm, AWGBase):
             self.onLoad(self.settingsName)
 
     def onReload(self):
+        """Reload segment data from file"""
         name = str(self.settingsComboBox.currentText())
         self.onLoad(name)
        
     def onLoad(self, name):
+        """load segment data from file"""
         name = str(name)
         if name in self.settingsDict:
             self.settingsName = name
@@ -297,19 +312,23 @@ class AWGUi(AWGForm, AWGBase):
             [channelUi.segmentModel.endResetModel() for channelUi in self.awgChannelUiList]
 
     def onAutoSave(self, checked):
+        """autosave is changed"""
         self.autoSave = checked
         self.saveButton.setEnabled(not checked)
         if checked:
             self.onSave()
 
     def onValue(self, var=None, value=None):
+        """variable value is changed in the table"""
         self.saveIfNecessary()
         self.replot()
 
     def evaluate(self, name):
+        """re-evaluate the text in the tableModel (happens when a global changes)"""
         self.tableModel.evaluate(name)
 
     def refreshVarDict(self):
+        """refresh the variable dictionary by checking all waveform dependencies"""
         allDependencies = set()
         [channelUi.waveform.updateDependencies() for channelUi in self.awgChannelUiList]
         [allDependencies.update(channelUi.waveform.dependencies) for channelUi in self.awgChannelUiList]
@@ -323,12 +342,14 @@ class AWGUi(AWGForm, AWGBase):
             channelUi.replot()
 
     def onDependenciesChanged(self, channel=None):
+        """When dependencies change, refresh all variables"""
         self.tableModel.beginResetModel()
         self.refreshVarDict()
         self.tableModel.endResetModel()
         self.saveIfNecessary()
 
     def onWaveformModeChanged(self, mode):
+        """Waveform mode (equation/segment) changed"""
         self.settings.waveformMode = mode
         equationMode = mode==self.settings.waveformModes.equation
         self.fileFrame.setEnabled(not equationMode)
@@ -373,11 +394,13 @@ class AWGUi(AWGForm, AWGBase):
             self.onSaveFile()
 
     def onOpenFile(self):
+        """Open file button is clicked. Pop up dialog asking for filename."""
         filename = str(QtGui.QFileDialog.getOpenFileName(self, 'Select File', self.lastDir,'YAML (*.yml)'))
         if filename:
             self.openFile(filename)
 
     def openFile(self, filename):
+        """Open the file 'filename'"""
         if os.path.exists(filename):
             self.lastDir, basename = os.path.split(filename)
             self.recentFiles[basename] = filename
@@ -415,6 +438,7 @@ class AWGUi(AWGForm, AWGBase):
                     w.setCurrentIndex(-1)
 
     def onSaveFile(self):
+        """Save button is clicked. Save data to segment file"""
         channelData = [channelSettings['segmentList']
                     for channelSettings in self.settings.channelSettingsList]
         yamldata = {'channelData': channelData}
@@ -432,6 +456,7 @@ class AWGUi(AWGForm, AWGBase):
 
     @QtCore.pyqtProperty(dict)
     def varAsOutputChannelDict(self):
+        """dict of output channels, for use in scans"""
         for varname in self.settings.varDict:
             if varname not in self._varAsOutputChannelDict:
                 self._varAsOutputChannelDict[varname] = VarAsOutputChannel(self, varname, self.globalDict)
