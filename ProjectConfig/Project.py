@@ -147,8 +147,9 @@ class Project(object):
             engine.dispose()
             success = True
             logger.info("Database connection successful")
-        except Exception:
+        except Exception as e:
             success = False
+            logger.warning("{0}: {1}".format(e.__class__.__name__, e))
             logger.info("Database connection failed - please check settings")
         return success
 
