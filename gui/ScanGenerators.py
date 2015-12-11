@@ -15,6 +15,8 @@ from modules.Expression import Expression
 
 OpStates = enum.enum('idle','running','paused','starting','stopping', 'interrupted')
 
+NoneScanCode = [4095, 0]
+MaxWordsInFifo = 2040
 
 class ParameterScanGenerator:
     expression = Expression()
@@ -29,23 +31,21 @@ class ParameterScanGenerator:
             _, data, self.gateSequenceSettings = self.scan.gateSequenceUi.gateSequenceScanData()    
         else:
             data = []
-        if self.scan.scanTarget == 'Internal':
-            self.scan.code, self.numVariablesPerUpdate = pulseProgramUi.variableScanCode(self.scan.scanParameter, self.scan.list, extendedReturn=True)
-            self.numUpdatedVariables = len(self.scan.code)/2/len(self.scan.list)
-            maxWordsToWrite = 2040 if maxUpdatesToWrite is None else 2*self.numUpdatedVariables*maxUpdatesToWrite
-            if len(self.scan.code)>maxWordsToWrite:
-                self.nextIndexToWrite = maxWordsToWrite
-                return ( self.scan.code[:maxWordsToWrite], data)
-            self.nextIndexToWrite = len(self.scan.code)
+        parameterName = self.scan.scanParameter if self.scan.scanTarget == 'Internal' else self.scan.parallelInternalScanParameter
+        if parameterName ==  "None":
+            self.scan.code, self.numVariablesPerUpdate = NoneScanCode * len(self.scan.list), 1
         else:
-            self.stepInPlaceValue = 0
-            self.scan.code = list([4095, 0]) # writing the last memory location
-        return ( self.scan.code, data)
+            self.scan.code, self.numVariablesPerUpdate = pulseProgramUi.variableScanCode(parameterName, self.scan.list, extendedReturn=True)
+        self.numUpdatedVariables = len(self.scan.code) / 2 / len(self.scan.list)
+        maxWordsToWrite = MaxWordsInFifo if maxUpdatesToWrite is None else 2 * self.numUpdatedVariables * maxUpdatesToWrite
+        if len(self.scan.code) > maxWordsToWrite:
+            self.nextIndexToWrite = maxWordsToWrite
+            return self.scan.code[:maxWordsToWrite], data
+        self.nextIndexToWrite = len(self.scan.code)
+        return self.scan.code, data
         
-    def restartCode(self,currentIndex ):
-        if self.scan.scanTarget != 'Internal':
-            return list([4095, 0]) # writing the last memory location
-        maxWordsToWrite = 2040 if self.maxUpdatesToWrite is None else 2*self.numUpdatedVariables*self.maxUpdatesToWrite
+    def restartCode(self, currentIndex):
+        maxWordsToWrite = MaxWordsInFifo if self.maxUpdatesToWrite is None else 2*self.numUpdatedVariables*self.maxUpdatesToWrite
         currentWordCount = 2*self.numUpdatedVariables*currentIndex
         if len(self.scan.code)-currentWordCount>maxWordsToWrite:
             self.nextIndexToWrite = maxWordsToWrite+currentWordCount
@@ -62,13 +62,10 @@ class ParameterScanGenerator:
         return value.ounit(self.scan.xUnit).toval()
         
     def dataNextCode(self, experiment ):
-        if self.scan.scanTarget == 'Internal':
-            if self.nextIndexToWrite<len(self.scan.code):
-                start = self.nextIndexToWrite
-                self.nextIndexToWrite = min( len(self.scan.code)+1, self.nextIndexToWrite + 2*self.numUpdatedVariables )
-                return self.scan.code[start:self.nextIndexToWrite]
-        else:
-            return list(self.scan.code)
+        if self.nextIndexToWrite<len(self.scan.code):
+            start = self.nextIndexToWrite
+            self.nextIndexToWrite = min( len(self.scan.code)+1, self.nextIndexToWrite + 2*self.numUpdatedVariables )
+            return self.scan.code[start:self.nextIndexToWrite]
         return []
         
     def dataOnFinal(self, experiment, currentState):
@@ -100,11 +97,8 @@ class StepInPlaceGenerator:
             _, data, self.gateSequenceSettings = self.scan.gateSequenceUi.gateSequenceScanData()    
         else:
             data = []
-        #self.stepInPlaceValue = pulseProgramUi.getVariableValue(self.scan.scanParameter)
-        self.stepInPlaceValue = 0
-        self.scan.code = [4095, 0] # writing the last memory location
-        #self.scan.code = pulseProgramUi.pulseProgram.variableScanCode(self.scan.scanParameter, [self.stepInPlaceValue])
-        return (self.scan.code*5, data) # write 5 points to the fifo queue at start,
+        self.scan.code = NoneScanCode # writing the last memory location
+        return self.scan.code*5, data # write 5 points to the fifo queue at start,
                         # this prevents the Step in Place from stopping in case the computer lags behind evaluating by up to 5 points
 
     def restartCode(self,currentIndex):
@@ -194,7 +188,7 @@ class GateSequenceScanGenerator:
         self.scan = scan
         self.nextIndexToWrite = 0
         self.numUpdatedVariables = 1
-        self.maxWordsToWrite = 2040
+        self.maxWordsToWrite = MaxWordsInFifo
         
     def prepare(self, pulseProgramUi, maxUpdatesToWrite=None):
         logger = logging.getLogger(__name__)

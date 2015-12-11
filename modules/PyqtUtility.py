@@ -18,7 +18,8 @@ def updateComboBoxItems( combo, items, selected=None):
     selected = str( combo.currentText() ) if selected is None else selected
     with BlockSignals(combo):
         combo.clear()
-        combo.addItems( items )
+        if items:
+            combo.addItems( items )
         index = combo.findText(selected)
         if index >= 0:
             combo.setCurrentIndex( index )

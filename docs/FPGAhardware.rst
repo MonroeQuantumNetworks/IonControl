@@ -17,8 +17,18 @@ configurations are described.
 Standard Configuration
 ----------------------
 
-The bitfiles *IonControl-firmware.bit* and *IonControl-firmware-LX150.bit* are used for the LX-45 and LX-150 version of the
-XEM-6010, respectively. This standard firmware setup is for use with the Duke breakout board *OpalKellyIonControlBoxFanout_v3b*,
+The bitfiles *IonControl-firmware-no-div.bit*, *IonControl-firmware-8Counters.bit*, *IonControl-firmware-20MHz-DDS-SCLK.bit* and *IonControl-firmware-LX150.bit* are used for the LX-45 and LX-150 version of the
+XEM-6010. All firmwares compiled for LX150 include LX150 in the file name. The firmware is specific to the FPGA and cannot be used with the other FPGA. Thus, please make sure to choose the correct version.
+A firmware for the LX45 FPGA is approximately 1450kB, for the LX150 it is approximately 4125kB.
+
+The full functionality of the firmware is slightly too large for the LX45 FPGA. Thus the standard firmware cannot be compiled for LX45 (without timing violations). There are three different firmware files trhat can be used with the LX45 FPGA.
+Each has a specific limitation that makes it possible to fit in the LX45.
+
+* *IonControl-firmware-no-div.bit* does *NOT* include the division command in the pulse program. It will *NOT* do any divisions.
+* *IonControl-firmware-8Counters.bit* only includes 8 counter channels and 2 timestamping channels. (But includes the division).
+* *IonControl-firmware-20MHz-DDS-SCLK.bit* uses a 20MHz serial clock for communication with DDS chips. This means writing the frequency takes about 3us instead of 1.5us.
+
+This standard firmware setup is for use with the Duke breakout board *OpalKellyIonControlBoxFanout_v3b*,
 which contains 8 DAC channels, 8 ADC channels, 3x 8 pin TTL input banks, 9x 8 pin TTL output banks,
 and 10x SMA TTL outputs (for connecting to RF switches).
 
@@ -27,7 +37,7 @@ and 10x SMA TTL outputs (for connecting to RF switches).
 * **In3** Input bank 3 is connected to trigger channels 0-7.
 
 * **Out1** Output bank 1 is connected to shutters 0-7.
-* **Out2** Output bank 2 is connected to shutters 8-15.
+* **Out2** bits 0-5 are connected to shutters 8-13, bit 6 is connected to trigger 17 and bit 7 forms a serial interface. This is intended for use with the trap voltage 100 channel DAC system.
 * **Out7** Output bank 7 is connected to shutter channels 16-23.
 
 The FPGA is configured to talk to four of the 2 channel AD9912 DDS boards: *DDS-AD9912_r4*, for a total of 8 DDS channels.
@@ -57,9 +67,14 @@ Setup-specific configurations
 In the following setup-specific configurations only deviations from the standard configuration are described.
 
 
+DDS10
+^^^^^
+
+* **Out7**: DDS channels 8 and 9
+
 Duke
 ^^^^
-
+Is currently not available. PLease let me know if it is needed.
 * **Out2** bits 0-5 are connected to shutters 8-13, bit 6 is connected to trigger 17 and bit 7 forms a serial interface. This is intended for use with the trap voltage 100 channel DAC system.
 * **Out7** is connected to two AD9910 boards, DDS channels 7 and 8
 * **Out6** is connected to Magiq pulser, DDS channel 9
