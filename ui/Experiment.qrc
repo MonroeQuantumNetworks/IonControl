@@ -45,6 +45,7 @@
     <file>icons/cos.png</file>
   </qresource>
   <qresource prefix="other">
+    <file>icons/add-blue.png</file>
     <file>icons/AWG.png</file>
     <file>icons/condense.png</file>
     <file>icons/slow-enabled-icon.png</file>
