@@ -53,8 +53,8 @@ class ExptConfigUi(Base,Form):
         self.portEdit.setValue(self.exptConfig['databaseConnection'].get('port',5432))
         self.echoCheck.setChecked(self.exptConfig['databaseConnection'].get('echo',False))
 
-        self.guiDict = {'hardware': (self.hardwareTabWidget, self.hardwareComboBox, self.hardwareTableWidget),
-                        'software': (self.softwareTabWidget, self.softwareComboBox, self.softwareTableWidget)}
+        self.guiDict = {'hardware': (self.hardwareTabWidget, self.hardwareComboBox, self.hardwareTableWidget, self.hardwareNameEdit),
+                        'software': (self.softwareTabWidget, self.softwareComboBox, self.softwareTableWidget, self.softwareNameEdit)}
         for guiName in self.guiDict:
             for objName in self.exptConfig[guiName]:
                 for name in self.exptConfig[guiName][objName]:
@@ -62,34 +62,45 @@ class ExptConfigUi(Base,Form):
 
         self.addHardwareButton.clicked.connect( partial(self.onAdd, 'hardware') )
         self.removeHardwareButton.clicked.connect( partial(self.onRemove, 'hardware') )
-        self.hardwareListWidget.currentTextChanged.connect( partial(self.onSelect, 'hardware') )
+        self.hardwareTableWidget.currentCellChanged.connect( partial(self.onSelect, 'hardware') )
         self.hardwareTabWidget.currentChanged.connect( partial(self.onTabWidgetChanged, 'hardware') )
         self.addSoftwareButton.clicked.connect( partial(self.onAdd, 'software') )
         self.removeSoftwareButton.clicked.connect( partial(self.onRemove, 'software') )
-        self.softwareListWidget.currentTextChanged.connect( partial(self.onSelect, 'software') )
+        self.softwareTableWidget.currentCellChanged.connect( partial(self.onSelect, 'software') )
         self.softwareTabWidget.currentChanged.connect( partial(self.onTabWidgetChanged, 'software') )
 
     def onTabWidgetChanged(self, guiName, index):
-        """Tab widget is clicked. Change the selection in the list widget."""
-        tabWidget,comboBox,listWidget = self.guiDict[guiName]
-        name = str(tabWidget.tabText(index))
-        item = listWidget.findItems(name, QtCore.Qt.MatchExactly)[0]
-        with BlockSignals(listWidget) as w:
-            w.setCurrentItem(item)
+        """Tab widget is clicked. Change the selection in the table widget.
+        Args:
+            guiName (str): 'hardware' or 'software'
+            index (int): new selected index in tab widget
+        """
+        tabWidget,comboBox,tableWidget,nameEdit = self.guiDict[guiName]
+        fullName = str(tabWidget.tabText(index))
+        objName,name = fullName.split(': ')
+        with BlockSignals(tableWidget) as w:
+            numRows = w.rowCount()
+            for row in range(numRows):
+                if str(w.item(row, 0).text())==objName and str(w.item(row, 1).text())==name:
+                    w.setCurrentItem(item)
+                    break
 
-    def onSelect(self, guiName, name):
-        """List widget is clicked. Change the current tab on the tab widget."""
-        tabWidget,comboBox,listWidget = self.guiDict[guiName]
-        name = str(name)
-        widget = self.widgetDict[(guiName,name)]
+    def onSelect(self, guiName, currentRow, currentColumn, previousRow, previousColumn):
+        """Table widget is clicked. Change the current tab on the tab widget."""
+        tabWidget,comboBox,tableWidget,nameEdit = self.guiDict[guiName]
+        objName=str(tableWidget.item(currentRow, 0).text())
+        name=str(tableWidget.item(currentRow, 1).text())
+        widget = self.widgetDict[(guiName,objName,name)]
         index = tabWidget.indexOf(widget)
         with BlockSignals(tabWidget) as w:
             w.setCurrentIndex(index)
 
     def onAdd(self, guiName):
         """Add is clicked."""
-        tabWidget,comboBox,listWidget = self.guiDict[guiName]
-        name = str(comboBox.currentText())
+        tabWidget,comboBox,tableWidget,nameEdit = self.guiDict[guiName]
+        objName = str(comboBox.currentText())
+        name = str(nameEdit.text())
+        nameEdit.clear()
         self.addObj(guiName, name)
 
     def addObj(self, guiName, objName, name):
@@ -99,7 +110,7 @@ class ExptConfigUi(Base,Form):
             objName (str): The type of hardware or software
             name (str): The name of the specific piece of hardware or software
         """
-        tabWidget,comboBox,tableWidget = self.guiDict[guiName]
+        tabWidget,comboBox,tableWidget,nameEdit = self.guiDict[guiName]
         if objName in self.guiTemplate[guiName]:
             templateDict = self.guiTemplate[guiName][objName]
             description = templateDict.get('description') if templateDict else None
@@ -133,7 +144,7 @@ class ExptConfigUi(Base,Form):
         Args:
             guiName: 'hardware' or 'software'
         """
-        tabWidget,comboBox,tableWidget = self.guiDict[guiName]
+        tabWidget,comboBox,tableWidget,nameEdit = self.guiDict[guiName]
         if tableWidget.currentItem():
             with BlockSignals(tableWidget) as w:
                 row = w.currentRow()
@@ -205,14 +216,20 @@ class ExptConfigUi(Base,Form):
             self.exptConfig=dict()
             self.exptConfig['hardware']=dict()
             self.exptConfig['software']=dict()
-            for (guiName,name), subwidgetList in self.subwidgetDict.iteritems():
-                if name in self.addedNames(guiName):
-                    self.exptConfig[guiName][name]=dict() #'name' is name of piece of equipment or software feature
+            for (guiName,objName,name), subwidgetList in self.subwidgetDict.iteritems():
+                if (objName,name) in self.entries(guiName):
+                    self.exptConfig[guiName][objName] = dict() #'objName' is a type of hardware or software
+                    self.exptConfig[guiName][objName][name]=dict() #'name' is a specific piece of hardware or software
                     for field,subwidget in subwidgetList: #'field' is the specific config field for 'name'
-                        self.exptConfig[guiName][name][field] = subwidget.content
-                    listWidget=self.guiDict[guiName][2]
-                    item = listWidget.findItems(name, QtCore.Qt.MatchExactly)[0]
-                    self.exptConfig[guiName][name]['enabled'] = item.checkState()==QtCore.Qt.Checked
+                        self.exptConfig[guiName][objName][name][field] = subwidget.content
+                    tableWidget=self.guiDict[guiName][2]
+                    numRows = tableWidget.rowCount()
+                    for row in range(numRows):
+                        objNameItem = w.item(row, 0)
+                        nameItem = w.item(row, 1)
+                        if str(objNameItem.text())==objName and str(nameItem.text())==name:
+                            self.exptConfig[guiName][objName][name]['enabled'] = objNameItem.checkState()==QtCore.Qt.Checked
+                            break
             self.exptConfig['databaseConnection'] = dbSettings
             self.exptConfig['showGui']=not self.defaultCheckBox.isChecked()
             Base.accept(self)
@@ -223,13 +240,11 @@ class ExptConfigUi(Base,Form):
         logging.getLogger(__name__).error(message)
         sys.exit(message)
 
-    def addedNames(self, guiName):
+    def entries(self, guiName):
         """return the names that have been added to the list of hardware or software"""
-        tabWidget,comboBox,listWidget = self.guiDict[guiName]
-        names = []
-        for index in xrange(listWidget.count()):
-             names.append(str(listWidget.item(index).text()))
-        return names
+        tabWidget,comboBox,tableWidget,nameEdit = self.guiDict[guiName]
+        #return list of tuples (objName, name)
+        return [( str(tableWidget.item(row, 0).text()), str(tableWidget.item(row, 1).text()) ) for row in range(tableWidget.rowCount())]
 
 
 class ConfigWidget(object):

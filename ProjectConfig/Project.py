@@ -181,13 +181,13 @@ class Project(object):
                     name = val.pop('name')
                     self.exptConfig['hardware'][key] = dict()
                     self.exptConfig['hardware'][key][name] = val
-                else: #For all other items, the default name key is set to 'None'
+                else: #For all other items, the default name key is set to ''
                     self.exptConfig['hardware'][key] = dict()
-                    self.exptConfig['hardware'][key][None] = val
+                    self.exptConfig['hardware'][key][''] = val
 
             for key, val in softwareCopy.iteritems():
                 self.exptConfig['software'][key] = dict()
-                self.exptConfig['software'][key][None] = val
+                self.exptConfig['software'][key][''] = val
 
             self.exptConfig['version'] = 2.0 #A version number is now stored in the config file, to make things more future-proof
             with open(self.exptConfigFilename, 'w') as f: #save updates to file
