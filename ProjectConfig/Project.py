@@ -82,6 +82,7 @@ class Project(object):
             with open(self.exptConfigFilename, 'r') as f:
                 try:
                     yamldata = yaml.load(f)
+                    #check that it has the necessary keys
                     yamldata['databaseConnection']
                     yamldata['showGui']
                     yamldata['hardware']
@@ -95,11 +96,14 @@ class Project(object):
                 except KeyError as e:
                     logger.warning('YAML data is missing required element {0} in experiment config file {1}'.format(e, self.exptConfigFilename))
 
+        #if the GUI is not shown, check the database connection. If it fails, show the GUI
         if self.exptConfig.get('databaseConnection') and not self.exptConfig.get('showGui'):
             self.dbConnection = DatabaseConnectionSettings(**self.exptConfig['databaseConnection'])
             success = self.attemptDatabaseConnection(self.dbConnection)
             if not success:
                 self.exptConfig['showGui']=True
+
+        self.updateExptConfigVersion()
 
         if self.exptConfig['showGui']:
             ui = ExptConfigUi(self)
@@ -152,6 +156,43 @@ class Project(object):
             logger.warning("{0}: {1}".format(e.__class__.__name__, e))
             logger.info("Database connection failed - please check settings")
         return success
+
+    def updateExptConfigVersion(self):
+        """update config file to latest version"""
+        version = self.exptConfig.get('version', 1.0)
+        if version < 2.0:
+            logger = logging.getLogger(__name__)
+            logger.info("Updating experiment config file {0} from v1.0 to v2.0".format(self.exptConfigFilename))
+            hardwareCopy = self.exptConfig['hardware'].copy()
+            softwareCopy = self.exptConfig['software'].copy()
+            self.exptConfig['hardware'].clear()
+            self.exptConfig['software'].clear()
+            for key, val in hardwareCopy.iteritems():
+                if key=='Opal Kelly FPGA: Pulser': #For Opal Kelly FPGAs, now one device with different names
+                    self.exptConfig['hardware'].setdefault('Opal Kelly FPGA', dict())
+                    self.exptConfig['hardware']['Opal Kelly FPGA']['Pulser'] = val
+                elif key=='Opal Kelly FPGA: DAC':
+                    self.exptConfig['hardware'].setdefault('Opal Kelly FPGA', dict())
+                    self.exptConfig['hardware']['Opal Kelly FPGA']['DAC'] = val
+                elif key=='Opal Kelly FPGA: 32 Channel PMT':
+                    self.exptConfig['hardware'].setdefault('Opal Kelly FPGA', dict())
+                    self.exptConfig['hardware']['Opal Kelly FPGA']['32 Channel PMT'] = val
+                elif key=='NI DAC Chassis': #For NI DAC Chassis, name is now dict key rather than field
+                    name = val.pop('name')
+                    self.exptConfig['hardware'][key] = dict()
+                    self.exptConfig['hardware'][key][name] = val
+                else: #For all other items, the default name key is set to 'None'
+                    self.exptConfig['hardware'][key] = dict()
+                    self.exptConfig['hardware'][key][None] = val
+
+            for key, val in softwareCopy.iteritems():
+                self.exptConfig['software'][key] = dict()
+                self.exptConfig['software'][key][None] = val
+
+            self.exptConfig['version'] = 2.0 #A version number is now stored in the config file, to make things more future-proof
+            with open(self.exptConfigFilename, 'w') as f: #save updates to file
+                yaml.dump(self.exptConfig, f, default_flow_style=False)
+                logger.info('experiment config file {0} updated to v2.0'.format(self.exptConfigFilename))
 
     def isEnabled(self, guiName, name):
         """returns True if 'name' is present in the config file and is enabled"""
