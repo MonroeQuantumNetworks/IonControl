@@ -211,11 +211,16 @@ class Project(object):
                         yamldata[guiName][objName][None]=yamldata[guiName][objName].pop(name)
         return yamldata
 
-    def isEnabled(self, guiName, name):
-        """returns True if 'name' is present in the config file and is enabled"""
-        item = self.exptConfig[guiName].get(name)
-        enabled = item.get('enabled') if item else False
-        return enabled
+    def isEnabled(self, guiName, objName):
+        """Determine what objects named 'objName' are enabled (if any)
+        Args:
+            guiName (str): 'hardware' or 'software'
+            objName (str): the name of the object in question
+        Returns:
+         dict of enabled objects 'objName'"""
+        objDict=self.exptConfig[guiName].get(objName,dict())
+        enabledObjects = {name:nameDict for name,nameDict in objDict.iteritems() if nameDict.get('enabled')}
+        return enabledObjects
 
 class ProjectInfoUi(Base,Form):
     """Class for seeing project settings in the main GUI, and setting config GUIs to show on next program start"""
@@ -260,3 +265,4 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
     app = QtGui.QApplication(sys.argv)
     project = Project()
+    pass
