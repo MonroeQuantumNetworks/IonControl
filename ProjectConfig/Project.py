@@ -87,7 +87,12 @@ class Project(object):
                     yamldata['showGui']
                     yamldata['hardware']
                     yamldata['software']
-                    self.exptConfig = yamldata
+                    self.exptConfig = yamldata.copy()
+                    for guiName in ['hardware','software']:
+                        for objName in yamldata[guiName]:
+                            for name in yamldata[guiName][objName]:
+                                if name==None: #Switch 'None' names to empty string
+                                    self.exptConfig[guiName][objName]['']=self.exptConfig[guiName][objName].pop(name)
                     logger.info('Experiment config file {0} loaded'.format(self.exptConfigFilename))
                 except yaml.scanner.ScannerError: #leave defaults if the file is improperly formatted
                     logger.warning('YAML formatting error: unable to read in experiment config file {0}'.format(self.exptConfigFilename))
@@ -110,8 +115,9 @@ class Project(object):
             ui.show()
             ui.exec_()
             self.exptConfig = ui.exptConfig
+            yamldata=self.changeBlankNamesToNone()
             with open(self.exptConfigFilename, 'w') as f: #save information from GUI to file
-                yaml.dump(self.exptConfig, f, default_flow_style=False)
+                yaml.dump(yamldata, f, default_flow_style=False)
                 logger.info('GUI data saved to {0}'.format(self.exptConfigFilename))
 
         self.dbConnection = DatabaseConnectionSettings(**self.exptConfig['databaseConnection'])
@@ -167,6 +173,7 @@ class Project(object):
             softwareCopy = self.exptConfig['software'].copy()
             self.exptConfig['hardware'].clear()
             self.exptConfig['software'].clear()
+
             for key, val in hardwareCopy.iteritems():
                 if key=='Opal Kelly FPGA: Pulser': #For Opal Kelly FPGAs, now one device with different names
                     self.exptConfig['hardware'].setdefault('Opal Kelly FPGA', dict())
@@ -180,8 +187,8 @@ class Project(object):
                 elif key=='NI DAC Chassis': #For NI DAC Chassis, name is now dict key rather than field
                     name = val.pop('name')
                     self.exptConfig['hardware'][key] = dict()
-                    self.exptConfig['hardware'][key][name] = val
-                else: #For all other items, the default name key is set to ''
+                    self.exptConfig['hardware'][key][''] = val
+                else: #For all other items, the default name key is set to an empty string
                     self.exptConfig['hardware'][key] = dict()
                     self.exptConfig['hardware'][key][''] = val
 
@@ -190,9 +197,19 @@ class Project(object):
                 self.exptConfig['software'][key][''] = val
 
             self.exptConfig['version'] = 2.0 #A version number is now stored in the config file, to make things more future-proof
+            yamldata=self.changeBlankNamesToNone()
             with open(self.exptConfigFilename, 'w') as f: #save updates to file
-                yaml.dump(self.exptConfig, f, default_flow_style=False)
+                yaml.dump(yamldata, f, default_flow_style=False)
                 logger.info('experiment config file {0} updated to v2.0'.format(self.exptConfigFilename))
+
+    def changeBlankNamesToNone(self):
+        yamldata=self.exptConfig.copy()
+        for guiName in ['hardware','software']:
+            for objName in self.exptConfig[guiName]:
+                for name in self.exptConfig[guiName][objName]:
+                    if name=='': #yaml doesn't work nicely with empty string keys for dicts, so we switch them to 'None' for saving only
+                        yamldata[guiName][objName][None]=yamldata[guiName][objName].pop(name)
+        return yamldata
 
     def isEnabled(self, guiName, name):
         """returns True if 'name' is present in the config file and is enabled"""
