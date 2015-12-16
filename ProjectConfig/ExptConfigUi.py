@@ -35,7 +35,6 @@ class ExptConfigUi(Base,Form):
         with open(self.guiTemplateFilename, 'r') as f:
             self.guiTemplate = yaml.load(f)
         self.setupUi(self)
-        self.separator=': '
 
     def setupUi(self, parent):
         """setup the dialog box ui"""
@@ -86,21 +85,31 @@ class ExptConfigUi(Base,Form):
         tabWidget,comboBox,tableWidget,nameEdit = self.guiDict['software']
         return [( str(tableWidget.item(row, 0).text()), str(tableWidget.item(row, 1).text()) ) for row in range(tableWidget.rowCount())]
 
+    def fullName(self, objName, name):
+        """return the full name to display associated with objName and name"""
+        separator=': '
+        return separator.join([objName, name]) if name else objName
+
+    def fromFullName(self, fullName):
+        """return the objName,name associated with the given fullName"""
+        separator=': '
+        return fullName.split(separator) if separator in fullName else (fullName, '')
+
     def addObj(self, guiName, objName, name):
         """Add (objName, name) to the table widget, and add the appropriate tab to the tab widget.
         Args:
             guiName (str): 'hardware' or 'software'
             objName (str): The type of hardware or software
-            name (str or None): The name of the specific piece of hardware or software
+            name (str): The name of the specific piece of hardware or software
         """
         tabWidget,comboBox,tableWidget,nameEdit = self.guiDict[guiName]
-        if objName in self.guiTemplate[guiName]:
+        if (objName in self.guiTemplate[guiName]) and ((objName, name) not in getattr(self, guiName)):
             templateDict = self.guiTemplate[guiName][objName]
             description = templateDict.get('description') if templateDict else None
             with BlockSignals(tableWidget) as w:
                 objItem=QtGui.QTableWidgetItem(objName)
                 objItem.setFlags(QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsSelectable)
-                nameItem=QtGui.QTableWidgetItem(name if name else '')
+                nameItem=QtGui.QTableWidgetItem(name)
                 nameItem.setFlags(QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsSelectable)
                 newrow=w.rowCount()
                 w.insertRow(newrow)
@@ -113,21 +122,21 @@ class ExptConfigUi(Base,Form):
                     checkState = QtCore.Qt.Checked if enabled else QtCore.Qt.Unchecked
                     objItem.setCheckState(checkState)
                 w.setCurrentItem(objItem)
+                w.resizeColumnsToContents()
             with BlockSignals(tabWidget) as w:
                 widget=self.getWidget(guiName, objName, name)
-                fullName = ': '.join([objName, name]) if name else objName
-                w.addTab(widget,fullName)
+                w.addTab(widget,self.fullName(objName, name))
                 index=w.indexOf(widget)
                 if description:
                     w.setTabToolTip(index,description)
                 w.setCurrentIndex(index)
 
     def getWidget(self, guiName, objName, name):
-        """Get the widget associated with the given objName.
+        """Get the config widget associated with the given objName.
         Args:
             guiName (str): 'hardware' or 'software'
             objName (str): The type of hardware or software
-            name (str or None): The name of the specific piece of hardware or software
+            name (str): The name of the specific piece of hardware or software
         """
         templateDict = self.guiTemplate[guiName][objName]
         fields = templateDict.get('fields') if templateDict else None
@@ -151,30 +160,37 @@ class ExptConfigUi(Base,Form):
                 layout.addRow('No configuration data for this selection', None)
             self.widgetDict[(guiName,objName,name)]['widget'] = mainwidget
         if roles:
-            fullName = ': '.join([objName, name]) if name else objName
             for role in roles:
-                if self.roleDict.get(role):
-                    self.roleDict[role].append(fullName)
-                else:
-                    self.roleDict[role]=[fullName]
+                self.roleDict.setdefault(role,[]).append(self.fullName(objName, name)) #append fullName to list of roles, or create list with just fullName if it doesn't exist yet
             self.updateRoles.emit()
         return self.widgetDict[(guiName,objName,name)]['widget']
 
     def onItemChanged(self, guiName, item):
+        """A new name is typed in for a table entry"""
         tabWidget,comboBox,tableWidget,nameEdit = self.guiDict[guiName]
         row=tableWidget.row(item)
         column=tableWidget.column(item)
         if self.currentObj[guiName]:
             _,oldName=self.currentObj[guiName]
-        if column==1:
+        if column==1: #This should always be true, since column 0 is not editable
             newName=str(item.text())
             objName=str(tableWidget.item(row,0).text())
-            self.widgetDict[(guiName,objName,newName)]=self.widgetDict.pop((guiName,objName,oldName))
-            fullName = self.separator.join([objName, newName]) if newName else objName
+            subDict=self.widgetDict.pop((guiName,objName,oldName))
+            self.widgetDict[(guiName,objName,newName)]=subDict
+            oldFullName = self.fullName(objName, oldName)
+            newFullName = self.fullName(objName, newName)
             self.currentObj[guiName]=(objName,newName)
             with BlockSignals(tabWidget) as w:
+                widget=subDict['widget']
                 index = w.indexOf(widget)
-                w.setTabText(index, fullName)
+                w.setTabText(index, newFullName)
+            templateDict = self.guiTemplate[guiName][objName]
+            roles = templateDict.get('roles') if templateDict else None
+            if roles:
+                for role in roles:
+                    self.roleDict[role].remove(oldFullName)
+                    self.roleDict[role].append(newFullName)
+                self.updateRoles.emit()
 
     def onTabWidgetChanged(self, guiName, index):
         """Tab widget is clicked. Change the selection in the table widget.
@@ -184,7 +200,7 @@ class ExptConfigUi(Base,Form):
         """
         tabWidget,comboBox,tableWidget,nameEdit = self.guiDict[guiName]
         fullName = str(tabWidget.tabText(index))
-        objName,name = fullName.split(self.separator) if self.separator in fullname else (fullname, None)
+        objName,name = self.fromFullName(fullName)
         with BlockSignals(tableWidget) as w:
             numRows = w.rowCount()
             for row in range(numRows):
@@ -192,6 +208,7 @@ class ExptConfigUi(Base,Form):
                 nameItem = tableWidget.item(row, 1)
                 if str(objNameItem.text())==objName and str(nameItem.text())==name:
                     w.setCurrentItem(objNameItem)
+                    self.currentObj[guiName]=(objName,name)
                     break
 
     def onSelect(self, guiName, currentRow, currentColumn, previousRow, previousColumn):
@@ -219,22 +236,26 @@ class ExptConfigUi(Base,Form):
             guiName: 'hardware' or 'software'
         """
         tabWidget,comboBox,tableWidget,nameEdit = self.guiDict[guiName]
-        if tableWidget.currentItem():
-            with BlockSignals(tableWidget) as w:
-                row = w.currentRow()
-                objName = str(w.item(row, 0).text())
-                name = str(w.item(row, 1).text())
-                w.removeRow(row)
-            with BlockSignals(tabWidget) as w:
-                widget = self.widgetDict[(guiName,objName,name)]['widget']
-                w.removeTab(w.indexOf(widget))
-            templateDict = self.guiTemplate[guiName][objName]
-            roles = templateDict.get('roles') if templateDict else None
-            if roles:
-                fullName = ': '.join([objName, name]) if name else objName
-                for role in roles:
-                    self.roleDict[role].remove(fullName)
-            self.updateRoles.emit()
+        selectedItems = tableWidget.selectedItems()
+        selectedRows = {tableWidget.row(item) for item in selectedItems}
+        uniqueSelectedItems = [tableWidget.item(row,0) for row in selectedRows]
+        with BlockSignals(tableWidget):
+            with BlockSignals(tabWidget):
+                for item in uniqueSelectedItems:
+                    row = tableWidget.row(item)
+                    objName = str(tableWidget.item(row, 0).text())
+                    name = str(tableWidget.item(row, 1).text())
+                    tableWidget.removeRow(row)
+                    widget = self.widgetDict[(guiName,objName,name)]['widget']
+                    index = tabWidget.indexOf(widget)
+                    tabWidget.removeTab(index)
+                    templateDict = self.guiTemplate[guiName][objName]
+                    roles = templateDict.get('roles') if templateDict else None
+                    if roles:
+                        fullName = self.fullName(objName, name)
+                        for role in roles:
+                            self.roleDict[role].remove(fullName)
+                        self.updateRoles.emit()
 
     def accept(self):
         """Ok button is clicked. Checks database settings before proceeding."""
@@ -250,28 +271,26 @@ class ExptConfigUi(Base,Form):
         if not success:
             QtGui.QMessageBox.information(self, 'Database error', 'Invalid database settings')
         else:
-            self.exptConfig=dict()
-            self.exptConfig['hardware']=dict()
-            self.exptConfig['software']=dict()
-            for (guiName,objName,name), subDict in self.widgetDict.iteritems():
-                subwidgetList=subDict['subwidgetList']
-                if (objName,name) in getattr(self, guiName):
+            self.exptConfig.clear()
+            for guiName in ['hardware', 'software']:
+                self.exptConfig[guiName] = dict()
+                tabWidget,comboBox,tableWidget,nameEdit = self.guiDict[guiName]
+                numRows = tableWidget.rowCount()
+                for row in range(numRows):
+                    objNameItem = tableWidget.item(row, 0)
+                    objName = str(objNameItem.text())
+                    nameItem = tableWidget.item(row, 1)
+                    name = str(nameItem.text())
+                    enabled = objNameItem.checkState()==QtCore.Qt.Checked
+                    subwidgetList=self.widgetDict[(guiName,objName,name)]['subwidgetList']
                     self.exptConfig[guiName][objName] = dict() #'objName' is a type of hardware or software
-                    self.exptConfig[guiName][objName][name]=dict() #'name' is a specific piece of hardware or software
+                    self.exptConfig[guiName][objName][name] = dict() #'name' is a specific piece of hardware or software
                     for field,subwidget in subwidgetList: #'field' is the specific config field for 'name'
                         self.exptConfig[guiName][objName][name][field] = subwidget.content
-                    tableWidget=self.guiDict[guiName][2]
-                    numRows = tableWidget.rowCount()
-                    for row in range(numRows):
-                        objNameItem = tableWidget.item(row, 0)
-                        objText = str(objNameItem.text())
-                        nameItem = tableWidget.item(row, 1)
-                        nameText = str(nameItem.text()) if str(nameItem.text()) else None
-                        if str(objNameItem.text())==objName and str(nameItem.text())==name:
-                            self.exptConfig[guiName][objName][name]['enabled'] = objNameItem.checkState()==QtCore.Qt.Checked
-                            break
+                    self.exptConfig[guiName][objName][name]['enabled'] = enabled
             self.exptConfig['databaseConnection'] = dbSettings
             self.exptConfig['showGui']=not self.defaultCheckBox.isChecked()
+            self.exptConfig['version']=2.0
             Base.accept(self)
 
     def reject(self):
