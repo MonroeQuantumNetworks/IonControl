@@ -222,6 +222,16 @@ class Project(object):
         enabledObjects = {name:nameDict for name,nameDict in objDict.iteritems() if nameDict.get('enabled')}
         return enabledObjects
 
+    def fullName(self, objName, name):
+        """return the full name to display associated with objName and name"""
+        separator=': '
+        return separator.join([objName, name]) if name else objName
+
+    def fromFullName(self, fullName):
+        """return the objName,name associated with the given fullName"""
+        separator=': '
+        return fullName.split(separator) if separator in fullName else (fullName, '')
+
 class ProjectInfoUi(Base,Form):
     """Class for seeing project settings in the main GUI, and setting config GUIs to show on next program start"""
     def __init__(self, project):

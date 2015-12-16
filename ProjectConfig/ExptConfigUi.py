@@ -95,16 +95,6 @@ class ExptConfigUi(Base,Form):
         tabWidget,comboBox,tableWidget,nameEdit = self.guiDict['software']
         return [( str(tableWidget.item(row, 0).text()), str(tableWidget.item(row, 1).text()) ) for row in range(tableWidget.rowCount())]
 
-    def fullName(self, objName, name):
-        """return the full name to display associated with objName and name"""
-        separator=': '
-        return separator.join([objName, name]) if name else objName
-
-    def fromFullName(self, fullName):
-        """return the objName,name associated with the given fullName"""
-        separator=': '
-        return fullName.split(separator) if separator in fullName else (fullName, '')
-
     def addObj(self, guiName, objName, name):
         """Add (objName, name) to the table widget, and add the appropriate tab to the tab widget.
         Args:
@@ -117,7 +107,7 @@ class ExptConfigUi(Base,Form):
         if objName not in self.guiTemplate[guiName]:
             logger.error("No GUI template entry for {0}".format(objName))
         elif (objName,name) in getattr(self, guiName):
-            logger.warning( "{0} {1} already exists".format(guiName, self.fullName(objName, name)) )
+            logger.warning( "{0} {1} already exists".format(guiName, self.project.fullName(objName, name)) )
         elif ':' in name:
             logger.error("character ':' cannot be used in a name")
         else:
@@ -142,7 +132,7 @@ class ExptConfigUi(Base,Form):
                 w.resizeColumnsToContents()
             with BlockSignals(tabWidget) as w:
                 widget=self.getWidget(guiName, objName, name)
-                w.addTab(widget,self.fullName(objName, name))
+                w.addTab(widget,self.project.fullName(objName, name))
                 index=w.indexOf(widget)
                 if description:
                     w.setTabToolTip(index,description)
@@ -178,7 +168,7 @@ class ExptConfigUi(Base,Form):
             self.widgetDict[(guiName,objName,name)]['widget'] = mainwidget
         if roles:
             for role in roles:
-                self.roleDict.setdefault(role,[]).append(self.fullName(objName, name)) #append fullName to list of roles, or create list with just fullName if it doesn't exist yet
+                self.roleDict.setdefault(role,[]).append(self.project.fullName(objName, name)) #append fullName to list of roles, or create list with just fullName if it doesn't exist yet
             self.updateRoles.emit()
         return self.widgetDict[(guiName,objName,name)]['widget']
 
@@ -195,7 +185,7 @@ class ExptConfigUi(Base,Form):
             if newName==oldName:
                 return
             elif getattr(self, guiName).count((objName, newName)) > 1:
-                logging.getLogger(__name__).warning( "{0} already exists".format(self.fullName(objName, newName)) )
+                logging.getLogger(__name__).warning( "{0} already exists".format(self.project.fullName(objName, newName)) )
                 item.setText(oldName)
                 return
             elif ':' in newName:
@@ -203,8 +193,8 @@ class ExptConfigUi(Base,Form):
                 return
             subDict=self.widgetDict.pop((guiName,objName,oldName))
             self.widgetDict[(guiName,objName,newName)]=subDict
-            oldFullName = self.fullName(objName, oldName)
-            newFullName = self.fullName(objName, newName)
+            oldFullName = self.project.fullName(objName, oldName)
+            newFullName = self.project.fullName(objName, newName)
             self.currentObj[guiName]=(objName,newName)
             with BlockSignals(tabWidget) as w:
                 widget=subDict['widget']
@@ -226,7 +216,7 @@ class ExptConfigUi(Base,Form):
         """
         tabWidget,comboBox,tableWidget,nameEdit = self.guiDict[guiName]
         fullName = str(tabWidget.tabText(index))
-        objName,name = self.fromFullName(fullName)
+        objName,name = self.project.fromFullName(fullName)
         with BlockSignals(tableWidget) as w:
             numRows = w.rowCount()
             for row in range(numRows):
@@ -278,7 +268,7 @@ class ExptConfigUi(Base,Form):
                     templateDict = self.guiTemplate[guiName][objName]
                     roles = templateDict.get('roles') if templateDict else None
                     if roles:
-                        fullName = self.fullName(objName, name)
+                        fullName = self.project.fullName(objName, name)
                         for role in roles:
                             self.roleDict[role].remove(fullName)
                         self.updateRoles.emit()
