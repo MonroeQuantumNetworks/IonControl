@@ -144,10 +144,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
             self.memoryProfiler = MemoryProfiler(self)
 
         #determine if Voltages software is enabled and import class if it is
-        softwareVoltages = self.project.software.get('Voltages')
         self.voltagesEnabled = self.project.isEnabled('software', 'Voltages')
-        hardwareVoltagesName = softwareVoltages.get('hardware') if softwareVoltages else None
-        hardwareVoltagesEnabled = self.project.isEnabled('hardware', hardwareVoltagesName)
         if self.voltagesEnabled:
             from voltageControl.VoltageControl import VoltageControl
 
