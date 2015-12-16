@@ -73,6 +73,16 @@ class ExptConfigUi(Base,Form):
 
         self.currentObj = {'hardware':None,'software':None}
 
+    def keyPressEvent(self, ev):
+        if ev.key()==QtCore.Qt.Key_Enter or ev.key()==QtCore.Qt.Key_Return:
+            if str(self.hardwareNameEdit.text()):
+                self.onAdd('hardware')
+                return
+            elif str(self.softwareNameEdit.text()):
+                self.onAdd('software')
+                return
+        super(ExptConfigUi, self).keyPressEvent(ev)
+
     @property
     def hardware(self):
         """A list of hardware tuples of the form (objName, name)"""
@@ -175,6 +185,12 @@ class ExptConfigUi(Base,Form):
         if column==1: #This should always be true, since column 0 is not editable
             newName=str(item.text())
             objName=str(tableWidget.item(row,0).text())
+            if newName==oldName:
+                return
+            elif (objName, newName) in getattr(self, guiName):
+                logging.getLogger(__name__).warning( "{0} already exists".format(self.fullName(objName, newName)) )
+                item.setText(oldName)
+                return
             subDict=self.widgetDict.pop((guiName,objName,oldName))
             self.widgetDict[(guiName,objName,newName)]=subDict
             oldFullName = self.fullName(objName, oldName)
