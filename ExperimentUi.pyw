@@ -777,58 +777,55 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
 
     def setupFPGAs(self):
         """Setup all Opal Kelly FPGAs"""
-        self.pmt32 = OKBase() #32 channel PMT
         self.dac = DACController() #100 channel DAC board
 
-        #Determine what's enabled
-        softwarePulserConfig = self.project.software.get('Pulser')
-        softwarePulserEnabled = softwarePulserConfig.get('enabled') if softwarePulserConfig else False
-        hardwarePulserName = softwarePulserConfig.get('hardware') if softwarePulserConfig else None
-        hardwarePulserConfig = self.project.hardware.get(hardwarePulserName)
-        hardwarePulserEnabled = hardwarePulserConfig.get('enabled') if hardwarePulserConfig else False
-        self.pulserEnabled = softwarePulserEnabled and hardwarePulserEnabled
-
-        pmt32Name = "Opal Kelly FPGA: 32 Channel PMT"
-        pmt32Config = self.project.hardware.get(pmt32Name)
-        self.pmt32Enabled = pmt32Config.get('enabled') if pmt32Config else False
-
-        dacName = "Opal Kelly FPGA: DAC"
-        dacConfig = self.project.hardware.get(dacName)
-        self.dacEnabled = dacConfig.get('enabled') if dacConfig else False
-
+        #determine name of FPGA used for Pulser, if any
+        pulserName=None
+        pulserSoftwareEnabled = self.project.isEnabled('software', 'Pulser')
+        if pulserSoftwareEnabled:
+            pulserHardware = pulserSoftwareEnabled.values()[0]['hardware']
+            hardwareObjName, hardwareName = project.fromFullName(pulserHardware)
+            if hardwareObjName=='Opal Kelly FPGA':
+                pulserName=hardwareName
         self.settings = FPGASettings() #settings for pulser specifically
-        if not any([self.pulserEnabled, self.pmt32Enabled, self.dacEnabled]): #if nothing is enabled, no need to do anything
-            return
 
-        self.OK_FPGA_Dict = self.pulser.listBoards() #all connected Opal Kelly FPGA boards
+        #determine name of FPGA used for DAC, if any
+        dacName=None
+        voltageSoftwareEnabled = self.project.isEnabled('software', 'Voltages')
+        if voltageSoftwareEnabled:
+            voltageHardware = voltageSoftwareEnabled.values()[0]['hardware']
+            hardwareObjName, hardwareName = project.fromFullName(voltageHardware)
+            if hardwareObjName=='Opal Kelly FPGA':
+                dacName=hardwareName
+
+        self.OK_FPGA_Dict = self.pulser.listBoards() #list all connected Opal Kelly FPGA boards
         logger.info( "Opal Kelly Devices found: {0}".format({k:v.modelName for k,v in self.OK_FPGA_Dict.iteritems()}) )
 
-        for FPGA, FPGAName, FPGAConfig, FPGAEnabled, hasConfig in [(self.pulser, hardwarePulserName, hardwarePulserConfig, self.pulserEnabled, True),
-                                                                   (self.dac, dacName, dacConfig, self.dacEnabled, False),
-                                                                   (self.pmt32, pmt32Name, pmt32Config, self.pmt32Enabled, False)]:
-            if FPGAEnabled:
-                deviceName=FPGAConfig.get('device') #The 'device' field of an FPGA should be the identifier of the FPGA.
-                if not deviceName:
-                    logger.error("No FPGA specified: 'device' field missing in '{0}' config".format(FPGAName))
-                elif deviceName not in self.OK_FPGA_Dict:
-                    logger.error("FPGA device {0} specified in '{1}' config cannot be found".format(deviceName, FPGAName))
-                else:
-                    device=self.OK_FPGA_Dict[deviceName]
-                    FPGA.openBySerial(device.serial)
-                    bitFile=FPGAConfig.get('bitFile')
-                    checkFileValid(bitFile, 'bitfile', FPGAName)
-                    if hasConfig:
-                        configFile = os.path.splitext(bitFile)[0] + '.xml'
-                        checkFileValid(configFile, 'config file', FPGAName)
-                    if FPGAConfig.get('uploadOnStartup'):
-                        FPGA.uploadBitfile(bitFile)
-                        logger.info("Uploaded file '{0}' to {1} (model {2}) in '{3}' config".format(bitFile, deviceName, device.modelName, FPGAName))
-                    if hasConfig:   # check and make sure corrct hardware is loaded
-                        FPGA.pulserConfiguration(configFile)
-                    if FPGA==self.pulser:
-                        self.settings.deviceSerial = device.serial
-                        self.settings.deviceDescription = device.identifier
-                        self.settings.deviceInfo = device
+        enabledFPGAs = self.project.isEnabled('hardware', 'Opal Kelly FPGA') #Dict of enabled FPGAs
+        for FPGAName, FPGAConfig in enabledFPGAs.iteritems():
+            FPGA = self.pulser if FPGAName==pulserName else (self.dac if FPGAName==dacName else OKBase())
+            deviceName=FPGAConfig.get('device') #The 'device' field of an FPGA should be the identifier of the FPGA.
+            if not deviceName:
+                logger.error("No FPGA specified: 'device' field missing in Opal Kelly FPGA: '{0}' config".format(FPGAName))
+            elif deviceName not in self.OK_FPGA_Dict:
+                logger.error("FPGA device {0} specified in Opal Kelly FPGA: '{1}' config cannot be found".format(deviceName, FPGAName))
+            else:
+                device=self.OK_FPGA_Dict[deviceName]
+                FPGA.openBySerial(device.serial)
+                bitFile=FPGAConfig.get('bitFile')
+                checkFileValid(bitFile, 'bitfile', FPGAName)
+                if name==pulserName:
+                    configFile = os.path.splitext(bitFile)[0] + '.xml'
+                    checkFileValid(configFile, 'config file', FPGAName)
+                if FPGAConfig.get('uploadOnStartup'):
+                    FPGA.uploadBitfile(bitFile)
+                    logger.info("Uploaded file '{0}' to {1} (model {2}) in Opal Kelly FPGA: '{3}' config".format(bitFile, deviceName, device.modelName, FPGAName))
+                if name==pulserName:   # check and make sure corrct hardware is loaded
+                    FPGA.pulserConfiguration(configFile)
+                if FPGA==self.pulser:
+                    self.settings.deviceSerial = device.serial
+                    self.settings.deviceDescription = device.identifier
+                    self.settings.deviceInfo = device
         pulserHardwareId = self.pulser.hardwareConfigurationId()
         if pulserHardwareId:
             logger.info("Pulser Configuration {0:x}".format(pulserHardwareId))
