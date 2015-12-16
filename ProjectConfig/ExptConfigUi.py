@@ -299,7 +299,7 @@ class ExptConfigUi(Base,Form):
                     name = str(nameItem.text())
                     enabled = objNameItem.checkState()==QtCore.Qt.Checked
                     subwidgetList=self.widgetDict[(guiName,objName,name)]['subwidgetList']
-                    self.exptConfig[guiName][objName] = dict() #'objName' is a type of hardware or software
+                    self.exptConfig[guiName].setdefault(objName, dict()) #'objName' is a type of hardware or software
                     self.exptConfig[guiName][objName][name] = dict() #'name' is a specific piece of hardware or software
                     for field,subwidget in subwidgetList: #'field' is the specific config field for 'name'
                         self.exptConfig[guiName][objName][name][field] = subwidget.content
