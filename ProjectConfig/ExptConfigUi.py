@@ -74,6 +74,18 @@ class ExptConfigUi(Base,Form):
 
         self.currentObj = {'hardware':None,'software':None}
 
+    @property
+    def hardware(self):
+        """A list of hardware tuples of the form (objName, name)"""
+        tabWidget,comboBox,tableWidget,nameEdit = self.guiDict['hardware']
+        return [( str(tableWidget.item(row, 0).text()), str(tableWidget.item(row, 1).text()) ) for row in range(tableWidget.rowCount())]
+
+    @property
+    def software(self):
+        """A list of software tuples of the form (objName, name)"""
+        tabWidget,comboBox,tableWidget,nameEdit = self.guiDict['software']
+        return [( str(tableWidget.item(row, 0).text()), str(tableWidget.item(row, 1).text()) ) for row in range(tableWidget.rowCount())]
+
     def onItemChanged(self, guiName, item):
         tabWidget,comboBox,tableWidget,nameEdit = self.guiDict[guiName]
         row=tableWidget.row(item)
@@ -243,7 +255,7 @@ class ExptConfigUi(Base,Form):
             self.exptConfig['software']=dict()
             for (guiName,objName,name), subDict in self.widgetDict.iteritems():
                 subwidgetList=subDict['subwidgetList']
-                if (objName,name) in self.entries(guiName):
+                if (objName,name) in getattr(self, guiName):
                     self.exptConfig[guiName][objName] = dict() #'objName' is a type of hardware or software
                     self.exptConfig[guiName][objName][name]=dict() #'name' is a specific piece of hardware or software
                     for field,subwidget in subwidgetList: #'field' is the specific config field for 'name'
@@ -267,13 +279,6 @@ class ExptConfigUi(Base,Form):
         message = "Experiment must be configured for IonControl program to run"
         logging.getLogger(__name__).error(message)
         sys.exit(message)
-
-    def entries(self, guiName):
-        """return the names that have been added to the list of hardware or software"""
-        tabWidget,comboBox,tableWidget,nameEdit = self.guiDict[guiName]
-        #return list of tuples (objName, name)
-        return [( str(tableWidget.item(row, 0).text()), str(tableWidget.item(row, 1).text()) ) for row in range(tableWidget.rowCount())]
-
 
 class ConfigWidget(object):
     """Class for arbitrary config widget"""
