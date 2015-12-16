@@ -113,7 +113,14 @@ class ExptConfigUi(Base,Form):
             name (str): The name of the specific piece of hardware or software
         """
         tabWidget,comboBox,tableWidget,nameEdit = self.guiDict[guiName]
-        if (objName in self.guiTemplate[guiName]) and ((objName, name) not in getattr(self, guiName)):
+        logger=logging.getLogger(__name__)
+        if objName not in self.guiTemplate[guiName]:
+            logger.error("No GUI template entry for {0}".format(objName))
+        elif (objName,name) in getattr(self, guiName):
+            logger.warning( "{0} {1} already exists".format(guiName, self.fullName(objName, name)) )
+        elif ':' in name:
+            logger.error("character ':' cannot be used in a name")
+        else:
             templateDict = self.guiTemplate[guiName][objName]
             description = templateDict.get('description') if templateDict else None
             with BlockSignals(tableWidget) as w:
@@ -190,6 +197,9 @@ class ExptConfigUi(Base,Form):
             elif getattr(self, guiName).count((objName, newName)) > 1:
                 logging.getLogger(__name__).warning( "{0} already exists".format(self.fullName(objName, newName)) )
                 item.setText(oldName)
+                return
+            elif ':' in newName:
+                logging.getLogger(__name__).warning("character ':' cannot be used in a name")
                 return
             subDict=self.widgetDict.pop((guiName,objName,oldName))
             self.widgetDict[(guiName,objName,newName)]=subDict
