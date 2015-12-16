@@ -148,7 +148,7 @@ class ChaseDA12000(AWGDeviceBase):
         if not self.project.isEnabled('hardware', self.displayName):
             self.enabled = False
         else:
-            dllName = self.project.hardware[self.displayName]['DLL']
+            dllName = self.project.hardware[self.displayName].values()[0]['DLL']
             try:
                 self.lib = WinDLL(dllName)
                 self.enabled = True
