@@ -187,7 +187,7 @@ class ExptConfigUi(Base,Form):
             objName=str(tableWidget.item(row,0).text())
             if newName==oldName:
                 return
-            elif (objName, newName) in getattr(self, guiName):
+            elif getattr(self, guiName).count((objName, newName)) > 1:
                 logging.getLogger(__name__).warning( "{0} already exists".format(self.fullName(objName, newName)) )
                 item.setText(oldName)
                 return

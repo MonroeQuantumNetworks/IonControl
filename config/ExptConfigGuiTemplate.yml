@@ -40,6 +40,7 @@ hardware:
     description: Arbitrary Waveform Generator DA12000 from Chase Scientific Company
     fields:
       DLL: path
+      cardNumber: int
   Dummy AWG:
     description: AWG interface that doesn't do anything (i.e. without any corresponding hardware)
   Conex Motion:
