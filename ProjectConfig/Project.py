@@ -16,6 +16,7 @@ from persist.DatabaseConnectionSettings import DatabaseConnectionSettings
 from ProjectConfigUi import ProjectConfigUi
 from ExptConfigUi import ExptConfigUi
 from sqlalchemy import create_engine
+from copy import deepcopy
 
 uiPath = os.path.join(os.path.dirname(__file__), '..', 'ui/ProjectInfo.ui')
 Form, Base = PyQt4.uic.loadUiType(uiPath)
@@ -87,7 +88,7 @@ class Project(object):
                     yamldata['showGui']
                     yamldata['hardware']
                     yamldata['software']
-                    self.exptConfig = yamldata.copy()
+                    self.exptConfig = deepcopy(yamldata)
                     for guiName in ['hardware','software']:
                         for objName in yamldata[guiName]:
                             for name in yamldata[guiName][objName]:
@@ -114,7 +115,6 @@ class Project(object):
             ui = ExptConfigUi(self)
             ui.show()
             ui.exec_()
-            self.exptConfig = ui.exptConfig
             yamldata=self.changeBlankNamesToNone()
             with open(self.exptConfigFilename, 'w') as f: #save information from GUI to file
                 yaml.dump(yamldata, f, default_flow_style=False)
@@ -169,8 +169,8 @@ class Project(object):
         if version < 2.0:
             logger = logging.getLogger(__name__)
             logger.info("Updating experiment config file {0} from v1.0 to v2.0".format(self.exptConfigFilename))
-            hardwareCopy = self.exptConfig['hardware'].copy()
-            softwareCopy = self.exptConfig['software'].copy()
+            hardwareCopy = deepcopy(self.exptConfig['hardware'])
+            softwareCopy = deepcopy(self.exptConfig['software'])
             self.exptConfig['hardware'].clear()
             self.exptConfig['software'].clear()
 
@@ -203,7 +203,7 @@ class Project(object):
                 logger.info('experiment config file {0} updated to v2.0'.format(self.exptConfigFilename))
 
     def changeBlankNamesToNone(self):
-        yamldata=self.exptConfig.copy()
+        yamldata=deepcopy(self.exptConfig)
         for guiName in ['hardware','software']:
             for objName in self.exptConfig[guiName]:
                 for name in self.exptConfig[guiName][objName]:
