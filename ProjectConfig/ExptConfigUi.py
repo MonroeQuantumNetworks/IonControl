@@ -193,6 +193,11 @@ class ExptConfigUi(Base,Form):
                 return
             subDict=self.widgetDict.pop((guiName,objName,oldName))
             self.widgetDict[(guiName,objName,newName)]=subDict
+            if objName=='Opal Kelly FPGA':
+                for fieldname, subwidget in subDict['subwidgetList']:
+                    if fieldname=='device':
+                        subwidget.widget.name=newName
+                        break
             oldFullName = self.project.fullName(objName, oldName)
             newFullName = self.project.fullName(objName, newName)
             self.currentObj[guiName]=(objName,newName)

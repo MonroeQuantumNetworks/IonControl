@@ -814,13 +814,13 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
                 FPGA.openBySerial(device.serial)
                 bitFile=FPGAConfig.get('bitFile')
                 checkFileValid(bitFile, 'bitfile', FPGAName)
-                if name==pulserName:
+                if FPGAName==pulserName:
                     configFile = os.path.splitext(bitFile)[0] + '.xml'
                     checkFileValid(configFile, 'config file', FPGAName)
                 if FPGAConfig.get('uploadOnStartup'):
                     FPGA.uploadBitfile(bitFile)
                     logger.info("Uploaded file '{0}' to {1} (model {2}) in Opal Kelly FPGA: '{3}' config".format(bitFile, deviceName, device.modelName, FPGAName))
-                if name==pulserName:   # check and make sure corrct hardware is loaded
+                if FPGAName==pulserName:   # check and make sure correct hardware is loaded
                     FPGA.pulserConfiguration(configFile)
                 if FPGA==self.pulser:
                     self.settings.deviceSerial = device.serial
