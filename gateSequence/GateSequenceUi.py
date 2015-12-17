@@ -16,7 +16,7 @@ from GateDefinition import GateDefinition
 from GateSequenceCompiler import GateSequenceCompiler
 from GateSequenceContainer import GateSequenceContainer
 from modules.enum import enum
-from modules.PyqtUtility import updateComboBoxItems
+from modules.PyqtUtility import updateComboBoxItems, BlockSignals
 from modules.HashableDict import HashableDict
 import xml.etree.ElementTree as ElementTree
 from modules.XmlUtilit import xmlEncodeAttributes, xmlParseAttributes,\
@@ -167,6 +167,11 @@ class GateSequenceUi(Form,Base):
             self.updateDatastructures()
         except IOError as err:
             logger.warning( "{0} during loading of GateSequence Files, ignored.".format(err) )
+        with BlockSignals(self.FullListRadioButton) as w:
+            if self.settings.active == self.Mode.FullList:
+                self.FullListRadioButton.setChecked(True)
+            elif self.settings.active == self.Mode.Gate:
+                self.GateRadioButton.setChecked(True)
 
     def updateDatastructures(self):
         if self.settings.enabled:
