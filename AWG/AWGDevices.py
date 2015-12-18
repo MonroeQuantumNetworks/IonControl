@@ -3,79 +3,136 @@ Created on Jul 2, 2015
 
 @author: Geoffrey Ji
 
-AWG Devices are defined here. If a new AWG needs to be added, 
-it must inherit AWGDevice and implement open, program, and close.
+AWG Devices are defined here. If a new AWG needs to be added,
+it must inherit AWGDeviceBase and implement:
+
+- __init__
+   to initialize whatever libraries it needs
+
+- open, program, trigger, and close
+   to interface with the AWG
+
+- deviceProperties
+   To specify fixed properties of the AWG device. Required keys:
+
+   - sampleRate (magnitude)
+      rate at which the samples programmed are output by the AWG (e.g. mg(1, 'GHz'))
+
+    - minSamples (int)
+       minimum number of samples to program
+
+    - maxSamples (int)
+       maximum number of samples to program
+
+    - sampleChunkSize (int)
+       number of samples must be a multiple of sampleChunkSize
+
+    - padValue (int)
+       the waveform will be padded with this number to make it a multiple of sampleChunkSize, or to make it the length of minSamples
+
+    - minAmplitude (int)
+       minimum amplitude value (raw)
+
+    - maxAmplitude (int)
+       maximum amplitude value (raw)
+
+    - numChannels (int)
+       Number of channels
+
+    - calibration (function)
+        function that returns raw amplitude number, given voltage
+
+    - calibrationInv (function)
+        function that returns voltage, given raw amplitude number
+
+- paramDef
+   To define dynamic properties and actions of the AWG, which are shown in the GUI and can be modified in the program.
 '''
 
-from ctypes import *
+import inspect
 import logging
+import sys
+import numpy
+from ctypes import *
 
-from modules.magnitude import Magnitude
+from PyQt4 import QtCore
+from pyqtgraph.parametertree.Parameter import Parameter
 
-from externalParameter.ExternalParameterBase import ExternalParameterBase
-import modules.magnitude as magnitude
-from modules.Observable import Observable
-
-
+from ProjectConfig.Project import getProject
+from modules.magnitude import mg, new_mag
 
 
-class AWGDevice(ExternalParameterBase):
-    """
-    The AWG does not fit into the external parameter framework,
-    but given a waveform, the variables can act as external
-    parameters. This class wraps a waveform into an external
-    parameter-based device.
-    """
-    className = "Generic AWG"
-    _outputChannels = {}
-    _waveform = None
-    enabled = False
-    
-    # parent should be the AWGUi, which we read whether or not to modify the internal scan as well
-    def __init__(self, name, config, globalDict, waveform, parent=None):
-        ExternalParameterBase.__init__(self, name, config, globalDict)
+class AWGDeviceBase(object):
+    """base class for AWG Devices"""
+    def __init__(self, settings, globalDict):
         self.open()
-        self.setWaveform(waveform)
-        self.parent = parent
-        
-    def setWaveform(self, waveform):
-        self._waveform = waveform
-        self.setDefaults()
-        self.displayValueObservable = dict([(name,Observable()) for name in self._outputChannels])
-        vardict = {k: "" if (not isinstance(v['value'], Magnitude)) or v['value'].dimensionless() else \
-                      str(v['value']).split(" ")[1] for (k, v) in self._waveform.vars.iteritems()}
-        self._outputChannels = vardict
+        self.settings = settings
+        self.globalDict = globalDict
+        for channel in range(self.deviceProperties['numChannels']):
+            if channel >= len(self.settings.channelSettingsList): #create new channels if it's necessary
+                self.settings.channelSettingsList.append({'equation' : 'A*sin(w*t+phi) + offset',
+                                                          'segmentList':[],
+                                                          'plotEnabled' : True,
+                                                          'plotStyle':self.settings.plotStyles.lines})
+        self.project = getProject()
+        sample = 1/self.deviceProperties['sampleRate']
+        new_mag('sample', sample)
+        new_mag('samples', sample)
 
-    def fullName(self, channel):
-        return "{0}".format(channel)
-    
-    def scanParam(self):
-        return (self.parent.parameters.setScanParam, str(self.parent.parameters.scanParam))
+    def paramDef(self):
+        """return the parameter definition used by pyqtgraph parametertree to show the gui"""
+        self.settings.deviceSettings.setdefault('programOnScanStart', False)
+        self.settings.deviceSettings.setdefault('useCalibration', False)
+        return [
+            {'name': 'Use calibration', 'type': 'bool', 'value': self.settings.deviceSettings['useCalibration'], 'key':'useCalibration'},
+            {'name': 'Program on scan start', 'type': 'bool', 'value': self.settings.deviceSettings['programOnScanStart'], 'tip': "", 'key': 'programOnScanStart'},
+            {'name': 'Program now', 'type': 'action', 'key':'program'},
+            {'name': 'Trigger now', 'type': 'action', 'key':'trigger'}
+        ]
 
-    def setDefaults(self):
-        self.initializeChannelsToExternals()
+    def parameter(self):
+        # re-create the parameters each time to prevent a exception that says the signal is not connected
+        self._parameter = Parameter.create(name='Programming Options', type='group', children=self.paramDef())
+        self._parameter.sigTreeStateChanged.connect(self.update, QtCore.Qt.UniqueConnection)
+        return self._parameter
 
-    def setValue(self, channel, v, continuous):
-        self._waveform.vars[channel]['value'] = v
-        self.program(continuous)
-        return v
+    def update(self, param, changes):
+        """update the parameter, called by the signal of pyqtgraph parametertree"""
+        for param, change, data in changes:
+            if change=='value':
+                self.settings.deviceSettings[param.opts['key']] = data
+                self.settings.saveIfNecessary()
+                if param.opts['key']=='useCalibration':
+                    self.settings.replot()
+            elif change=='activated':
+                getattr( self, param.opts['key'] )()
 
-    def isEnabled(self):
-        return self.parent.parameters.enabled
-    
-    def open(self):
-        raise NotImplementedError("Method must be implemented by specific AWG device class!")
-    
-    def program(self, continuous):
-        raise NotImplementedError("Method must be implemented by specific AWG device class!")
-        
-    def close(self):
-        raise NotImplementedError("Method must be implemented by specific AWG device class!")
- 
-class ChaseDA12000(AWGDevice):
-    className = "Chase DA12000 AWG"
-    _dllName = "DA12000_DLL64.dll"
- 
+    #functions and attributes that must be defined by inheritors
+    def open(self): raise NotImplementedError("'open' method must be implemented by specific AWG device class")
+    def program(self): raise NotImplementedError("'program' method must be implemented by specific AWG device class")
+    def trigger(self): raise NotImplementedError("'trigger' method must be implemented by specific AWG device class")
+    def close(self): raise NotImplementedError("'close' method must be implemented by specific AWG device class")
+    @property
+    def deviceProperties(self): raise NotImplementedError("'deviceProperties' must be set by specific AWG device class")
+    @property
+    def displayName(self): raise NotImplementedError("'displayName' must be set by specific AWG device class")
+
+class ChaseDA12000(AWGDeviceBase):
+    """Class for programming a ChaseDA12000 AWG"""
+    displayName = "Chase DA12000 AWG"
+    deviceProperties = dict(
+        sampleRate = mg(1, 'GHz'), #rate at which the samples programmed are output by the AWG
+        minSamples = 128, #minimum number of samples to program
+        maxSamples = 4000000, #maximum number of samples to program
+        sampleChunkSize = 64, #number of samples must be a multiple of sampleCnunkSize
+        padValue = 2047, #the waveform will be padded with this number to make it a multiple of sampleChunkSize, or to make it the length of minSamples
+        minAmplitude = 0, #minimum amplitude value (raw)
+        maxAmplitude = 4095, #maximum amplitude value (raw)
+        numChannels = 1, #Number of channels
+        calibration = lambda voltage: 2047. + 3413.33*voltage, #function that returns raw amplitude number, given voltage
+        calibrationInv = lambda raw: -0.599707 + 0.000292969*raw #function that returns voltage, given raw amplitude number
+    )
+
     class SEGMENT(Structure):
         _fields_ = [("SegmentNum", c_ulong),
                     ("SegmentPtr", POINTER(c_ulong)),
@@ -85,49 +142,96 @@ class ChaseDA12000(AWGDevice):
                     ("EndingPadVal", c_ulong), # Not used
                     ("TrigEn", c_ulong),
                     ("NextSegNum", c_ulong)]
-    
-    try:
-        da = WinDLL (_dllName)
-        enabled = True
-    except Exception:
-        logging.getLogger(__name__).info("{0} unavailable. Unable to open {1}.".format(className, _dllName))
-        enabled = False
+
+    def __init__(self, settings, globalDict):
+        super(ChaseDA12000, self).__init__(settings, globalDict)
+        if not self.project.isEnabled('hardware', self.displayName):
+            self.enabled = False
+        else:
+            dllName = self.project.hardware[self.displayName].values()[0]['DLL']
+            try:
+                self.lib = WinDLL(dllName)
+                self.enabled = True
+            except Exception:
+                logging.getLogger(__name__).info("{0} unavailable. Unable to open {1}.".format(self.displayName, dllName))
+                self.enabled = False
+
+    def paramDef(self):
+        """return the parameter definition used by pyqtgraph parametertree to show the gui"""
+        self.settings.deviceSettings.setdefault('continuous', False)
+        paramList = [
+            {'name': 'Run continuously', 'type': 'bool', 'value': self.settings.deviceSettings['continuous'], 'tip': "Restart sequence at sequence end, continuously (no trigger)", 'key': 'continuous'}
+        ]
+        paramList.extend( super(ChaseDA12000, self).paramDef() )
+        return paramList
 
     def open(self):
         logger = logging.getLogger(__name__)
         try:
-            ChaseDA12000.da.da12000_Open(1)
+            self.lib.da12000_Open(1)
             self.enabled = True
         except Exception:
-            logger.info("Unable to open {0}.".format(self.className))
+            logger.info("Unable to open {0}.".format(self.displayName))
             self.enabled = False
     
-    def program(self, continuous):
+    def program(self):
         logger = logging.getLogger(__name__)
         if self.enabled:
-            pts = self._waveform.evaluate()
+            pts = self.settings.channelSettingsList[0]['waveform'].evaluate()
+            if self.settings.deviceSettings.get('useCalibration'):
+                calibration = self.settings.deviceProperties['calibration']
+                calibration = numpy.vectorize(calibration, otypes=[numpy.int])
+                pts = calibration(pts)
+            pts.tolist()
             logger.info("writing " + str(len(pts)) + " points to AWG")
             seg_pts = (c_ulong * len(pts))(*pts)
-            seg0 = ChaseDA12000.SEGMENT(0, seg_pts, len(pts), 0, 2048, 2048, 1, 0)
-            seg = (ChaseDA12000.SEGMENT*1)(seg0)
+            seg0 = self.SEGMENT(0, seg_pts, len(pts), 0, 2048, 2048, 1, 0)
+            seg = (self.SEGMENT*1)(seg0)
 
-            ChaseDA12000.da.da12000_CreateSegments(1, 1, 1, seg)
-            ChaseDA12000.da.da12000_SetTriggerMode(1, 1 if continuous else 2, 0)
+            self.lib.da12000_CreateSegments(1, 1, 1, seg)
+            self.lib.da12000_SetTriggerMode(1, 1 if self.settings.deviceSettings['continuous'] else 2, 0)
         else:
-            logger.warning("{0} unavailable. Unable to program.".format(self.className)) 
+            logger.warning("{0} unavailable. Unable to program.".format(self.displayName))
+
+    def trigger(self):
+        if self.enabled:
+            self.lib.da12000_SetSoftTrigger(1)
 
     def close(self):
         if self.enabled:
-            ChaseDA12000.da.da12000_Close(1)
-        
-class DummyAWG(AWGDevice):
-    className = "Dummy AWG"
+            self.lib.da12000_Close(1)
+
+
+class DummyAWG(AWGDeviceBase):
+    displayName = "Dummy AWG"
+    deviceProperties = dict(
+        sampleRate = mg(1, 'GHz'), #rate at which the samples programmed are output by the AWG
+        minSamples = 1, #minimum number of samples to program
+        maxSamples = 4000000, #maximum number of samples to program
+        sampleChunkSize = 1, #number of samples must be a multiple of sampleCnunkSize
+        padValue = 2047, #the waveform will be padded with this number ot make it a multiple of sampleChunkSize, or to make it the length of minSamples
+        minAmplitude = 0, #minimum amplitude value (raw)
+        maxAmplitude = 4095, #maximum amplitude value (raw)
+        numChannels = 2,  #Number of channels
+        calibration = lambda voltage: 2047. + 3413.33*voltage, #function that returns raw amplitude number, given voltage
+        calibrationInv = lambda raw: -0.599707 + 0.000292969*raw #function that returns voltage, given raw amplitude number
+    )
     
     def open(self): pass
     def close(self): pass
-    def program(self, continuous): pass
-        
-        
-AWGDeviceList = [ChaseDA12000,
-                 DummyAWG
-                 ]
+    def program(self): pass
+    def trigger(self): pass
+
+def isAWGDevice(obj):
+    """Determine if obj is an AWG device.
+    returns True if obj inherits from AWGDeviceBase, but is not itself AWGDeviceBase"""
+    try:
+        inheritance = inspect.getmro(obj)
+        return True if AWGDeviceBase in inheritance and AWGDeviceBase!=inheritance[0] else False
+    except:
+        return False
+
+#Extract the AWG device classes
+current_module = sys.modules[__name__]
+AWGDeviceClasses = inspect.getmembers(current_module, isAWGDevice)
+AWGDeviceDict = {cls.displayName:clsName for clsName, cls in AWGDeviceClasses}

@@ -33,6 +33,7 @@ from modules.GuiAppearance import restoreGuiState, saveGuiState #@UnresolvedImpo
 import copy
 from modules.PyqtUtility import updateComboBoxItems
 from persist.LoadingEvent import LoadingEvent, LoadingHistory
+from modules.firstNotNone import firstNotNone
 
 import os
 uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\AutoLoad.ui')
@@ -443,6 +444,7 @@ class AutoLoad(UiForm,UiBase):
 
     def setProfile(self, name, profile):
         self.settings = profile
+        self.settings.globalDict = self.globalVariablesUi.globalDict
         self.currentSettingsName = name
         self.parameterWidget.setParameters( self.parameter() )
         self.useInterlockGui.setChecked(self.settings.useInterlock)
@@ -756,7 +758,7 @@ class AutoLoad(UiForm,UiBase):
         if self.settings.shutterChannel2 >= 0:
             self.pulser.setShutterBit( abs(self.settings.shutterChannel2), invertIf(False,self.settings.shutterChannelActiveLow2) )
         self.numFailedAutoload = 0
-        self.trappingTime = self.loadingHistory.lastEvent().trappingTime
+        self.trappingTime = firstNotNone(self.loadingHistory.lastEvent().trappingTime, now())
         self.timerNullTime = self.trappingTime
         self.ionReappeared.emit()        
     

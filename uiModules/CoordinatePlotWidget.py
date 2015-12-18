@@ -27,7 +27,8 @@ from datetime import datetime
 from pyqtgraph.graphicsItems.AxisItem import AxisItem
 
 grid_opacity = 0.3
-icons_dir = '.\\ui\\icons\\'
+import os
+icons_dir = os.path.join(os.path.dirname(__file__), '..', r'ui\\icons\\')
 range_icon_file = icons_dir + 'unity-range'
 holdZero_icon_file = icons_dir + 'hold-zero'
 

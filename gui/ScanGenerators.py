@@ -3,7 +3,6 @@ Created on Nov 6, 2014
 
 @author: pmaunz
 '''
-from copy import deepcopy
 import logging
 import random
 
@@ -12,7 +11,6 @@ import numpy
 from modules import DataDirectory
 from modules import enum
 from modules.Expression import Expression
-from scan.ScanControl import Scan
 
 
 OpStates = enum.enum('idle','running','paused','starting','stopping', 'interrupted')
@@ -22,17 +20,11 @@ MaxWordsInFifo = 2040
 
 class ParameterScanGenerator:
     expression = Expression()
-    def __init__(self, scan, scanParam = None):
+    def __init__(self, scan):
         self.scan = scan
         self.nextIndexToWrite = 0
         self.numUpdatedVariables = 1
-        if scanParam != None:
-            self.scan = Scan()
-            for attr in dir(scan):
-                setattr(self.scan, attr, getattr(scan, attr))
-            self.scan.scanTarget = 'Internal' # spoof internal scan for the scan parameter
-            self.scan.scanParameter = scanParam
-        
+
     def prepare(self, pulseProgramUi, maxUpdatesToWrite=None):
         self.maxUpdatesToWrite = maxUpdatesToWrite
         if self.scan.gateSequenceUi.settings.enabled:

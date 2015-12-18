@@ -4,7 +4,7 @@ Created on Jul 24, 2014
 @author: wolverine
 '''
 
-from Conex.ConexInstrument import ConexInstrument
+from Conex.ConexInstrument import ConexInstrument, ConexInstrumentException
 from ExternalParameterBase import ExternalParameterBase
 from modules import magnitude
 import math
@@ -32,9 +32,15 @@ class ConexLinear(ExternalParameterBase):
         self.lastValue = None
 
     def _setValue(self, channel, v):
-        if v>self.outputChannels[channel].settings.limit:
-            v = self.outputChannels[channel].settings.limit
-        self.instrument.position = v.toval('mm')
+        try:
+            if v>self.outputChannels[channel].settings.limit:
+                v = self.outputChannels[channel].settings.limit
+            self.instrument.position = v.toval('mm')
+        except ConexInstrumentException as e:
+            if str(e).find("Try a home search."):
+                self.instrument.homeSearch()
+            else:
+                raise e
         return v
         
     def getValue(self, channel):

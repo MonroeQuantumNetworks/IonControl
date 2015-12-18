@@ -16,6 +16,7 @@ from persist.DatabaseConnectionSettings import DatabaseConnectionSettings
 from ProjectConfigUi import ProjectConfigUi
 from ExptConfigUi import ExptConfigUi
 from sqlalchemy import create_engine
+from copy import deepcopy
 
 uiPath = os.path.join(os.path.dirname(__file__), '..', 'ui/ProjectInfo.ui')
 Form, Base = PyQt4.uic.loadUiType(uiPath)
@@ -82,11 +83,17 @@ class Project(object):
             with open(self.exptConfigFilename, 'r') as f:
                 try:
                     yamldata = yaml.load(f)
+                    #check that it has the necessary keys
                     yamldata['databaseConnection']
                     yamldata['showGui']
                     yamldata['hardware']
                     yamldata['software']
-                    self.exptConfig = yamldata
+                    self.exptConfig = deepcopy(yamldata)
+                    for guiName in ['hardware','software']:
+                        for objName in yamldata[guiName]:
+                            for name in yamldata[guiName][objName]:
+                                if name==None: #Switch 'None' names to empty string
+                                    self.exptConfig[guiName][objName]['']=self.exptConfig[guiName][objName].pop(name)
                     logger.info('Experiment config file {0} loaded'.format(self.exptConfigFilename))
                 except yaml.scanner.ScannerError: #leave defaults if the file is improperly formatted
                     logger.warning('YAML formatting error: unable to read in experiment config file {0}'.format(self.exptConfigFilename))
@@ -95,19 +102,22 @@ class Project(object):
                 except KeyError as e:
                     logger.warning('YAML data is missing required element {0} in experiment config file {1}'.format(e, self.exptConfigFilename))
 
+        #if the GUI is not shown, check the database connection. If it fails, show the GUI
         if self.exptConfig.get('databaseConnection') and not self.exptConfig.get('showGui'):
             self.dbConnection = DatabaseConnectionSettings(**self.exptConfig['databaseConnection'])
             success = self.attemptDatabaseConnection(self.dbConnection)
             if not success:
                 self.exptConfig['showGui']=True
 
+        self.updateExptConfigVersion()
+
         if self.exptConfig['showGui']:
             ui = ExptConfigUi(self)
             ui.show()
             ui.exec_()
-            self.exptConfig = ui.exptConfig
+            yamldata=self.changeBlankNamesToNone()
             with open(self.exptConfigFilename, 'w') as f: #save information from GUI to file
-                yaml.dump(self.exptConfig, f, default_flow_style=False)
+                yaml.dump(yamldata, f, default_flow_style=False)
                 logger.info('GUI data saved to {0}'.format(self.exptConfigFilename))
 
         self.dbConnection = DatabaseConnectionSettings(**self.exptConfig['databaseConnection'])
@@ -147,16 +157,80 @@ class Project(object):
             engine.dispose()
             success = True
             logger.info("Database connection successful")
-        except Exception:
+        except Exception as e:
             success = False
+            logger.warning("{0}: {1}".format(e.__class__.__name__, e))
             logger.info("Database connection failed - please check settings")
         return success
 
-    def isEnabled(self, guiName, name):
-        """returns True if 'name' is present in the config file and is enabled"""
-        item = self.exptConfig[guiName].get(name)
-        enabled = item.get('enabled') if item else False
-        return enabled
+    def updateExptConfigVersion(self):
+        """update config file to latest version"""
+        version = self.exptConfig.get('version', 1.0)
+        if version < 2.0:
+            logger = logging.getLogger(__name__)
+            logger.info("Updating experiment config file {0} from v1.0 to v2.0".format(self.exptConfigFilename))
+            hardwareCopy = deepcopy(self.exptConfig['hardware'])
+            softwareCopy = deepcopy(self.exptConfig['software'])
+            self.exptConfig['hardware'].clear()
+            self.exptConfig['software'].clear()
+
+            for key, val in hardwareCopy.iteritems():
+                if key=='Opal Kelly FPGA: Pulser': #For Opal Kelly FPGAs, now one device with different names
+                    self.exptConfig['hardware'].setdefault('Opal Kelly FPGA', dict())
+                    self.exptConfig['hardware']['Opal Kelly FPGA']['Pulser'] = val
+                elif key=='Opal Kelly FPGA: DAC':
+                    self.exptConfig['hardware'].setdefault('Opal Kelly FPGA', dict())
+                    self.exptConfig['hardware']['Opal Kelly FPGA']['DAC'] = val
+                elif key=='Opal Kelly FPGA: 32 Channel PMT':
+                    self.exptConfig['hardware'].setdefault('Opal Kelly FPGA', dict())
+                    self.exptConfig['hardware']['Opal Kelly FPGA']['32 Channel PMT'] = val
+                elif key=='NI DAC Chassis': #For NI DAC Chassis, name is now dict key rather than field
+                    name = val.pop('name')
+                    self.exptConfig['hardware'][key] = dict()
+                    self.exptConfig['hardware'][key][''] = val
+                else: #For all other items, the default name key is set to an empty string
+                    self.exptConfig['hardware'][key] = dict()
+                    self.exptConfig['hardware'][key][''] = val
+
+            for key, val in softwareCopy.iteritems():
+                self.exptConfig['software'][key] = dict()
+                self.exptConfig['software'][key][''] = val
+
+            self.exptConfig['version'] = 2.0 #A version number is now stored in the config file, to make things more future-proof
+            yamldata=self.changeBlankNamesToNone()
+            with open(self.exptConfigFilename, 'w') as f: #save updates to file
+                yaml.dump(yamldata, f, default_flow_style=False)
+                logger.info('experiment config file {0} updated to v2.0'.format(self.exptConfigFilename))
+
+    def changeBlankNamesToNone(self):
+        yamldata=deepcopy(self.exptConfig)
+        for guiName in ['hardware','software']:
+            for objName in self.exptConfig[guiName]:
+                for name in self.exptConfig[guiName][objName]:
+                    if name=='': #yaml doesn't work nicely with empty string keys for dicts, so we switch them to 'None' for saving only
+                        yamldata[guiName][objName][None]=yamldata[guiName][objName].pop(name)
+        return yamldata
+
+    def isEnabled(self, guiName, objName):
+        """Determine what objects named 'objName' are enabled (if any)
+        Args:
+            guiName (str): 'hardware' or 'software'
+            objName (str): the name of the object in question
+        Returns:
+         dict of enabled objects 'objName'"""
+        objDict=self.exptConfig[guiName].get(objName,dict())
+        enabledObjects = {name:nameDict for name,nameDict in objDict.iteritems() if nameDict.get('enabled')}
+        return enabledObjects
+
+    def fullName(self, objName, name):
+        """return the full name to display associated with objName and name"""
+        separator=': '
+        return separator.join([objName, name]) if name else objName
+
+    def fromFullName(self, fullName):
+        """return the objName,name associated with the given fullName"""
+        separator=': '
+        return fullName.split(separator) if separator in fullName else (fullName, '')
 
 class ProjectInfoUi(Base,Form):
     """Class for seeing project settings in the main GUI, and setting config GUIs to show on next program start"""
@@ -201,3 +275,4 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
     app = QtGui.QApplication(sys.argv)
     project = Project()
+    pass
