@@ -96,8 +96,8 @@ class AWGWaveform(object):
         else:
             self.dependencies = set()
             for segment in self.segmentList:
-                self.dependencies.add(segment['amplitude'])
-                self.dependencies.add(segment['duration'])
+                self.dependencies.add(segment.amplitude)
+                self.dependencies.add(segment.duration)
 
     def evaluate(self):
         """evaluate the waveform based on either the equation or the segment list"""
@@ -112,9 +112,9 @@ class AWGWaveform(object):
         """
         sampleList = numpy.array([])
         for segment in self.segmentList:
-            if segment['enabled']:
-                amplitude = self.settings.varDict[segment['amplitude']]['value'].to_base_units().val
-                numSamples = self.settings.varDict[segment['duration']]['value']*self.sampleRate
+            if segment.enabled:
+                amplitude = self.settings.varDict[segment.amplitude]['value'].to_base_units().val
+                numSamples = self.settings.varDict[segment.duration]['value']*self.sampleRate
                 numSamples = int( numSamples.toval() ) #convert to float, then to integer
                 sampleList = numpy.append(sampleList, [amplitude]*numSamples)
         return self.compliantSampleList(sampleList)

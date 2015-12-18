@@ -12,6 +12,12 @@ from modules.MagnitudeParser import isIdentifier
 import sip
 api2 = sip.getapi("QVariant")==2
 
+class AWGSegment(object):
+    def __init__(self):
+        self.enabled = True
+        self.amplitude = 'V0'
+        self.duration = 'T0'
+
 class AWGSegmentModel(QtCore.QAbstractTableModel):
     """Table model for displaying AWG segments when the AWGUi is in segment mode"""
     segmentChanged = QtCore.pyqtSignal(int, int, int, object) #channel, row, column, value
@@ -22,11 +28,11 @@ class AWGSegmentModel(QtCore.QAbstractTableModel):
         self.globalDict = globalDict
         self.column = enum('enabled', 'amplitude', 'duration')
         self.dataLookup = {
-            (QtCore.Qt.CheckStateRole,self.column.enabled): lambda row: QtCore.Qt.Checked if self.segmentList[row]['enabled'] else QtCore.Qt.Unchecked,
-            (QtCore.Qt.DisplayRole, self.column.amplitude): lambda row: self.segmentList[row]['amplitude'],
-            (QtCore.Qt.DisplayRole, self.column.duration): lambda row: self.segmentList[row]['duration'],
-            (QtCore.Qt.EditRole, self.column.amplitude): lambda row: self.segmentList[row]['amplitude'],
-            (QtCore.Qt.EditRole, self.column.duration): lambda row: self.segmentList[row]['duration']
+            (QtCore.Qt.CheckStateRole,self.column.enabled): lambda row: QtCore.Qt.Checked if self.segmentList[row].enabled else QtCore.Qt.Unchecked,
+            (QtCore.Qt.DisplayRole, self.column.amplitude): lambda row: self.segmentList[row].amplitude,
+            (QtCore.Qt.DisplayRole, self.column.duration): lambda row: self.segmentList[row].duration,
+            (QtCore.Qt.EditRole, self.column.amplitude): lambda row: self.segmentList[row].amplitude,
+            (QtCore.Qt.EditRole, self.column.duration): lambda row: self.segmentList[row].duration
             }
         self.setDataLookup = {
             (QtCore.Qt.CheckStateRole, self.column.enabled): lambda index, value: self.setEnabled(index, value),
@@ -50,7 +56,7 @@ class AWGSegmentModel(QtCore.QAbstractTableModel):
         row = index.row()
         column = index.column()
         enabled = value==QtCore.Qt.Checked
-        self.segmentList[row]['enabled'] = enabled
+        self.segmentList[row].enabled = enabled
         self.dataChanged.emit(index, index)
         self.segmentChanged.emit(self.channel, row, column, enabled)
         self.settings.saveIfNecessary()
@@ -67,7 +73,7 @@ class AWGSegmentModel(QtCore.QAbstractTableModel):
             logger.warning("'{0}' is not a valid variable name".format(strvalue))
             return False
         else:
-            self.segmentList[row][key] = strvalue
+            setattr(self.segmentList[row], key, strvalue)
             self.dataChanged.emit(index, index)
             self.segmentChanged.emit(self.channel, row, column, strvalue)
             self.settings.saveIfNecessary()
@@ -99,11 +105,9 @@ class AWGSegmentModel(QtCore.QAbstractTableModel):
 
     def addSegment(self):
         row = len(self.segmentList)
+        newSegment = AWGSegment()
         self.beginInsertRows(QtCore.QModelIndex(), row, row)
-        self.segmentList.append({
-            'enabled':True,
-            'amplitude':'v{0}'.format(row),
-            'duration':'t{0}'.format(row)})
+        self.segmentList.append(newSegment)
         self.settings.saveIfNecessary()
         self.endInsertRows()
 
