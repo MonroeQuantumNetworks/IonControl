@@ -444,6 +444,7 @@ class AutoLoad(UiForm,UiBase):
 
     def setProfile(self, name, profile):
         self.settings = profile
+        self.settings.globalDict = self.globalVariablesUi.globalDict
         self.currentSettingsName = name
         self.parameterWidget.setParameters( self.parameter() )
         self.useInterlockGui.setChecked(self.settings.useInterlock)
