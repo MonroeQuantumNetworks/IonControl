@@ -55,11 +55,13 @@ class ShutterHardwareTableModel(QtCore.QAbstractTableModel):
             else:
                 if value.strip() != '':
                     self.data[index.row()] = value
-                    self.dataChangedSignal.dataChanged.emit( index.row(), index.row() )
+                    if self.dataChangedSignal is not None:
+                        self.dataChangedSignal.dataChanged.emit( index.row(), index.row() )
                 else:
                     if index.row() in self.data.customDict:
                         self.data.pop(index.row())
-                        self.dataChangedSignal.dataChanged.emit( index.row(), index.row() )
+                        if self.dataChangedSignal is not None:
+                            self.dataChangedSignal.dataChanged.emit( index.row(), index.row() )
         return False
         
     def data(self, index, role): 

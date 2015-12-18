@@ -84,14 +84,17 @@ class PulserParameterModel(CategoryTreeModel):
         
 
 class PulserParameterUi(CategoryTreeView):
-    def __init__(self, pulser, config, globalDict=None, parent=None):
+    def __init__(self, pulser, config, configName='PulserParameterUi', globalDict=None, parent=None):
         super(PulserParameterUi, self).__init__(parent)
         self.isSetup = False
         self.globalDict = firstNotNone( globalDict, dict() )
         self.config = config
-        self.configName = 'PulserParameterUi'
+        self.configName = configName
         self.pulser = pulser
-        self.pulserParamConfigName = "PulserParameterValues-{0:x}".format(self.pulser.hardwareConfigurationId())
+        if configName=='PulserParameterUi':
+            self.pulserParamConfigName = "PulserParameterValues-{0:x}".format(self.pulser.hardwareConfigurationId())
+        else:
+            self.pulserParamConfigName = "PulserParameterValues-{0}-{0:x}".format(configName, self.pulser.hardwareConfigurationId())
         oldValues = self.config.get('PulserParameterValues', dict()) if self.pulserParamConfigName not in self.config else self.config[self.pulserParamConfigName]
         self.parameterList = list()
         pulserconfig = self.pulser.pulserConfiguration()

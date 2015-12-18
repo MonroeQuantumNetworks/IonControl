@@ -18,13 +18,13 @@ ShutterForm, ShutterBase = PyQt4.uic.loadUiType(uipath)
 class ShutterUi(ShutterForm, ShutterBase):
     onColor =  QtGui.QColor(QtCore.Qt.green)
     offColor =  QtGui.QColor(QtCore.Qt.red)
-    def __init__(self,pulserHardware,outputname,config, dataContainer, size=32, parent=None):
+    def __init__(self, pulserHardware, configName, outputname, config, dataContainer, size=32, parent=None):
         ShutterBase.__init__(self,parent)
         ShutterForm.__init__(self)
         self.pulserHardware = pulserHardware
         self.outputname = outputname
         self.config = config
-        self.configname = 'ShutterUi.'+self.outputname
+        self.configname = '{0}.{1}'.format(configName, outputname)
         self.dataContainer = dataContainer
         self.size = size
         self.bitsLookup = sorted(dataContainer[0].defaultDict.keys())

@@ -62,7 +62,7 @@ class InstrumentLoggingDisplayTableModel( QtCore.QAbstractTableModel ):
         for key, channel in inputChannels.iteritems():
             if key not in self.data: 
                 self.data[key] = InputData() 
-                channel.observable.subscribe( self.updateHandler )
+                #channel.observable.subscribe( self.updateHandler )   TODO: fix this
                 self.inputChannels[key] = channel
         self.endResetModel()
         
