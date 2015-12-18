@@ -112,8 +112,8 @@
           </property>
           <property name="iconSize">
            <size>
-            <width>24</width>
-            <height>24</height>
+            <width>16</width>
+            <height>16</height>
            </size>
           </property>
           <property name="autoRaise">
@@ -174,7 +174,7 @@
      <property name="orientation">
       <enum>Qt::Vertical</enum>
      </property>
-     <widget class="QTableView" name="segmentView"/>
+     <widget class="CategoryTreeView" name="segmentView"/>
      <widget class="CoordinatePlotWidget" name="plot"/>
     </widget>
    </item>
@@ -185,6 +185,11 @@
    <class>CoordinatePlotWidget</class>
    <extends>QGraphicsView</extends>
    <header>uiModules.CoordinatePlotWidget</header>
+  </customwidget>
+  <customwidget>
+   <class>CategoryTreeView</class>
+   <extends>QTreeView</extends>
+   <header>uiModules.CategoryTree</header>
   </customwidget>
  </customwidgets>
  <resources>

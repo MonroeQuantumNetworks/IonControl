@@ -89,12 +89,12 @@ class AWGUi(AWGForm, AWGBase):
                 if channel >= len(settings.channelSettingsList): #create new channels if it's necessary
                     settings.channelSettingsList.append({
                         'equation' : 'A*sin(w*t+phi) + offset',
-                        'segmentList':[],
+                        'segmentModelRoot':None,
                         'plotEnabled':True,
                         'plotStyle':Settings.plotStyles.lines})
                 else:
                     settings.channelSettingsList[channel].setdefault('equation', 'A*sin(w*t+phi) + offset')
-                    settings.channelSettingsList[channel].setdefault('segmentList', [])
+                    settings.channelSettingsList[channel].setdefault('segmentModelRoot', None)
                     settings.channelSettingsList[channel].setdefault('plotEnabled', True)
                     settings.channelSettingsList[channel].setdefault('plotStyle', Settings.plotStyles.lines)
         self.settings = Settings() #we always run settings through the constructor
@@ -403,55 +403,57 @@ class AWGUi(AWGForm, AWGBase):
 
     def openFile(self, filename):
         """Open the file 'filename'"""
-        if os.path.exists(filename):
-            self.lastDir, basename = os.path.split(filename)
-            self.recentFiles[basename] = filename
-            self.settings.filename = filename
-            with BlockSignals(self.filenameComboBox) as w:
-                self.filenameModel.setStringList(self.recentFiles.keys())
-                w.setCurrentIndex(w.findText(basename))
-            with open(filename, 'r') as f:
-                yamldata = yaml.load(f)
-            variables = yamldata.get('variables')
-            channelData = yamldata.get('channelData')
-            self.tableModel.beginResetModel()
-            [channelUi.segmentModel.beginResetModel() for channelUi in self.awgChannelUiList]
-            if channelData:
-                for channel, channelSettings in enumerate(self.settings.channelSettingsList):
-                    if channel < len(channelData):
-                        channelSettings['segmentList'] = channelData[channel]
-            if variables:
-                for varname, vardata in variables.iteritems():
-                    self.settings.varDict.setdefault(varname, dict())
-                    self.settings.varDict[varname]['value'] = mg(vardata['value'], vardata['unit'])
-                    self.settings.varDict[varname]['text'] = vardata['text']
-            for channelUi in self.awgChannelUiList:
-                channelUi.waveform.updateDependencies()
-                channelUi.replot()
-            self.onDependenciesChanged()
-            self.tableModel.endResetModel()
-            [channelUi.segmentModel.endResetModel() for channelUi in self.awgChannelUiList]
-        else:
-            logging.getLogger(__name__).warning("file '{0}' does not exist".format(filename))
-            if filename in self.recentFiles:
-                del self.recentFiles[filename]
-                with BlockSignals(self.filenameComboBox) as w:
-                    self.filenameModel.setStringList(self.recentFiles.keys())
-                    w.setCurrentIndex(-1)
+        logger.warning("fix me fix me fix me")
+        # if os.path.exists(filename):
+        #     self.lastDir, basename = os.path.split(filename)
+        #     self.recentFiles[basename] = filename
+        #     self.settings.filename = filename
+        #     with BlockSignals(self.filenameComboBox) as w:
+        #         self.filenameModel.setStringList(self.recentFiles.keys())
+        #         w.setCurrentIndex(w.findText(basename))
+        #     with open(filename, 'r') as f:
+        #         yamldata = yaml.load(f)
+        #     variables = yamldata.get('variables')
+        #     channelData = yamldata.get('channelData')
+        #     self.tableModel.beginResetModel()
+        #     [channelUi.segmentModel.beginResetModel() for channelUi in self.awgChannelUiList]
+        #     if channelData:
+        #         for channel, channelSettings in enumerate(self.settings.channelSettingsList):
+        #             if channel < len(channelData):
+        #                 channelSettings['segmentList'] = channelData[channel]
+        #     if variables:
+        #         for varname, vardata in variables.iteritems():
+        #             self.settings.varDict.setdefault(varname, dict())
+        #             self.settings.varDict[varname]['value'] = mg(vardata['value'], vardata['unit'])
+        #             self.settings.varDict[varname]['text'] = vardata['text']
+        #     for channelUi in self.awgChannelUiList:
+        #         channelUi.waveform.updateDependencies()
+        #         channelUi.replot()
+        #     self.onDependenciesChanged()
+        #     self.tableModel.endResetModel()
+        #     [channelUi.segmentModel.endResetModel() for channelUi in self.awgChannelUiList]
+        # else:
+        #     logging.getLogger(__name__).warning("file '{0}' does not exist".format(filename))
+        #     if filename in self.recentFiles:
+        #         del self.recentFiles[filename]
+        #         with BlockSignals(self.filenameComboBox) as w:
+        #             self.filenameModel.setStringList(self.recentFiles.keys())
+        #             w.setCurrentIndex(-1)
 
     def onSaveFile(self):
         """Save button is clicked. Save data to segment file"""
-        channelData = [channelSettings['segmentList']
-                    for channelSettings in self.settings.channelSettingsList]
-        yamldata = {'channelData': channelData}
-        variables={varname:
-                             {'value':float(varValueTextDict['value'].toStringTuple()[0]),
-                              'unit':varValueTextDict['value'].toStringTuple()[1],
-                              'text':varValueTextDict['text']}
-                         for varname, varValueTextDict in self.settings.varDict.iteritems()}
-        yamldata.update({'variables':variables})
-        with open(self.settings.filename, 'w') as f:
-            yaml.dump(yamldata, f, default_flow_style=False)
+        logger.warning('fix me fix me fix me')
+        # channelData = [channelSettings['segmentList']
+        #             for channelSettings in self.settings.channelSettingsList]
+        # yamldata = {'channelData': channelData}
+        # variables={varname:
+        #                      {'value':float(varValueTextDict['value'].toStringTuple()[0]),
+        #                       'unit':varValueTextDict['value'].toStringTuple()[1],
+        #                       'text':varValueTextDict['text']}
+        #                  for varname, varValueTextDict in self.settings.varDict.iteritems()}
+        # yamldata.update({'variables':variables})
+        # with open(self.settings.filename, 'w') as f:
+        #     yaml.dump(yamldata, f, default_flow_style=False)
 
     def onReloadFile(self):
         self.openFile(self.settings.filename)

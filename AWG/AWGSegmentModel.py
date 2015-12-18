@@ -9,6 +9,7 @@ from modules.Expression import Expression
 from modules.firstNotNone import firstNotNone
 from modules.enum import enum
 from modules.MagnitudeParser import isIdentifier
+from uiModules.CategoryTree import CategoryTreeModel
 import sip
 api2 = sip.getapi("QVariant")==2
 
@@ -18,21 +19,31 @@ class AWGSegment(object):
         self.amplitude = 'V0'
         self.duration = 'T0'
 
-class AWGSegmentModel(QtCore.QAbstractTableModel):
+class AWGSegmentModel(CategoryTreeModel):
     """Table model for displaying AWG segments when the AWGUi is in segment mode"""
-    segmentChanged = QtCore.pyqtSignal(int, int, int, object) #channel, row, column, value
-    def __init__(self, channel, settings, globalDict, parent=None, *args):
-        QtCore.QAbstractTableModel.__init__(self, parent, *args)
+    segmentChanged = QtCore.pyqtSignal()
+    def __init__(self, channel, settings, globalDict, parent=None):
         self.channel = channel
         self.settings = settings
         self.globalDict = globalDict
-        self.column = enum('enabled', 'amplitude', 'duration')
+        CategoryTreeModel.__init__(self, [], parent)
+        if hasattr(self.settings.channelSettingsList[self.channel]['segmentModelRoot'], 'children'):
+            self.root.children = self.settings.channelSettingsList[self.channel]['segmentModelRoot'].children
+        self.settings.channelSettingsList[self.channel]['segmentModelRoot'] = self.root
+        self.columnNames = ['enabled', 'amplitude', 'duration']
+        self.numColumns = len(self.columnNames)
+        self.column = enum(*self.columnNames)
+        self.headerLookup = {
+            (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, self.column.enabled): "",
+            (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, self.column.amplitude): "Amplitude",
+            (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, self.column.duration): "Duration"
+            }
         self.dataLookup = {
-            (QtCore.Qt.CheckStateRole,self.column.enabled): lambda row: QtCore.Qt.Checked if self.segmentList[row].enabled else QtCore.Qt.Unchecked,
-            (QtCore.Qt.DisplayRole, self.column.amplitude): lambda row: self.segmentList[row].amplitude,
-            (QtCore.Qt.DisplayRole, self.column.duration): lambda row: self.segmentList[row].duration,
-            (QtCore.Qt.EditRole, self.column.amplitude): lambda row: self.segmentList[row].amplitude,
-            (QtCore.Qt.EditRole, self.column.duration): lambda row: self.segmentList[row].duration
+            (QtCore.Qt.CheckStateRole,self.column.enabled): lambda node: QtCore.Qt.Checked if node.content.enabled else QtCore.Qt.Unchecked,
+            (QtCore.Qt.DisplayRole, self.column.amplitude): lambda node: node.content.amplitude,
+            (QtCore.Qt.DisplayRole, self.column.duration): lambda node: node.content.duration,
+            (QtCore.Qt.EditRole, self.column.amplitude): lambda node: node.content.amplitude,
+            (QtCore.Qt.EditRole, self.column.duration): lambda node: node.content.duration
             }
         self.setDataLookup = {
             (QtCore.Qt.CheckStateRole, self.column.enabled): lambda index, value: self.setEnabled(index, value),
@@ -40,31 +51,21 @@ class AWGSegmentModel(QtCore.QAbstractTableModel):
             (QtCore.Qt.EditRole, self.column.duration): lambda index, value: self.setValue(index, value, 'duration')
             }
         self.flagsLookup = {
-            self.column.enabled: QtCore.Qt.ItemIsEnabled|  QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsSelectable,
+            self.column.enabled: QtCore.Qt.ItemIsEnabled |  QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsSelectable,
             self.column.amplitude: QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsSelectable,
             self.column.duration: QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsSelectable
             }
 
-    @QtCore.pyqtProperty(list)
-    def segmentList(self):
-        return self.settings.channelSettingsList[self.channel]['segmentList']
-
-    def flags(self, index):
-        return self.flagsLookup[index.column()]
-
     def setEnabled(self, index, value):
-        row = index.row()
-        column = index.column()
-        enabled = value==QtCore.Qt.Checked
-        self.segmentList[row].enabled = enabled
+        node = self.nodeFromIndex(index)
+        node.content.enabled = value==QtCore.Qt.Checked
         self.dataChanged.emit(index, index)
-        self.segmentChanged.emit(self.channel, row, column, enabled)
+        self.segmentChanged.emit()
         self.settings.saveIfNecessary()
         return True
 
     def setValue(self, index, value, key):
-        row = index.row()
-        column = index.column()
+        node = self.nodeFromIndex(index)
         strvalue = str((value if api2 else value.toString()) if isinstance(value, QtCore.QVariant) else value)
         if strvalue in self.globalDict:
             logger.warning("'{0}' is already a global variable name".format(strvalue))
@@ -73,47 +74,12 @@ class AWGSegmentModel(QtCore.QAbstractTableModel):
             logger.warning("'{0}' is not a valid variable name".format(strvalue))
             return False
         else:
-            setattr(self.segmentList[row], key, strvalue)
+            setattr(node.content, key, strvalue)
             self.dataChanged.emit(index, index)
-            self.segmentChanged.emit(self.channel, row, column, strvalue)
+            self.segmentChanged.emit()
             self.settings.saveIfNecessary()
             return True
 
-    def rowCount(self, parent=QtCore.QModelIndex()):
-        return len(self.segmentList)
-
-    def columnCount(self, parent=QtCore.QModelIndex()):
-        return 3
-
-    def data(self, index, role):
-        if index.isValid():
-            return self.dataLookup.get((role, index.column()), lambda row: None)(index.row())
-        return None
-
-    def setData(self, index, value, role):
-        return self.setDataLookup.get((role,index.column()), lambda index, value: False )(index, value)
-
-    def headerData(self, section, orientation, role):
-        if role==QtCore.Qt.DisplayRole:
-            if orientation==QtCore.Qt.Vertical:
-                return str(section)
-            elif orientation==QtCore.Qt.Horizontal:
-                if section==self.column.amplitude:
-                    return 'Amplitude'
-                elif section==self.column.duration:
-                    return 'Duration'
-
     def addSegment(self):
-        row = len(self.segmentList)
         newSegment = AWGSegment()
-        self.beginInsertRows(QtCore.QModelIndex(), row, row)
-        self.segmentList.append(newSegment)
-        self.settings.saveIfNecessary()
-        self.endInsertRows()
-
-    def removeSegment(self, row):
-        self.beginRemoveRows(QtCore.QModelIndex(), row, row)
-        del self.segmentList[row]
-        self.settings.saveIfNecessary()
-        self.endRemoveRows()
-
+        self.addNode(newSegment)

@@ -72,8 +72,8 @@ class AWGWaveform(object):
         return self.settings.channelSettingsList[self.channel]['equation']
 
     @property
-    def segmentList(self):
-        return self.settings.channelSettingsList[self.channel]['segmentList']
+    def segmentModelRoot(self):
+        return self.settings.channelSettingsList[self.channel]['segmentModelRoot']
 
     def calibrateInvIfNecessary(self, p):
         """Converts raw to volts if useCalibration is True"""
@@ -95,9 +95,10 @@ class AWGWaveform(object):
             self.dependencies.add(self.durationName)
         else:
             self.dependencies = set()
-            for segment in self.segmentList:
-                self.dependencies.add(segment.amplitude)
-                self.dependencies.add(segment.duration)
+            if self.segmentModelRoot:
+                for node in self.segmentModelRoot.children:
+                    self.dependencies.add(node.content.amplitude)
+                    self.dependencies.add(node.content.duration)
 
     def evaluate(self):
         """evaluate the waveform based on either the equation or the segment list"""
@@ -111,12 +112,14 @@ class AWGWaveform(object):
             sampleList: list of values to program to the AWG
         """
         sampleList = numpy.array([])
-        for segment in self.segmentList:
-            if segment.enabled:
-                amplitude = self.settings.varDict[segment.amplitude]['value'].to_base_units().val
-                numSamples = self.settings.varDict[segment.duration]['value']*self.sampleRate
-                numSamples = int( numSamples.toval() ) #convert to float, then to integer
-                sampleList = numpy.append(sampleList, [amplitude]*numSamples)
+        if self.segmentModelRoot:
+            for node in self.segmentModelRoot.children:
+                segment = node.content
+                if segment.enabled:
+                    amplitude = self.settings.varDict[segment.amplitude]['value'].to_base_units().val
+                    numSamples = self.settings.varDict[segment.duration]['value']*self.sampleRate
+                    numSamples = int( numSamples.toval() ) #convert to float, then to integer
+                    sampleList = numpy.append(sampleList, [amplitude]*numSamples)
         return self.compliantSampleList(sampleList)
 
     def evaluateEquation(self):

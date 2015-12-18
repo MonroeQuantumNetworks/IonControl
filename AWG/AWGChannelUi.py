@@ -118,7 +118,7 @@ class AWGChannelUi(AWGChannelForm, AWGChannelBase):
         """Set equation to match the text box (which also updates the waveform)"""
         self.equation = str(self.equationEdit.text())
 
-    def onSegmentChanged(self, channel=None, row=None, column=None, value=None):
+    def onSegmentChanged(self):
         """Update dependencies if a segment changed"""
         self.waveform.updateDependencies()
         self.dependenciesChanged.emit(self.channel)
@@ -131,9 +131,5 @@ class AWGChannelUi(AWGChannelForm, AWGChannelBase):
 
     def onRemoveSegment(self):
         """Remove segment button is clicked."""
-        selectedIndexes = self.segmentView.selectedIndexes()
-        selectedRows = list({index.row() for index in selectedIndexes})
-        selectedRows.sort(reverse=True) #go backwards so the earlier rows don't change their row number
-        for row in selectedRows:
-            self.segmentModel.removeSegment(row)
+        self.segmentView.onDelete()
         self.onSegmentChanged()
