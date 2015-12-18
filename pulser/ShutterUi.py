@@ -58,8 +58,8 @@ class ShutterUi(ShutterForm, ShutterBase):
         self.shutterTableView.setEnabled( not disabled )
 
 class TriggerUi(ShutterUi):
-    def __init__(self,pulserHardware,outputname,dataContainer, parent=None):
-        super(TriggerUi,self).__init__(pulserHardware,outputname,dataContainer, parent)
+    def __init__(self, pulserHardware, configName, outputname, dataContainer, parent=None):
+        super(TriggerUi,self).__init__(pulserHardware, configName, outputname, dataContainer, parent)
         
     def setupUi(self,parent):
         super(TriggerUi,self).setupUi(parent)

@@ -207,9 +207,9 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
                     
         self.scanExperiment = self.tabDict["Scan"]
 
-        self.shutterUi, self.shutterDockWidget = self.instantiateShutterUi(self.pulser, 'ShutterUi', "shutter", self.config, self.globalVariablesUi.globalDict, self.shutterNameDict, self.shutterNameSignal)
+        self.shutterUi, self.shutterDockWidget = self.instantiateShutterUi(self.pulser, 'Shutters', "ShutterUi", self.config, self.globalVariablesUi.globalDict, self.shutterNameDict, self.shutterNameSignal)
 
-        self.triggerUi = ShutterUi.TriggerUi(self.pulser, 'trigger', self.config, (self.triggerNameDict, self.triggerNameSignal) )
+        self.triggerUi = ShutterUi.TriggerUi(self.pulser, 'ShutterUi', 'trigger', self.config, (self.triggerNameDict, self.triggerNameSignal) )
         self.triggerUi.offColor =  QtGui.QColor(QtCore.Qt.white)
         self.triggerUi.setupUi(self.triggerUi)
         self.pulser.ppActiveChanged.connect( self.triggerUi.setDisabled )
