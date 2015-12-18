@@ -142,6 +142,12 @@ class AWGUi(AWGForm, AWGBase):
         self.settingsComboBox.setCurrentIndex( self.settingsComboBox.findText(self.settingsName) )
         self.settingsComboBox.currentIndexChanged[str].connect( self.onLoad )
         self.settingsComboBox.lineEdit().editingFinished.connect( self.onComboBoxEditingFinished )
+        self.autoSaveCheckBox.setChecked(self.autoSave)
+        self.saveButton.setEnabled( not self.autoSave )
+        self.saveButton.setVisible( not self.autoSave )
+        self.reloadButton.setEnabled( not self.autoSave )
+        self.reloadButton.setVisible( not self.autoSave )
+        self.autoSaveCheckBox.stateChanged.connect(self.onAutoSave)
 
         #programming options widget
         self.programmingOptionsTreeWidget.setParameters( self.device.parameter() )
@@ -164,15 +170,6 @@ class AWGUi(AWGForm, AWGBase):
         self.openFileButton.clicked.connect(self.onOpenFile)
         self.saveFileButton.clicked.connect(self.onSaveFile)
         self.reloadFileButton.clicked.connect(self.onReloadFile)
-
-        # Context Menu
-        self.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
-        self.autoSaveAction = QtGui.QAction( "auto save" , self)
-        self.autoSaveAction.setCheckable(True)
-        self.autoSaveAction.setChecked(self.autoSave )
-        self.saveButton.setEnabled( not self.autoSave )
-        self.autoSaveAction.triggered.connect( self.onAutoSave )
-        self.addAction( self.autoSaveAction )
 
         #Restore GUI state
         state = self.config.get(self.configname+'.state')
@@ -314,7 +311,10 @@ class AWGUi(AWGForm, AWGBase):
     def onAutoSave(self, checked):
         """autosave is changed"""
         self.autoSave = checked
-        self.saveButton.setEnabled(not checked)
+        self.saveButton.setEnabled( not checked )
+        self.saveButton.setVisible( not checked )
+        self.reloadButton.setEnabled( not checked )
+        self.reloadButton.setVisible( not checked )
         if checked:
             self.onSave()
 
