@@ -13,7 +13,7 @@ from pyqtgraph import mkBrush
 from trace.pens import solidBluePen, blue
 
 from AWG.AWGWaveform import AWGWaveform
-from AWG.AWGSegmentTableModel import AWGSegmentTableModel
+from AWG.AWGSegmentModel import AWGSegmentModel
 
 blueBrush = mkBrush(blue)
 
@@ -67,7 +67,7 @@ class AWGChannelUi(AWGChannelForm, AWGChannelBase):
         self.equationEdit.setToolTip("use 't' for time variable")
 
         #segment table
-        self.segmentModel = AWGSegmentTableModel(self.channel, self.settings, self.globalDict)
+        self.segmentModel = AWGSegmentModel(self.channel, self.settings, self.globalDict)
         self.segmentView.setModel(self.segmentModel)
         self.segmentModel.segmentChanged.connect(self.onSegmentChanged)
         self.addSegmentButton.clicked.connect(self.onAddSegment)
