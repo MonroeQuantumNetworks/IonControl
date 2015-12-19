@@ -73,6 +73,7 @@ class DedicatedData(object):
         self.externalStatus = None
         self.timeTickOffset = timeTickOffset
         self._timestamp = time_time()
+        self.maxBytesRead = 0
         
     def count(self):
         return self.data[0:15]
@@ -252,6 +253,7 @@ class PulserHardwareServer(Process, OKBase):
                    
         data, self.data.overrun, self.data.externalStatus = self.ppReadData(8)
         self.dedicatedData.externalStatus = self.data.externalStatus
+        self.dedicatedData.maxBytesRead = max(self.dedicatedData.maxBytesRead, len(data) if data else 0)
         if data:
             for s in sliceview(data,8):
                 (token,) = struct.unpack('Q',s)
