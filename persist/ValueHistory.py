@@ -59,6 +59,8 @@ class ValueHistoryStore:
     def rename(self, space, oldsourcename, newsourcename):
         if (space, oldsourcename) not in self.sourceDict:
             raise HistoryException("cannot rename {0} to {1} because {0} does not exist in database".format(oldsourcename, newsourcename))
+        if (space, newsourcename) in self.sourceDict:
+            raise HistoryException("cannot rename {0} to {1} because {1} already exists in database".format(oldsourcename, newsourcename))
         elem = self.session.query(HistorySource).filter(HistorySource.space==space).filter(HistorySource.name==oldsourcename).first()
         elem.name = newsourcename
         self.commit()
