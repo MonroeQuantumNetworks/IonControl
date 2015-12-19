@@ -94,7 +94,7 @@ class PulserParameterUi(CategoryTreeView):
         if configName=='PulserParameterUi':
             self.pulserParamConfigName = "PulserParameterValues-{0:x}".format(self.pulser.hardwareConfigurationId())
         else:
-            self.pulserParamConfigName = "PulserParameterValues-{0}-{0:x}".format(configName, self.pulser.hardwareConfigurationId())
+            self.pulserParamConfigName = "PulserParameterValues-{0}-{1:x}".format(configName, self.pulser.hardwareConfigurationId())
         oldValues = self.config.get('PulserParameterValues', dict()) if self.pulserParamConfigName not in self.config else self.config[self.pulserParamConfigName]
         self.parameterList = list()
         pulserconfig = self.pulser.pulserConfiguration()

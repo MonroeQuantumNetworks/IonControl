@@ -10,6 +10,7 @@ from PyQt4 import QtGui, QtCore
 import PyQt4.uic
 
 from pulser import ShutterHardwareTableModel
+from pulser.ChannelNameDict import ChannelNameDict
 
 import os
 uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\Shutter.ui')
@@ -21,6 +22,10 @@ class ShutterUi(ShutterForm, ShutterBase):
     def __init__(self, pulserHardware, configName, outputname, config, dataContainer, size=32, parent=None):
         ShutterBase.__init__(self,parent)
         ShutterForm.__init__(self)
+        if dataContainer[0] is None:
+            dataContainer = (ChannelNameDict(), dataContainer[1])
+            pulserConfig = pulserHardware.pulserConfiguration()
+            dataContainer[0].defaultDict = pulserConfig.shutterBits if pulserConfig else dict()
         self.pulserHardware = pulserHardware
         self.outputname = outputname
         self.config = config

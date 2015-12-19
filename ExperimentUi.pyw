@@ -267,7 +267,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
 #         self.DDS9910DockWidget.setWidget( self.DDSUi9910 )
 #        self.pulser.ppActiveChanged.connect( self.DDSUi9910.setDisabled )
         #self.tabDict['Scan'].NeedsDDSRewrite.connect( self.DDSUi9910.onWriteAll )
-        self.instantiateAuxilliaryPulsers()
+        self.instantiateAuxiliaryPulsers()
 
         self.valueHistoryUi = ValueHistoryUi(self.config, self.dbConnection)
         self.valueHistoryUi.setupUi( self.valueHistoryUi )
@@ -855,15 +855,15 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         else:
             logger.error("No pulser available")
 
-    def instantiateAuxilliaryPulsers(self):
-        self.auxilliaryPulsers = list()
-        for FPGAName, FPGAConfig in self.project.isEnabled('hardware', 'Opal Kelly FPGA: Auxilliary Pulser').iteritems():
+    def instantiateAuxiliaryPulsers(self):
+        self.auxiliaryPulsers = list()
+        for FPGAName, FPGAConfig in self.project.isEnabled('hardware', 'Auxiliary Pulser').iteritems():
             FPGA = PulserHardware()
             deviceName=FPGAConfig.get('device') #The 'device' field of an FPGA should be the identifier of the FPGA.
             if not deviceName:
-                logger.error("No FPGA specified: 'device' field missing in Auxilliary Opal Kelly FPGA: '{0}' config".format(FPGAName))
+                logger.error("No FPGA specified: 'device' field missing in Auxiliary Opal Kelly FPGA: '{0}' config".format(FPGAName))
             elif deviceName not in self.OK_FPGA_Dict:
-                logger.error("FPGA device {0} specified in Auxilliary Opal Kelly FPGA: '{1}' config cannot be found".format(deviceName, FPGAName))
+                logger.error("FPGA device {0} specified in Auxiliary Opal Kelly FPGA: '{1}' config cannot be found".format(deviceName, FPGAName))
             else:
                 device=self.OK_FPGA_Dict[deviceName]
                 FPGA.openBySerial(device.serial)
@@ -877,7 +877,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
                 FPGA.pulserConfiguration(configFile)
                 pulserHardwareId = self.pulser.hardwareConfigurationId()
                 if pulserHardwareId:
-                    logger.info("Auxilliary Pulser {1} Configuration {0:x}".format(pulserHardwareId, FPGAName))
+                    logger.info("Auxiliary Pulser {1} Configuration {0:x}".format(pulserHardwareId, FPGAName))
                 else:
                     logger.error("No pulser available")
                 if FPGAConfig.get('PulserParameters'):
@@ -891,9 +891,9 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
                     ui, _ = self.instantiateDACUi(FPGA, "{0} DAC".format(FPGAName), "{0}.dacUi".format(FPGAName), self.config, self.globalVariablesUi.globalDict)
                     self.objectListToSaveContext.append(ui)
                 if FPGAConfig.get('Shutters'):
-                    ui, _ = self.instantiateShutterUi(FPGA, "{0} Shutter".format(FPGAName), "{0}.ShutterUi".format(FPGAName), self.config, self.globalVariablesUi.globalDict, dict(), None)
+                    ui, _ = self.instantiateShutterUi(FPGA, "{0} Shutter".format(FPGAName), "{0}.ShutterUi".format(FPGAName), self.config, self.globalVariablesUi.globalDict, None, None)
                     self.objectListToSaveContext.append(ui)
-                self.auxilliaryPulsers.append(FPGA)
+                self.auxiliaryPulsers.append(FPGA)
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)

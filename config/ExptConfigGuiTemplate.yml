@@ -30,11 +30,11 @@ hardware:
       device: ok_fpga
       bitFile: path
       uploadOnStartup: bool
-  "Opal Kelly FPGA: Auxilliary Pulser":
-    description: Auxilliary pulser
+  "Auxiliary Pulser":
+    description: Auxiliary pulser
     fields:
         device: ok_fpga
-        bitfile: path
+        bitFile: path
         uploadOnStartup: bool
         DAC: bool
         DDS: bool
