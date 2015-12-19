@@ -219,7 +219,7 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
                     self.curves[counter].setData(self.xData[counter],self.yData[counter])
         self.statusDisplay.setData(data)
         self.dataAvailable.emit(data)
-        logging.getLogger(__name__).info("Max bytes read {0}".format(data.maxBytesRead))
+        #logging.getLogger(__name__).info("Max bytes read {0}".format(data.maxBytesRead))
  
     def convertAnalog(self,data):
         converted = list()
