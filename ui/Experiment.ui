@@ -218,15 +218,6 @@
     </layout>
    </widget>
   </widget>
-  <widget class="QDockWidget" name="shutterDockWidget">
-   <property name="windowTitle">
-    <string>Shutters</string>
-   </property>
-   <attribute name="dockWidgetArea">
-    <number>2</number>
-   </attribute>
-   <widget class="QWidget" name="dockWidgetContents_2"/>
-  </widget>
   <widget class="QDockWidget" name="triggerDockWidget">
    <property name="windowTitle">
     <string>Triggers</string>
@@ -235,15 +226,6 @@
     <number>2</number>
    </attribute>
    <widget class="QWidget" name="dockWidgetContents_3"/>
-  </widget>
-  <widget class="QDockWidget" name="DDSDockWidget">
-   <property name="windowTitle">
-    <string>DDS</string>
-   </property>
-   <attribute name="dockWidgetArea">
-    <number>2</number>
-   </attribute>
-   <widget class="QWidget" name="dockWidgetContents_4"/>
   </widget>
   <widget class="QToolBar" name="experimentToolBar">
    <property name="windowTitle">

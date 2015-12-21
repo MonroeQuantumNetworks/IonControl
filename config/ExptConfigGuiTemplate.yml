@@ -30,6 +30,16 @@ hardware:
       device: ok_fpga
       bitFile: path
       uploadOnStartup: bool
+  "Auxiliary Pulser":
+    description: Auxiliary pulser
+    fields:
+        device: ok_fpga
+        bitFile: path
+        uploadOnStartup: bool
+        DAC: bool
+        DDS: bool
+        PulserParameters: bool
+        Shutters: bool
   NI DAC Chassis:
     description: DAC system from National Instruments used to output voltages
     roles:

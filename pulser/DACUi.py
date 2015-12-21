@@ -23,19 +23,22 @@ def extendTo(array, length, defaulttype):
         
 class DACUi(dacForm, dacBase):
     persistSpace = 'DAC'
-    def __init__(self,config,pulser,globalDict,parent=None):
+    def __init__(self, pulser, config, configName, globalDict, parent=None):
         self.isSetup = False
         dacBase.__init__(self,parent)
         dacForm.__init__(self)
         self.config = config
         self.dac = DAC(pulser)
-        self.dacChannels = self.config.get('dacUi.dacExpressionChannels')
+        self.channelsConfigName = '{0}.dacExpressionChannels'.format(configName)
+        self.autoApplyConfigName = '{0}.autoApply'.format(configName)
+        self.guiStateConfigName = '{0}.guiState'.format(configName)
+        self.dacChannels = self.config.get(self.channelsConfigName)
         if not self.dacChannels or len(self.dacChannels)!=self.dac.numChannels:
             self.dacChannels = [DACChannelSetting(globalDict=globalDict) for _ in range(self.dac.numChannels) ] 
         for index, channel in enumerate(self.dacChannels):
             channel.globalDict = globalDict
             channel.onChange = partial( self.onChange, index )
-        self.autoApply = self.config.get('dacUi.autoApply',True)
+        self.autoApply = self.config.get(self.autoApplyConfigName, True)
         self.decimation = defaultdict( lambda: StaticDecimation(mg(30,'s')) )
         self.persistence = DBPersist()
         self.globalDict = globalDict
@@ -59,7 +62,7 @@ class DACUi(dacForm, dacBase):
         self.onApply()
         self.dacTableModel.voltageChanged.connect( self.onVoltage )
         self.dacTableModel.enableChanged.connect( self.onEnableChanged )
-        restoreGuiState( self, self.config.get('dacUi.guiState') )
+        restoreGuiState(self, self.config.get(self.guiStateConfigName))
         self.isSetup = True
             
     def onEnableChanged(self, channel, value):
@@ -89,9 +92,9 @@ class DACUi(dacForm, dacBase):
                     self.dac.setVoltage(channel, settings.outputVoltage, autoApply=self.autoApply, applyAll=True)
         
     def saveConfig(self):
-        self.config['dacUi.dacExpressionChannels'] = self.dacChannels
-        self.config['dacUi.autoApply'] = self.autoApply
-        self.config['dacUi.guiState'] = saveGuiState( self )
+        self.config[self.channelsConfigName] = self.dacChannels
+        self.config[self.autoApplyConfigName] = self.autoApply
+        self.config[self.guiStateConfigName] = saveGuiState( self )
         
     def onApply(self):
         if self.dacChannels:

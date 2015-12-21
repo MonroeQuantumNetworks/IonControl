@@ -14,6 +14,8 @@ import modules.magnitude as magnitude
 from modules import MagnitudeUtilit
 from modules.MagnitudeParser import isIdentifier
 from functools import partial
+
+from persist.ValueHistory import HistoryException
 from uiModules.CategoryTree import CategoryTreeModel, nodeTypes
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 from modules.enum import enum
@@ -149,7 +151,10 @@ class GlobalVariablesModel(CategoryTreeModel):
         newName = str(value if api2 else str(value.toString())).strip()
         if isIdentifier(newName):
             del self._globalDict_[var.name]
-            var.name = newName
+            try:
+                var.name = newName
+            except HistoryException as e:
+                logging.getLogger(__name__).warning(str(e))
             self._globalDict_[newName] = var
             return True
         else:
@@ -170,7 +175,7 @@ class GlobalVariablesModel(CategoryTreeModel):
         if name not in self._globalDict_ and isIdentifier(name):
             newGlobal = GlobalVariable(name, magnitude.mg(0, ''))
             newGlobal.categories = categories
-            newGlobal.valueChanged.connect( partial(self.onValueChanged, name) )
+            newGlobal.valueChanged.connect(self.onValueChanged)
             node = self.addNode(newGlobal)
             self._globalDict_[name] = newGlobal
             return node
