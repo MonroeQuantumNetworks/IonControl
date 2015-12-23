@@ -112,6 +112,8 @@ OPS = {'NOP'    : 0x00,
        'DACOUT': 0x5b,
        'LDACTIVE': 0x5c,
        'JMPNINTERRUPT': 0x5d,
+       'RAND': 0x60,
+       'RANDSEED': 0x61,
        'END'    : 0xFF }
 
 class Dimensions:

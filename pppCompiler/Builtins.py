@@ -88,6 +88,28 @@ def load_count( symboltable, arg=list(), kwarg=dict()):
     symbol = symboltable.getConst( arg[1] )
     return ["  LDCOUNT {0}".format(symbol.name)]
 
+def rand(symboltable, arg=list(), kwarg=dict()):
+    """
+    rand() get 64bit true random number
+    Random bits are generated from a 63bit pseudo random number generator xor'd
+    with a true random number generator based on a oscillating gate
+    """
+    if len(arg)>1:
+        raise CompileException("rand() expects no arguments")
+    return ["  RAND"]
+
+def rand_seed(symboltable, arg=list(), kwarg=dict()):
+    """
+    rand_seed(variable) set the seed for the pseudo random number generator
+    Random bits are generated from a 63bit pseudo random number generator xor'd
+    with a true random number generator based on a oscillating gate. Thus, seeding
+    will NOT allow to generate repeatable random numbers.
+    """
+    if len(arg)!=2:
+        raise CompileException( "expected exactly one argument in rand_seed()" )
+    symbol = symboltable.getVar( arg[1] )
+    return ["  RANDSEED {0}".format(symbol.name)]
+
 def set_trigger( symboltable, arg=list(), kwarg=dict()):
     """
     set_trigger( trigger )
