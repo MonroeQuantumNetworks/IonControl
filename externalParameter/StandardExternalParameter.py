@@ -265,8 +265,9 @@ if visaEnabled:
         Set the PTS3500 Frequency Source
         """
         className = "PTS3500 Frequency "
-        _outputChannels = {"Freq": "Hz"}
-        def __init__(self, name, config, globalDict, instrument="GPIB0::8::INSTR"):
+        _outputChannels = {"Freq": "GHz"}
+        _outputLookup = { "Freq": ("F","Hz","\\nA1\\n")}
+        def __init__(self, name, config, globalDict, instrument="GPIB0::16::INSTR"):
             logger = logging.getLogger(__name__)
             ExternalParameterBase.__init__(self, name, config, globalDict)
             logger.info( "trying to open '{0}'".format(instrument) )
@@ -277,8 +278,8 @@ if visaEnabled:
             self.initializeChannelsToExternals()
 
         def setValue(self, channel, v):
-            unit= self._outputChannels[channel]
-            command = "F{0}\nA1\n".format(v.toval(unit))
+            function, unit, suffix= self._outputLookup[channel]
+            command = "{0}{1}{2}".format(function, int(v.toval(unit)), suffix)
             self.instrument.write(command)
             return v
 
@@ -291,10 +292,10 @@ if visaEnabled:
         Set the DS345 SRS Function Generator
         """
         className = "DS345 SRS Function Generator "
-        _outputChannels = {"Freq": "Hz", "Ampl": "dB"}
+        _outputChannels = {"Freq": "MHz", "Ampl": "dB"}
         _outputLookup = { "Freq": ("FREQ","Hz"),
                           "Ampl": ("AMPL","dB")}
-        def __init__(self, name, config, globalDict, instrument="GPIB0::8::INSTR"):
+        def __init__(self, name, config, globalDict, instrument="GPIB0::19::INSTR"):
             logger = logging.getLogger(__name__)
             ExternalParameterBase.__init__(self, name, config, globalDict)
             logger.info( "trying to open '{0}'".format(instrument) )
