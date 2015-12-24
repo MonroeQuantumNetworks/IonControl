@@ -151,7 +151,7 @@ class FeedbackEvaluation(EvaluationBase):
                 {'name': 'I', 'type': 'magnitude', 'value': self.settings['I'], 'tip': "Integral gain"},
                 {'name': 'AveragingTime', 'type': 'magnitude', 'value': self.settings['AveragingTime'],
                  'tip': "Time spent accumulating data before updating the servo output"},
-                {'name': 'GlobalVariable', 'type': 'list', 'values': self.globalDict.keys(), 'value': self.settings['GlobalVariable'],
+                {'name': 'GlobalVariable', 'type': 'list', 'values': sorted(self.globalDict.keys()), 'value': self.settings['GlobalVariable'],
                  'tip': "Name of variable to which servo output value should be pushed"},
                 {'name': 'Reset', 'type': 'bool', 'value': self.settings['Reset'], 'tip': "Reset integrator"}]
  

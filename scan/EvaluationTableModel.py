@@ -1,3 +1,5 @@
+import copy
+
 from PyQt4 import QtCore, QtGui
 
 from scan.EvaluationBase import EvaluationAlgorithms
@@ -163,8 +165,10 @@ class EvaluationTableModel( QtCore.QAbstractTableModel):
     def setAlgorithm(self, index, algorithm):
         algorithm = str(algorithm)
         evaluation = self.evalList[index.row()]
-        if algorithm!=evaluation.evaluation:
-            evaluation.settingsCache[evaluation.evaluation] = evaluation.settings
+        previousEvaluation = copy.deepcopy(self.evalList[index.row()])
+        previousAlgorithm = previousEvaluation.evaluation
+        if algorithm!=previousAlgorithm:
+            evaluation.settingsCache[previousAlgorithm] = previousEvaluation.settings
             evaluation.evaluation = algorithm
             algo = EvaluationAlgorithms[evaluation.evaluation](globalDict=self.globalDict)
             algo.subscribe( self.updateSaveStatus )   # track changes of the algorithms settings so the save status is displayed correctly
