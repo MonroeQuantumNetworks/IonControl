@@ -8,8 +8,9 @@ from modules import magnitude
 class EvaluationTableModel( QtCore.QAbstractTableModel):
     dataChanged = QtCore.pyqtSignal( object, object )
     headerDataLookup = ['Type','Id','Channel','Evaluation','Name','Hist', 'Plot', 'Abszisse' ]
-    def __init__(self, updateSaveStatus, plotnames=None, evalList=None, parent=None, analysisNames=None, counterNames=None):
+    def __init__(self, updateSaveStatus, plotnames=None, evalList=None, parent=None, analysisNames=None, counterNames=None, globalDict=dict()):
         super(EvaluationTableModel, self).__init__(parent)
+        self.globalDict = globalDict
         if evalList:
             self.evalList = evalList
         else:
@@ -165,7 +166,7 @@ class EvaluationTableModel( QtCore.QAbstractTableModel):
         if algorithm!=evaluation.evaluation:
             evaluation.settingsCache[evaluation.evaluation] = evaluation.settings
             evaluation.evaluation = algorithm
-            algo = EvaluationAlgorithms[evaluation.evaluation]()
+            algo = EvaluationAlgorithms[evaluation.evaluation](globalDict=self.globalDict)
             algo.subscribe( self.updateSaveStatus )   # track changes of the algorithms settings so the save status is displayed correctly
             if evaluation.evaluation in evaluation.settingsCache:
                 evaluation.settings = evaluation.settingsCache[evaluation.evaluation]
