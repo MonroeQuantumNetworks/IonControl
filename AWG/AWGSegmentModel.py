@@ -20,19 +20,19 @@ class AWGSegment(object):
         self.duration = 'T0'
 
 class AWGSegmentModel(CategoryTreeModel):
-    """Table model for displaying AWG segments when the AWGUi is in segment mode"""
+    """Model for displaying AWG segments when the AWGUi is in segment mode"""
     segmentChanged = QtCore.pyqtSignal()
     def __init__(self, channel, settings, globalDict, parent=None):
         self.channel = channel
         self.settings = settings
         self.globalDict = globalDict
         CategoryTreeModel.__init__(self, [], parent)
-        if hasattr(self.settings.channelSettingsList[self.channel]['segmentModelRoot'], 'children'):
-            self.root.children = self.settings.channelSettingsList[self.channel]['segmentModelRoot'].children
-        self.settings.channelSettingsList[self.channel]['segmentModelRoot'] = self.root
+        self.root.children = self.settings.channelSettingsList[self.channel]['segmentData']
+        self.updateNodeDict()
         self.columnNames = ['enabled', 'amplitude', 'duration']
         self.numColumns = len(self.columnNames)
         self.column = enum(*self.columnNames)
+        self.allowDeletion=True
         self.headerLookup = {
             (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, self.column.enabled): "",
             (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, self.column.amplitude): "Amplitude",
@@ -55,6 +55,17 @@ class AWGSegmentModel(CategoryTreeModel):
             self.column.amplitude: QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsSelectable,
             self.column.duration: QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsSelectable
             }
+
+    def updateNodeDict(self):
+        self.nodeDict.clear()
+        self.nodeDict[self.root.id] = self.root
+        self.addToNodeDict(self.root.children)
+
+    def addToNodeDict(self, nodeList):
+        for node in nodeList:
+            self.nodeDict[node.id] = node
+            if node.children:
+                self.updateNodeDict(node.children)
 
     def setEnabled(self, index, value):
         node = self.nodeFromIndex(index)

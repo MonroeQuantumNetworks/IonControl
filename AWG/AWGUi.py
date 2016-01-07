@@ -89,12 +89,12 @@ class AWGUi(AWGForm, AWGBase):
                 if channel >= len(settings.channelSettingsList): #create new channels if it's necessary
                     settings.channelSettingsList.append({
                         'equation' : 'A*sin(w*t+phi) + offset',
-                        'segmentModelRoot':None,
+                        'segmentData':[],
                         'plotEnabled':True,
                         'plotStyle':Settings.plotStyles.lines})
                 else:
                     settings.channelSettingsList[channel].setdefault('equation', 'A*sin(w*t+phi) + offset')
-                    settings.channelSettingsList[channel].setdefault('segmentModelRoot', None)
+                    settings.channelSettingsList[channel].setdefault('segmentData', [])
                     settings.channelSettingsList[channel].setdefault('plotEnabled', True)
                     settings.channelSettingsList[channel].setdefault('plotStyle', Settings.plotStyles.lines)
         self.settings = Settings() #we always run settings through the constructor

@@ -71,7 +71,7 @@ class AWGDeviceBase(object):
         for channel in range(self.deviceProperties['numChannels']):
             if channel >= len(self.settings.channelSettingsList): #create new channels if it's necessary
                 self.settings.channelSettingsList.append({'equation' : 'A*sin(w*t+phi) + offset',
-                                                          'segmentModelRoot':None,
+                                                          'segmentData':[],
                                                           'plotEnabled' : True,
                                                           'plotStyle':self.settings.plotStyles.lines})
         self.project = getProject()
