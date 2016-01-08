@@ -270,12 +270,12 @@ class AWGUi(AWGForm, AWGBase):
             self.onLoad(self.settingsName)
 
     def onReload(self):
-        """Reload segment data from file"""
+        """Reload settings"""
         name = str(self.settingsComboBox.currentText())
         self.onLoad(name)
        
     def onLoad(self, name):
-        """load segment data from file"""
+        """load settings"""
         name = str(name)
         if name in self.settingsDict:
             self.settingsName = name
@@ -304,6 +304,8 @@ class AWGUi(AWGForm, AWGBase):
                 channelUi.plotCheckbox.setChecked(self.settings.channelSettingsList[channelUi.channel]['plotEnabled'])
                 with BlockSignals(channelUi.styleComboBox) as w:
                     w.setCurrentIndex(self.settings.channelSettingsList[channelUi.channel]['plotStyle'])
+                channelUi.segmentModel.root.children = self.settings.channelSettingsList[channelUi.channel]['segmentData']
+                channelUi.segmentModel.updateNodeDict()
                 channelUi.replot()
             self.onDependenciesChanged()
             self.saveButton.setEnabled(False)
