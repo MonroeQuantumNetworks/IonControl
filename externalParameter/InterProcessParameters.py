@@ -6,7 +6,7 @@ from multiprocessing.connection import Client
 class LockOutputFrequency(ExternalParameterBase):
 
     className = "Digital Lock Output Frequency"
-    _outputChannels = {"OutputFrequency": "MHz"}
+    _outputChannels = {"OutputFrequency": "MHz", "Harmonic": ""}
 
     def __init__(self, name, config, globalDict, instrument="localhost:16888"):
         logger = logging.getLogger(__name__)
