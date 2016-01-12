@@ -393,6 +393,57 @@ class SquareRabiFit(FitFunctionBase):
         R = numpy.pi/T
         self.results['maxVal'].value = (A*numpy.square(numpy.sin(R*t/2.))) + O
 
+class SquareRabiFitAmp(FitFunctionBase):
+    name = "Square Rabi w/Amp"
+    functionString =  '(A/(1+(2*pi*(x-C)/R)**2))/(sin**2(R*t/2)) * sin**2(sqrt(1+(2*pi*(x-C)/R)**2)*R*t/2) + O where R=pi/T'
+    parameterNames = [ 'T', 'C', 'A', 'O', 't' ]
+    def __init__(self):
+        FitFunctionBase.__init__(self)
+        self.startParameters = [1.0,42.0,1.0,0.0,100.0]
+        self.results['maxVal'] = ResultRecord( name='maxVal',definition='maximum value of function' )
+
+    def __setstate__(self, state):
+        super(SquareRabiFitAmp, self ).__setstate__(state)
+        self.results.setdefault( 'maxVal', ResultRecord( name='maxVal',definition='maximum value of function' ))
+
+    def functionEval(self, x, T, C, A, O, t ):
+        R = numpy.pi/T
+        u = numpy.square(2*numpy.pi*(x-C)/R)
+        return (((A/(1+u))/(numpy.square(numpy.sin(R*t/2.0))))*numpy.square(numpy.sin(numpy.sqrt(1+u)*R*t/2.))) + O
+
+    def smartStartValues(self, xIn, yIn, parameters, enabled):
+        T, C, A, O, t = parameters   #@UnusedVariable
+        x,y = zip(*sorted(zip(xIn, yIn)))
+        x = numpy.array(x)
+        y = numpy.array(y)
+        maxindex = numpy.argmax(y)
+        minimum = numpy.amin(y)
+        maximum = y[maxindex]
+        C = x[maxindex]
+        A = maximum-minimum
+        O = minimum
+        threshold = (maximum+minimum)/2.
+        if not enabled[4]:  # if t is fixed we can estimate T
+            indexplus = -1 #If the threshold point is never found, indexplus is set to the index of the last element
+            for ind, val in enumerate(y[maxindex:]):
+                if val < threshold:
+                    indexplus = ind + maxindex
+                    break
+            indexminus = 0 #If the threshold point is never found, indexplus is set to the index of the first element
+            for ind, val in enumerate(y[maxindex::-1]):
+                if val < threshold:
+                    indexminus = maxindex-ind
+                    break
+            if x[indexplus]-x[indexminus] != 0:
+                T = 0.79869/(x[indexplus]-x[indexminus])
+        logging.getLogger(__name__).info("smart start values T={0}, C={1}, A={2}, O={3}, t={4}".format(T, C, A, O, t))
+        return (T, C, A, O, t)
+
+    def update(self,parameters=None):
+        T, C, A, O, t = parameters if parameters is not None else self.parameters #@UnusedVariable
+        R = numpy.pi/T
+        self.results['maxVal'].value = (A*numpy.square(numpy.sin(R*t/2.))) + O
+
 class LorentzianFit(FitFunctionBase):
     name = "Lorentzian"
     functionString =  'A*s**2*1/(s**2+(x-x0)**2)+O'
