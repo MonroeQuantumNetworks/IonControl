@@ -13,7 +13,7 @@ from sympy.parsing.sympy_parser import parse_expr
 from modules.Expression import Expression
 from modules.magnitude import mg
 from modules.enum import enum
-from uiModules.CategoryTree import CategoryTreeModel
+from AWGSegmentModel import nodeTypes
 
 
 class AWGWaveform(object):
@@ -95,30 +95,42 @@ class AWGWaveform(object):
             self.dependencies.add(self.durationName)
         else:
             self.dependencies = set()
-            for node in self.segmentData:
-                self.dependencies.add(node.content.amplitude)
-                self.dependencies.add(node.content.duration)
+            self.updateSegmentDependencies(self.segmentData)
+
+    def updateSegmentDependencies(self, nodeList):
+        for node in nodeList:
+            if node.nodeType==nodeTypes.segment:
+                self.dependencies.add(node.amplitude)
+                self.dependencies.add(node.duration)
+            elif node.nodeType==nodeTypes.segmentSet:
+                self.dependencies.add(node.repetitions)
+                self.updateSegmentDependencies(node.children) #recursive
 
     def evaluate(self):
         """evaluate the waveform based on either the equation or the segment list"""
         equationMode = self.settings.waveformMode==self.settings.waveformModes.equation
-        return self.evaluateEquation() if equationMode else self.evaluateSegments()
+        sampleList = self.evaluateEquation() if equationMode else self.evaluateSegments(self.segmentData)
+        return self.compliantSampleList(sampleList)
 
-    def evaluateSegments(self):
+    def evaluateSegments(self, nodeList):
         """Evaluate the waveform based on the segment table.
 
         Returns:
             sampleList: list of values to program to the AWG
         """
         sampleList = numpy.array([])
-        for node in self.segmentData:
-            segment = node.content
-            if segment.enabled:
-                amplitude = self.settings.varDict[segment.amplitude]['value'].to_base_units().val
-                numSamples = self.settings.varDict[segment.duration]['value']*self.sampleRate
-                numSamples = int( numSamples.toval() ) #convert to float, then to integer
-                sampleList = numpy.append(sampleList, [amplitude]*numSamples)
-        return self.compliantSampleList(sampleList)
+        for node in nodeList:
+            if node.enabled:
+                if node.nodeType==nodeTypes.segment:
+                    amplitude = self.settings.varDict[node.amplitude]['value'].to_base_units().val
+                    numSamples = self.settings.varDict[node.duration]['value']*self.sampleRate
+                    numSamples = int( numSamples.toval() ) #convert to float, then to integer
+                    sampleList = numpy.append(sampleList, [amplitude]*numSamples)
+                elif node.nodeType==nodeTypes.segmentSet:
+                    repetitions = int(self.settings.varDict[node.repetitions]['value'].to_base_units().val)
+                    for n in range(repetitions):
+                        sampleList = numpy.append(sampleList, self.evaluateSegments(node.children)) #recursive
+        return sampleList
 
     def evaluateEquation(self):
         """Evaluate the waveform based on the equation.
@@ -145,7 +157,7 @@ class AWGWaveform(object):
         func = numpy.vectorize(func, otypes=[numpy.float64]) #vectorize the function
         step = self.stepsize.toval(ounit='s')
         sampleList = func( numpy.arange(numSamples)*step ) #apply the function to each time step value
-        return self.compliantSampleList(sampleList)
+        return sampleList
 
     def compliantSampleList(self, sampleList):
         """Make the sample list compliant with the capabilities of the AWG

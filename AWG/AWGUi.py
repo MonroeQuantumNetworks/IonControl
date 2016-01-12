@@ -75,10 +75,10 @@ class AWGUi(AWGForm, AWGBase):
         self.configname = 'AWGUi.' + deviceClass.displayName
         self.globalDict = globalDict
         self.autoSave = self.config.get(self.configname+'.autoSave', True)
-        self.settingsDict = self.config.get(self.configname+'.settingsDict', dict())
-        self.settingsName = self.config.get(self.configname+'.settingsName', '')
-        # self.settingsDict=dict()
-        # self.settingsName=''
+        # self.settingsDict = self.config.get(self.configname+'.settingsDict', dict())
+        # self.settingsName = self.config.get(self.configname+'.settingsName', '')
+        self.settingsDict=dict()
+        self.settingsName=''
         self.recentFiles = self.config.get(self.configname+'.recentFiles', dict()) #dict of form {basename: filename}, where filename has path and basename doesn't
         self.lastDir = self.config.get(self.configname+'.lastDir', getProject().configDir)
         Settings.deviceProperties = deviceClass.deviceProperties

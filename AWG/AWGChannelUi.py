@@ -8,7 +8,7 @@ import logging
 import os
 
 import PyQt4.uic
-from PyQt4 import QtCore
+from PyQt4 import QtCore, QtGui
 from pyqtgraph import mkBrush
 from trace.pens import solidBluePen, blue
 
@@ -70,8 +70,18 @@ class AWGChannelUi(AWGChannelForm, AWGChannelBase):
         self.segmentModel = AWGSegmentModel(self.channel, self.settings, self.globalDict)
         self.segmentView.setModel(self.segmentModel)
         self.segmentModel.segmentChanged.connect(self.onSegmentChanged)
+        self.segmentView.segmentChanged.connect(self.onSegmentChanged)
         self.addSegmentButton.clicked.connect(self.onAddSegment)
         self.removeSegmentButton.clicked.connect(self.onRemoveSegment)
+
+        #Context menu
+        self.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
+        addToSetAction = QtGui.QAction("Add to Set", self)
+        removeFromSetAction = QtGui.QAction("Remove From Set", self)
+        self.addAction(addToSetAction)
+        addToSetAction.triggered.connect(self.onAddToSet)
+        self.addAction(removeFromSetAction)
+        removeFromSetAction.triggered.connect(self.onRemoveFromSet)
 
         #plot
         self.plot.setTimeAxis(False)
@@ -133,3 +143,9 @@ class AWGChannelUi(AWGChannelForm, AWGChannelBase):
         """Remove segment button is clicked."""
         self.segmentView.onDelete()
         self.onSegmentChanged()
+
+    def onAddToSet(self):
+        pass
+
+    def onRemoveFromSet(self):
+        pass

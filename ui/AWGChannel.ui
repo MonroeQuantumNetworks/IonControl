@@ -89,39 +89,6 @@
          </widget>
         </item>
         <item>
-         <widget class="Line" name="line">
-          <property name="lineWidth">
-           <number>1</number>
-          </property>
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QToolButton" name="addSegmentSetButton">
-          <property name="toolTip">
-           <string>add segment set</string>
-          </property>
-          <property name="text">
-           <string>...</string>
-          </property>
-          <property name="icon">
-           <iconset resource="Experiment.qrc">
-            <normaloff>:/other/icons/add-blue.png</normaloff>:/other/icons/add-blue.png</iconset>
-          </property>
-          <property name="iconSize">
-           <size>
-            <width>16</width>
-            <height>16</height>
-           </size>
-          </property>
-          <property name="autoRaise">
-           <bool>true</bool>
-          </property>
-         </widget>
-        </item>
-        <item>
          <spacer name="horizontalSpacer">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
@@ -174,7 +141,14 @@
      <property name="orientation">
       <enum>Qt::Vertical</enum>
      </property>
-     <widget class="CategoryTreeView" name="segmentView"/>
+     <widget class="AWGSegmentView" name="segmentView">
+      <property name="editTriggers">
+       <set>QAbstractItemView::AnyKeyPressed|QAbstractItemView::DoubleClicked|QAbstractItemView::EditKeyPressed</set>
+      </property>
+      <property name="selectionMode">
+       <enum>QAbstractItemView::ContiguousSelection</enum>
+      </property>
+     </widget>
      <widget class="CoordinatePlotWidget" name="plot"/>
     </widget>
    </item>
@@ -187,9 +161,9 @@
    <header>uiModules.CoordinatePlotWidget</header>
   </customwidget>
   <customwidget>
-   <class>CategoryTreeView</class>
+   <class>AWGSegmentView</class>
    <extends>QTreeView</extends>
-   <header>uiModules.CategoryTree</header>
+   <header>AWG.AWGSegmentModel</header>
   </customwidget>
  </customwidgets>
  <resources>
