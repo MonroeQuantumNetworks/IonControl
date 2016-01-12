@@ -45,7 +45,6 @@ class AWGSegmentSet(AWGSegmentNode):
         super(AWGSegmentSet, self).__init__(parent)
         self.nodeType = nodeTypes.segmentSet
         self.repetitions = kwds.get('repetitions', 'R0')
-        self.name = kwds.get('name')
 
 
 class AWGSegment(AWGSegmentNode):
@@ -70,7 +69,7 @@ class AWGSegmentModel(QtCore.QAbstractItemModel):
         self.numColumns = len(self.columnNames)
         self.column = enum(*self.columnNames)
         self.allowDeletion=True
-        lightGray = QtGui.QColor(215, 215, 215, 255)
+        lightBlue = QtGui.QColor(207, 255, 248, 255)
         self.headerLookup = {
             (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, self.column.enabled): "",
             (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, self.column.amplitude): "Amplitude",
@@ -81,10 +80,14 @@ class AWGSegmentModel(QtCore.QAbstractItemModel):
             (QtCore.Qt.CheckStateRole,self.column.enabled): lambda node: QtCore.Qt.Checked if node.enabled else QtCore.Qt.Unchecked,
             (QtCore.Qt.DisplayRole, self.column.amplitude): lambda node: node.amplitude if node.nodeType==nodeTypes.segment else None,
             (QtCore.Qt.DisplayRole, self.column.duration): lambda node:  node.duration if node.nodeType==nodeTypes.segment else None,
-            (QtCore.Qt.BackgroundColorRole, self.column.repetitions): lambda node: lightGray if node.nodeType==nodeTypes.segment else None,
-            (QtCore.Qt.BackgroundColorRole, self.column.duration): lambda node: lightGray if node.nodeType==nodeTypes.segmentSet else None,
+            (QtCore.Qt.DisplayRole, self.column.repetitions): lambda node:  node.repetitions if node.nodeType==nodeTypes.segmentSet else None,
+            (QtCore.Qt.BackgroundColorRole, self.column.enabled): lambda node: lightBlue if node.nodeType==nodeTypes.segmentSet else None,
+            (QtCore.Qt.BackgroundColorRole, self.column.amplitude): lambda node: lightBlue if node.nodeType==nodeTypes.segmentSet else None,
+            (QtCore.Qt.BackgroundColorRole, self.column.duration): lambda node: lightBlue if node.nodeType==nodeTypes.segmentSet else None,
+            (QtCore.Qt.BackgroundColorRole, self.column.repetitions): lambda node: lightBlue if node.nodeType==nodeTypes.segmentSet else None,
             (QtCore.Qt.EditRole, self.column.amplitude): lambda node: node.amplitude if node.nodeType==nodeTypes.segment else None,
-            (QtCore.Qt.EditRole, self.column.duration): lambda node:  node.duration if node.nodeType==nodeTypes.segment else None
+            (QtCore.Qt.EditRole, self.column.duration): lambda node:  node.duration if node.nodeType==nodeTypes.segment else None,
+            (QtCore.Qt.EditRole, self.column.repetitions): lambda node:  node.repetitions if node.nodeType==nodeTypes.segmentSet else None
             }
         self.setDataLookup = {
             (QtCore.Qt.CheckStateRole, self.column.enabled): lambda index, value: self.setEnabled(index, value),
@@ -147,7 +150,7 @@ class AWGSegmentModel(QtCore.QAbstractItemModel):
         elif col==self.column.repetitions and node.nodeType==nodeTypes.segmentSet:
             return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsSelectable
         else:
-            return QtCore.Qt.NoItemFlags
+            return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
 
     def headerData(self, section, orientation, role):
         return self.headerLookup.get((orientation, role, section))
@@ -180,13 +183,13 @@ class AWGSegmentModel(QtCore.QAbstractItemModel):
         else:
             return False
 
-    def addSegment(self):
-        parent = self.root
+    def addNode(self, parent, nodeType):
         parentIndex = self.indexFromNode(parent)
-        newSegment = AWGSegment(parent)
+        node = AWGSegment(parent) if nodeType==nodeTypes.segment else AWGSegmentSet(parent)
         self.beginInsertRows(parentIndex, parent.childCount(), parent.childCount())
-        parent.children.append(newSegment)
+        parent.children.append(node)
         self.endInsertRows()
+        return node
 
     def moveRow(self, index, up):
         """move modelIndex 'index' up if up is True, else down"""
@@ -200,7 +203,22 @@ class AWGSegmentModel(QtCore.QAbstractItemModel):
                 self.endMoveRows()
                 return True
 
-    def removeNode(self, node, useModelReset=False):
+    def changeParent(self, nodeList, oldParent, newParent):
+        nodeList.sort(key = lambda node: node.row)
+        firstRow = nodeList[0].row
+        lastRow = nodeList[-1].row
+        oldParentIndex = self.indexFromNode(oldParent)
+        newParentIndex = self.indexFromNode(newParent)
+        moveValid = self.beginMoveRows(oldParentIndex, firstRow, lastRow, newParentIndex, 0)
+        if moveValid:
+            for node in nodeList:
+                node.parent = newParent
+                newParent.children.append(node)
+            self.endMoveRows()
+            return True
+
+
+    def removeNode(self, node):
         """Remove the specified node from the tree."""
         if node.children==[] and node!=self.root:
             parent = node.parent

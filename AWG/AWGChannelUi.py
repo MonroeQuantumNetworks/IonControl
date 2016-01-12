@@ -13,7 +13,7 @@ from pyqtgraph import mkBrush
 from trace.pens import solidBluePen, blue
 
 from AWG.AWGWaveform import AWGWaveform
-from AWG.AWGSegmentModel import AWGSegmentModel
+from AWG.AWGSegmentModel import AWGSegmentModel, nodeTypes
 
 blueBrush = mkBrush(blue)
 
@@ -136,7 +136,13 @@ class AWGChannelUi(AWGChannelForm, AWGChannelBase):
 
     def onAddSegment(self):
         """Add segment button is clicked."""
-        self.segmentModel.addSegment()
+        indexList = self.segmentView.selectedRowIndexes()
+        if indexList:
+            selectedNode = self.segmentModel.nodeFromIndex(indexList[-1])
+            parent = selectedNode if selectedNode.nodeType==nodeTypes.segmentSet else selectedNode.parent
+        else:
+            parent = self.segmentModel.root
+        self.segmentModel.addNode(parent, nodeTypes.segment)
         self.onSegmentChanged()
 
     def onRemoveSegment(self):
@@ -145,7 +151,23 @@ class AWGChannelUi(AWGChannelForm, AWGChannelBase):
         self.onSegmentChanged()
 
     def onAddToSet(self):
-        pass
+        logger = logging.getLogger(__name__)
+        indexList = self.segmentView.selectedRowIndexes()
+        nodeList = [self.segmentModel.nodeFromIndex(index) for index in indexList]
+        if nodeList:
+            oldParent = nodeList[-1].parent
+            sameParent = all([node.parent==oldParent for node in nodeList])
+            if not sameParent:
+                logger.warning("Selected nodes do not all have the same parent")
+            else:
+                newParent=self.segmentModel.addNode(oldParent, nodeTypes.segmentSet)
+                self.segmentModel.changeParent(nodeList, oldParent, newParent)
+        self.segmentView.expandAll()
 
     def onRemoveFromSet(self):
         pass
+    #     nodes = self.segmentView.selectedNodes()
+    #     for node in nodes:
+    #         currentSets = node.content.sets
+    #         self.segmentModel.changeCategory(node, currentSets[:-1])
+    #         self.segmentView.expandToNode(node)
