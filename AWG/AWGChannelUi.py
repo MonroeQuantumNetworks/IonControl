@@ -160,9 +160,9 @@ class AWGChannelUi(AWGChannelForm, AWGChannelBase):
             if not sameParent:
                 logger.warning("Selected nodes do not all have the same parent")
             else:
-                newParent=self.segmentModel.addNode(oldParent, nodeTypes.segmentSet)
+                newParent=self.segmentModel.addNode(oldParent, nodeTypes.segmentSet, nodeList[-1].row+1)
                 self.segmentModel.changeParent(nodeList, oldParent, newParent)
-        self.segmentView.expandAll()
+                self.segmentView.expandAll()
 
     def onRemoveFromSet(self):
         pass
