@@ -10,13 +10,14 @@ class Settings:
     pass
 
 class Keithley2010Reader(object):
+    _outputChannels = {}
     modeNames = ['Voltage:DC','Voltage:AC','Current:DC','Current:AC','Resistance']
     @staticmethod
     def connectedInstruments():
         rm = visa.ResourceManager()
         return [name for name in rm.list_resources() if name.find('COM')!=0 ]
 
-    def __init__(self, instrument=0, timeout=1, settings=None):
+    def __init__(self, instrument=0, timeout=1000, settings=None):
         self.instrument = instrument
         self.timeout = timeout
         self.conn = None
@@ -27,6 +28,7 @@ class Keithley2010Reader(object):
         self.settings.__dict__.setdefault('digits', 8)
         self.settings.__dict__.setdefault('averagePoints', 100 )
         self.settings.__dict__.setdefault('mode','Voltage:DC')
+        self.settings.__dict__.setdefault('channelSettings',  dict())
 
     def open(self):
         self.rm = visa.ResourceManager()

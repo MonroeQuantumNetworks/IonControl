@@ -19,15 +19,14 @@ class ReaderMeta(InstrumentMeta):
 
 class InstrumentReaderBase( ExternalParameterBase ):
     __metaclass__ = ReaderMeta
-    def __init__(self, name, settings, childobject, newDataSlot=None ):
+    def __init__(self, name, settings, globalDict, childobject, newDataSlot=None ):
         self.settings = settings
         self.commandQueue = Queue()
         self.responseQueue = Queue()
         self.reader = InstrumentLoggingReader(name, childobject, self.commandQueue, self.responseQueue )
         self.reader.start()
-        ExternalParameterBase.__init__(self, name, settings)
-        if newDataSlot is not None:
-            self.reader.newData.connect( newDataSlot )
+        ExternalParameterBase.__init__(self, name, settings, globalDict)
+        self.newData = self.reader.newData
          
     def setDefaults(self):
         pass
