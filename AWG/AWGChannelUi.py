@@ -163,11 +163,21 @@ class AWGChannelUi(AWGChannelForm, AWGChannelBase):
                 newParent=self.segmentModel.addNode(oldParent, nodeTypes.segmentSet, nodeList[-1].row+1)
                 self.segmentModel.changeParent(nodeList, oldParent, newParent)
                 self.segmentView.expandAll()
+                self.onSegmentChanged()
 
     def onRemoveFromSet(self):
-        pass
-    #     nodes = self.segmentView.selectedNodes()
-    #     for node in nodes:
-    #         currentSets = node.content.sets
-    #         self.segmentModel.changeCategory(node, currentSets[:-1])
-    #         self.segmentView.expandToNode(node)
+        logger = logging.getLogger(__name__)
+        indexList = self.segmentView.selectedRowIndexes()
+        nodeList = [self.segmentModel.nodeFromIndex(index) for index in indexList]
+        if nodeList:
+            oldParent = nodeList[-1].parent
+            sameParent = all([node.parent==oldParent for node in nodeList])
+            if not sameParent:
+                logger.warning("Selected nodes do not all have the same parent")
+            elif oldParent is self.segmentModel.root:
+                pass
+            else:
+                newParent=oldParent.parent
+                self.segmentModel.changeParent(nodeList, oldParent, newParent, oldParent.row)
+                self.segmentView.expandAll()
+                self.onSegmentChanged()

@@ -205,22 +205,21 @@ class AWGSegmentModel(QtCore.QAbstractItemModel):
                 self.endMoveRows()
                 return True
 
-    def changeParent(self, nodeList, oldParent, newParent):
+    def changeParent(self, nodeList, oldParent, newParent, newParentRow=0):
         nodeList.sort(key = lambda node: node.row)
         firstRow = nodeList[0].row
         lastRow = nodeList[-1].row
         oldParentIndex = self.indexFromNode(oldParent)
         newParentIndex = self.indexFromNode(newParent)
-        moveValid = self.beginMoveRows(oldParentIndex, firstRow, lastRow, newParentIndex, 0)
+        moveValid = self.beginMoveRows(oldParentIndex, firstRow, lastRow, newParentIndex, newParentRow)
         if moveValid:
+            newParent.children[newParentRow:newParentRow] = nodeList
             for node in nodeList:
                 node.parent = newParent
-                newParent.children.append(node)
                 if node in oldParent.children:
                     oldParent.children.remove(node)
             self.endMoveRows()
             return True
-
 
     def removeNode(self, node):
         """Remove the specified node from the tree."""
