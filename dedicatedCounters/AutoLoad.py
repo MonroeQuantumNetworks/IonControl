@@ -218,6 +218,7 @@ class AutoLoad(UiForm,UiBase):
         self.globalAdjustRevertList = list()
         self.voltageNodeBeforeLoading = ""
         self.externalInstrumentObservable = externalInstrumentObservable
+        self.originalResetValue = 0
         
     def constructStatemachine(self):
         self.statemachine = Statemachine('AutoLoad', now=now )
