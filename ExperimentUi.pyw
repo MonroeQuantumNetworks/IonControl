@@ -698,6 +698,8 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         for i in range(numTempAreas):
             if len(self.scanExperiment.area.tempAreas) > 0:
                 self.scanExperiment.area.tempAreas[0].win.close()
+        # close auxiliary pulsers
+        map(lambda x: x.shutdown(), self.auxiliaryPulsers)
 
     def saveConfig(self):
         self.config['MainWindow.State'] = self.parent.saveState()

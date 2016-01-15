@@ -860,9 +860,13 @@ class AutoLoad(UiForm,UiBase):
         self.settings.loadAlgorithm = number
 
     def setBeyondThreshold(self):
-        self.originalResetValue = self.globalVariablesUi.globalDict[self.settings.resetField]
-        self.globalVariablesUi.globalDict[self.settings.resetField] = self.settings.resetValue
+        self.originalResetValue = self.globalVariablesUi.globalDict.get(self.settings.resetField)
+        if self.originalResetValue is not None:
+            self.globalVariablesUi.globalDict[self.settings.resetField] = self.settings.resetValue
+        else:
+            logging.getLogger(__name__).warning("invalid global variable '{0}'".format(self.settings.resetField))
         self.statusLabel.setText("Too many ions, dumping them :(")
 
     def exitBeyondThreshold(self):
-        self.globalVariablesUi.globalDict[self.settings.resetField] = self.originalResetValue
+        if self.originalResetValue is not None:
+            self.globalVariablesUi.globalDict[self.settings.resetField] = self.originalResetValue

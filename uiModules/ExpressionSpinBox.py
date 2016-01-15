@@ -24,7 +24,7 @@ class ExpressionSpinBox(MagnitudeSpinBox):
 
     def focusOutEvent(self, event):
         super(ExpressionSpinBox, self).focusOutEvent(event)
-        if self.lineEdit().isModified():
+        if self.text() != self.expressionValue.string:
             cursorPosition = self.lineEdit().cursorPosition()
             self.expressionValue.string = self.text()
             self.expressionValue.value = super(ExpressionSpinBox, self).value()

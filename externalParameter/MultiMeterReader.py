@@ -12,7 +12,7 @@ class MultiMeterReader:
         rm = visa.ResourceManager()
         return [name for name in rm.list_resources() if name.find('COM')!=0 ]
 
-    def __init__(self, instrument=0, timeout=1, settings=None):
+    def __init__(self, instrument=0, timeout=1000, settings=None):
         self.instrument = instrument
         self.timeout = timeout
         self.conn = None

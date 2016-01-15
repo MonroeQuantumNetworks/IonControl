@@ -62,5 +62,6 @@ class InstrumentLoggingReader(QtCore.QThread):
         setattr( self.reader, field, data )
        
     def stop(self):
+        self.newData.emit(self.name, None)
         self.exiting = True
         

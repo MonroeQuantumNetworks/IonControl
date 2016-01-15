@@ -11,8 +11,8 @@ class InputChannel(object):
         self.channelName = channelName
 
     @property
-    def observable(self):
-        return self.device.inputObservable[self.channelName]
+    def newData(self):
+        return self.device.newData
         
     @property
     def value(self):

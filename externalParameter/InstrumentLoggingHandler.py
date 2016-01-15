@@ -170,13 +170,13 @@ class InstrumentLoggingHandler(QtCore.QObject):
         self.persistSpace = persistSpace
         self.subscriptions = set()
         
-    def addDataHandler(self, event):
-        self.addData(event.name, event.data)
+    def addDataHandler(self, channel, data):
+        self.addData(channel, data)
         
     def setInputChannels(self, inputChannels ):
         for key, channel in inputChannels.iteritems():
             if key not in self.subscriptions:
-                channel.observable.subscribe( self.addDataHandler )
+                channel.newData.connect(self.addDataHandler)
         
     def addData(self, source, data ):
         handler = self.handlerDict[source]
