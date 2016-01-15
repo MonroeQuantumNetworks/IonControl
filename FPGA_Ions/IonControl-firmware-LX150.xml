@@ -163,7 +163,9 @@
         <Parameter address="0x1a" default="0" bitmask="0xff" categories="Output Delays" shift="32" name="Output delay channel 60" encoding="TIME" enabled="True"/>
         <Parameter address="0x1a" default="0" bitmask="0xff" categories="Output Delays" shift="40" name="Output delay channel 61" encoding="TIME" enabled="True"/>
         <Parameter address="0x1a" default="0" bitmask="0xff" categories="Output Delays" shift="48" name="Output delay channel 62" encoding="TIME" enabled="True"/>
-        <Parameter address="0x1a" default="0" bitmask="0xff" categories="Output Delays" shift="56" name="Output delay channel 63" encoding="TIME" enabled="True"/>
+        <Parameter address="0x70" default="0" bitmask="0xff" categories="Output Delays" shift="56" name="Output delay channel 63" encoding="TIME" enabled="True"/>
+
+        <Parameter address="0x1a" default="0" bitmask="0xffffffffffffffff" categories="Logic Analyzer" shift="0" name="Aux Enable Mask" encoding="None" enabled="True"/>
     </ExtendedWireIns>
     <StatusBits>
         <StatusBit bitNo="0" active="error" name="PI 0 underflow"/>
