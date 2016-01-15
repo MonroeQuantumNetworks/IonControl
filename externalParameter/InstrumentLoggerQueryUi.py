@@ -158,7 +158,10 @@ class InstrumentLoggerQueryUi(Form,Base):
             logging.getLogger(__name__).warning("Database query returned empty set")
         elif len(result)>0:
             #time = [(pytz.utc.localize(e.upd_date) - datetime(1970,1,1, tzinfo=pytz.utc)).total_seconds() for e in result]
-            time = [(e.upd_date-datetime.fromtimestamp(0)).total_seconds() for e in result]
+            if result[0].upd_date.tzinfo is not None:
+                time = [(e.upd_date - datetime(1970, 1, 1, tzinfo=pytz.utc)).total_seconds() for e in result]
+            else:
+                time = [(e.upd_date-datetime.fromtimestamp(0)).total_seconds() for e in result]
             value = [e.value for e in result]
             bottom = [e.value - e.bottom if e.bottom is not None else e.value for e in result]
             top = [e.top -e.value if e.top is not None else e.value for e in result]
