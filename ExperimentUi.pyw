@@ -93,6 +93,9 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.shutterNameDict = config.get('Settings.ShutterNameDict', ChannelNameDict())
         if self.shutterNameDict.__class__.__name__ == 'ChannelNameMap':
             self.shutterNameDict = ChannelNameDict( self.shutterNameDict.names )
+        if self.shutterNameDict.customDict.__class__.__name__ == 'ChannelNameMap':
+            self.shutterNameDict = ChannelNameDict(self.shutterNameDict.customDict._fwd, self.shutterNameDict.defaultDict )
+
         self.shutterNameSignal = DataChanged()
         self.triggerNameDict = config.get('Settings.TriggerNameDict', ChannelNameDict())
         if self.triggerNameDict.__class__.__name__ == 'ChannelNameMap':
