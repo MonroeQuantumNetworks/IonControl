@@ -158,6 +158,9 @@ class AWGSegmentModel(QtCore.QAbstractItemModel):
     def setEnabled(self, index, value):
         node = self.nodeFromIndex(index)
         node.enabled = value==QtCore.Qt.Checked
+        for childNode in node.children:
+            childIndex = self.indexFromNode(childNode)
+            self.setEnabled(childIndex, value) #recursive
         self.dataChanged.emit(index, index)
         self.segmentChanged.emit()
         self.settings.saveIfNecessary()
