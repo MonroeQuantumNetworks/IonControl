@@ -72,8 +72,8 @@ class AWGWaveform(object):
         return self.settings.channelSettingsList[self.channel]['equation']
 
     @property
-    def segmentData(self):
-        return self.settings.channelSettingsList[self.channel]['segmentData']
+    def segmentDataRoot(self):
+        return self.settings.channelSettingsList[self.channel]['segmentDataRoot']
 
     def calibrateInvIfNecessary(self, p):
         """Converts raw to volts if useCalibration is True"""
@@ -95,7 +95,7 @@ class AWGWaveform(object):
             self.dependencies.add(self.durationName)
         else:
             self.dependencies = set()
-            self.updateSegmentDependencies(self.segmentData)
+            self.updateSegmentDependencies(self.segmentDataRoot.children)
 
     def updateSegmentDependencies(self, nodeList):
         for node in nodeList:
@@ -109,7 +109,7 @@ class AWGWaveform(object):
     def evaluate(self):
         """evaluate the waveform based on either the equation or the segment list"""
         equationMode = self.settings.waveformMode==self.settings.waveformModes.equation
-        sampleList = self.evaluateEquation() if equationMode else self.evaluateSegments(self.segmentData)
+        sampleList = self.evaluateEquation() if equationMode else self.evaluateSegments(self.segmentDataRoot.children)
         return self.compliantSampleList(sampleList)
 
     def evaluateSegments(self, nodeList):

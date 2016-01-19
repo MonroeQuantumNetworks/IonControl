@@ -10,6 +10,7 @@ from pyqtgraph.dockarea import DockArea, Dock
 
 from AWG.AWGChannelUi import AWGChannelUi
 from AWG.AWGTableModel import AWGTableModel
+from AWG.AWGSegmentModel import AWGSegmentNode
 from AWG.VarAsOutputChannel import VarAsOutputChannel
 from modules.PyqtUtility import BlockSignals
 from modules.SequenceDict import SequenceDict
@@ -75,10 +76,10 @@ class AWGUi(AWGForm, AWGBase):
         self.configname = 'AWGUi.' + deviceClass.displayName
         self.globalDict = globalDict
         self.autoSave = self.config.get(self.configname+'.autoSave', True)
-        # self.settingsDict = self.config.get(self.configname+'.settingsDict', dict())
-        # self.settingsName = self.config.get(self.configname+'.settingsName', '')
-        self.settingsDict=dict()
-        self.settingsName=''
+        self.settingsDict = self.config.get(self.configname+'.settingsDict', dict())
+        self.settingsName = self.config.get(self.configname+'.settingsName', '')
+        # self.settingsDict=dict()
+        # self.settingsName=''
         self.recentFiles = self.config.get(self.configname+'.recentFiles', dict()) #dict of form {basename: filename}, where filename has path and basename doesn't
         self.lastDir = self.config.get(self.configname+'.lastDir', getProject().configDir)
         Settings.deviceProperties = deviceClass.deviceProperties
@@ -89,12 +90,12 @@ class AWGUi(AWGForm, AWGBase):
                 if channel >= len(settings.channelSettingsList): #create new channels if it's necessary
                     settings.channelSettingsList.append({
                         'equation' : 'A*sin(w*t+phi) + offset',
-                        'segmentData':[],
+                        'segmentDataRoot':AWGSegmentNode(None, ''),
                         'plotEnabled':True,
                         'plotStyle':Settings.plotStyles.lines})
                 else:
                     settings.channelSettingsList[channel].setdefault('equation', 'A*sin(w*t+phi) + offset')
-                    settings.channelSettingsList[channel].setdefault('segmentData', [])
+                    settings.channelSettingsList[channel].setdefault('segmentDataRoot', AWGSegmentNode(None, ''))
                     settings.channelSettingsList[channel].setdefault('plotEnabled', True)
                     settings.channelSettingsList[channel].setdefault('plotStyle', Settings.plotStyles.lines)
         self.settings = Settings() #we always run settings through the constructor
@@ -304,8 +305,7 @@ class AWGUi(AWGForm, AWGBase):
                 channelUi.plotCheckbox.setChecked(self.settings.channelSettingsList[channelUi.channel]['plotEnabled'])
                 with BlockSignals(channelUi.styleComboBox) as w:
                     w.setCurrentIndex(self.settings.channelSettingsList[channelUi.channel]['plotStyle'])
-                channelUi.segmentModel.root.children = self.settings.channelSettingsList[channelUi.channel]['segmentData']
-                channelUi.segmentModel.updateNodeDict()
+                channelUi.segmentModel.root = self.settings.channelSettingsList[channelUi.channel]['segmentDataRoot']
                 channelUi.replot()
             self.onDependenciesChanged()
             self.saveButton.setEnabled(False)

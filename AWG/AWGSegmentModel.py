@@ -63,8 +63,7 @@ class AWGSegmentModel(QtCore.QAbstractItemModel):
         self.channel = channel
         self.settings = settings
         self.globalDict = globalDict
-        self.root = AWGSegmentNode(None, '')
-        self.root.children = self.settings.channelSettingsList[self.channel]['segmentData']
+        self.root = self.settings.channelSettingsList[self.channel]['segmentDataRoot']
         self.columnNames = ['enabled', 'amplitude', 'duration', 'repetitions']
         self.numColumns = len(self.columnNames)
         self.column = enum(*self.columnNames)

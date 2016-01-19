@@ -61,6 +61,7 @@ from pyqtgraph.parametertree.Parameter import Parameter
 from ProjectConfig.Project import getProject
 from modules.magnitude import mg, new_mag
 
+from AWG.AWGSegmentModel import AWGSegmentNode
 
 class AWGDeviceBase(object):
     """base class for AWG Devices"""
@@ -71,7 +72,7 @@ class AWGDeviceBase(object):
         for channel in range(self.deviceProperties['numChannels']):
             if channel >= len(self.settings.channelSettingsList): #create new channels if it's necessary
                 self.settings.channelSettingsList.append({'equation' : 'A*sin(w*t+phi) + offset',
-                                                          'segmentData':[],
+                                                          'segmentDataRoot':AWGSegmentNode(None, ''),
                                                           'plotEnabled' : True,
                                                           'plotStyle':self.settings.plotStyles.lines})
         self.project = getProject()
