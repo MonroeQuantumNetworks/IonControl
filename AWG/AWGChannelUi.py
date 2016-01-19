@@ -69,6 +69,7 @@ class AWGChannelUi(AWGChannelForm, AWGChannelBase):
         #segment table
         self.segmentModel = AWGSegmentModel(self.channel, self.settings, self.globalDict)
         self.segmentView.setModel(self.segmentModel)
+        self.segmentView.restoreTreeState(self.settings.channelSettingsList[self.channel]['segmentTreeState'])
         self.segmentModel.segmentChanged.connect(self.onSegmentChanged)
         self.segmentView.segmentChanged.connect(self.onSegmentChanged)
         self.addSegmentButton.clicked.connect(self.onAddSegment)

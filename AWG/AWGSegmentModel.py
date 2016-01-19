@@ -10,6 +10,7 @@ from modules.firstNotNone import firstNotNone
 from modules.enum import enum
 from modules.MagnitudeParser import isIdentifier
 from uiModules.KeyboardFilter import KeyListFilter
+import logging
 
 import sip
 api2 = sip.getapi("QVariant")==2
@@ -278,3 +279,32 @@ class AWGSegmentView(QtGui.QTreeView):
         for index in indexList:
             model.moveRow(index, up)
         self.segmentChanged.emit()
+
+    def getExpansionState(self, node):
+        expansionList = []
+        for childNode in node.children:
+            expanded = self.isExpanded(self.model().indexFromNode(childNode))
+            expansionList.append((expanded, self.getExpansionState(childNode)))
+        return expansionList
+
+    def restoreExpansionState(self, node, expansionList):
+        try:
+            for row, childNode in enumerate(node.children):
+                index = self.model().indexFromNode(childNode)
+                self.setExpanded(index, expansionList[row][0])
+                self.restoreExpansionState(childNode, expansionList[row][1])
+        except IndexError:
+            logging.getLogger(__name__).warning("Unable to restore tree state")
+
+    def saveTreeState(self):
+        columnWidths = self.header().saveState()
+        expansionState = self.getExpansionState(self.model().root)
+        return {'columnWidths':columnWidths,
+                'expansionState':expansionState}
+
+    def restoreTreeState(self, state):
+        if state:
+            if 'columnWidths' in state:
+                self.header().restoreState(state['columnWidths'])
+            if 'expansionState' in state:
+                self.restoreExpansionState(self.model().root, state['expansionState'])

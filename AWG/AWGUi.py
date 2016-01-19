@@ -91,11 +91,13 @@ class AWGUi(AWGForm, AWGBase):
                     settings.channelSettingsList.append({
                         'equation' : 'A*sin(w*t+phi) + offset',
                         'segmentDataRoot':AWGSegmentNode(None, ''),
+                        'segmentTreeState':None,
                         'plotEnabled':True,
                         'plotStyle':Settings.plotStyles.lines})
                 else:
                     settings.channelSettingsList[channel].setdefault('equation', 'A*sin(w*t+phi) + offset')
                     settings.channelSettingsList[channel].setdefault('segmentDataRoot', AWGSegmentNode(None, ''))
+                    settings.channelSettingsList[channel].setdefault('segmentTreeState', None)
                     settings.channelSettingsList[channel].setdefault('plotEnabled', True)
                     settings.channelSettingsList[channel].setdefault('plotStyle', Settings.plotStyles.lines)
         self.settings = Settings() #we always run settings through the constructor
@@ -247,6 +249,7 @@ class AWGUi(AWGForm, AWGBase):
         self.config[self.configname+".guiState"] = saveGuiState(self)
         for awgChannelUi in self.awgChannelUiList:
             self.config[self.configname+"channel{0}.guiState".format(awgChannelUi.channel)] = saveGuiState(awgChannelUi)
+            self.settings.channelSettingsList[awgChannelUi.channel]['segmentTreeState'] = awgChannelUi.segmentView.saveTreeState()
         self.config[self.configname+'.state'] = self.saveState()
         self.config[self.configname+'.pos'] = self.pos()
         self.config[self.configname+'.size'] = self.size()
@@ -277,6 +280,8 @@ class AWGUi(AWGForm, AWGBase):
        
     def onLoad(self, name):
         """load settings"""
+        for channelUi in self.awgChannelUiList:
+            self.settings.channelSettingsList[channelUi.channel]['segmentTreeState'] = channelUi.segmentView.saveTreeState()
         name = str(name)
         if name in self.settingsDict:
             self.settingsName = name
@@ -311,6 +316,8 @@ class AWGUi(AWGForm, AWGBase):
             self.saveButton.setEnabled(False)
             self.tableModel.endResetModel()
             [channelUi.segmentModel.endResetModel() for channelUi in self.awgChannelUiList]
+            for channelUi in self.awgChannelUiList:
+                channelUi.segmentView.restoreTreeState(self.settings.channelSettingsList[channelUi.channel]['segmentTreeState'])
 
     def onAutoSave(self, checked):
         """autosave is changed"""
