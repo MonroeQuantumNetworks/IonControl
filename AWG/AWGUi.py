@@ -10,7 +10,7 @@ from pyqtgraph.dockarea import DockArea, Dock
 
 from AWG.AWGChannelUi import AWGChannelUi
 from AWG.AWGTableModel import AWGTableModel
-from AWG.AWGSegmentModel import AWGSegmentNode
+from AWG.AWGSegmentModel import AWGSegmentNode, AWGSegment, AWGSegmentSet, nodeTypes
 from AWG.VarAsOutputChannel import VarAsOutputChannel
 from modules.PyqtUtility import BlockSignals
 from modules.SequenceDict import SequenceDict
@@ -90,13 +90,13 @@ class AWGUi(AWGForm, AWGBase):
                 if channel >= len(settings.channelSettingsList): #create new channels if it's necessary
                     settings.channelSettingsList.append({
                         'equation' : 'A*sin(w*t+phi) + offset',
-                        'segmentDataRoot':AWGSegmentNode(None, ''),
+                        'segmentDataRoot':AWGSegmentNode(None),
                         'segmentTreeState':None,
                         'plotEnabled':True,
                         'plotStyle':Settings.plotStyles.lines})
                 else:
                     settings.channelSettingsList[channel].setdefault('equation', 'A*sin(w*t+phi) + offset')
-                    settings.channelSettingsList[channel].setdefault('segmentDataRoot', AWGSegmentNode(None, ''))
+                    settings.channelSettingsList[channel].setdefault('segmentDataRoot', AWGSegmentNode(None))
                     settings.channelSettingsList[channel].setdefault('segmentTreeState', None)
                     settings.channelSettingsList[channel].setdefault('plotEnabled', True)
                     settings.channelSettingsList[channel].setdefault('plotStyle', Settings.plotStyles.lines)
@@ -412,57 +412,90 @@ class AWGUi(AWGForm, AWGBase):
 
     def openFile(self, filename):
         """Open the file 'filename'"""
-        logger.warning("fix me fix me fix me")
-        # if os.path.exists(filename):
-        #     self.lastDir, basename = os.path.split(filename)
-        #     self.recentFiles[basename] = filename
-        #     self.settings.filename = filename
-        #     with BlockSignals(self.filenameComboBox) as w:
-        #         self.filenameModel.setStringList(self.recentFiles.keys())
-        #         w.setCurrentIndex(w.findText(basename))
-        #     with open(filename, 'r') as f:
-        #         yamldata = yaml.load(f)
-        #     variables = yamldata.get('variables')
-        #     channelData = yamldata.get('channelData')
-        #     self.tableModel.beginResetModel()
-        #     [channelUi.segmentModel.beginResetModel() for channelUi in self.awgChannelUiList]
-        #     if channelData:
-        #         for channel, channelSettings in enumerate(self.settings.channelSettingsList):
-        #             if channel < len(channelData):
-        #                 channelSettings['segmentList'] = channelData[channel]
-        #     if variables:
-        #         for varname, vardata in variables.iteritems():
-        #             self.settings.varDict.setdefault(varname, dict())
-        #             self.settings.varDict[varname]['value'] = mg(vardata['value'], vardata['unit'])
-        #             self.settings.varDict[varname]['text'] = vardata['text']
-        #     for channelUi in self.awgChannelUiList:
-        #         channelUi.waveform.updateDependencies()
-        #         channelUi.replot()
-        #     self.onDependenciesChanged()
-        #     self.tableModel.endResetModel()
-        #     [channelUi.segmentModel.endResetModel() for channelUi in self.awgChannelUiList]
-        # else:
-        #     logging.getLogger(__name__).warning("file '{0}' does not exist".format(filename))
-        #     if filename in self.recentFiles:
-        #         del self.recentFiles[filename]
-        #         with BlockSignals(self.filenameComboBox) as w:
-        #             self.filenameModel.setStringList(self.recentFiles.keys())
-        #             w.setCurrentIndex(-1)
+        if os.path.exists(filename):
+            self.lastDir, basename = os.path.split(filename)
+            self.recentFiles[basename] = filename
+            self.settings.filename = filename
+            with BlockSignals(self.filenameComboBox) as w:
+                self.filenameModel.setStringList(self.recentFiles.keys())
+                w.setCurrentIndex(w.findText(basename))
+            with open(filename, 'r') as f:
+                yamldata = yaml.load(f)
+            variables = yamldata.get('variables')
+            channelData = yamldata.get('channelData')
+            self.tableModel.beginResetModel()
+            [channelUi.segmentModel.beginResetModel() for channelUi in self.awgChannelUiList]
+            if channelData:
+                for channelUi in self.awgChannelUiList:
+                    if channelUi.channel < len(channelData):
+                        self.settings.channelSettingsList[channelUi.channel]['segmentDataRoot'] = self.convertListToNodes(channelData[channelUi.channel], isRoot=True)
+                        channelUi.segmentModel.root = self.settings.channelSettingsList[channelUi.channel]['segmentDataRoot']
+            if variables:
+                for varname, vardata in variables.iteritems():
+                    self.settings.varDict.setdefault(varname, dict())
+                    self.settings.varDict[varname]['value'] = mg(vardata['value'], vardata['unit'])
+                    self.settings.varDict[varname]['text'] = vardata['text']
+            for channelUi in self.awgChannelUiList:
+                channelUi.waveform.updateDependencies()
+                channelUi.replot()
+            self.onDependenciesChanged()
+            self.tableModel.endResetModel()
+            [channelUi.segmentModel.endResetModel() for channelUi in self.awgChannelUiList]
+            [channelUi.segmentView.expandAll() for channelUi in self.awgChannelUiList]
+        else:
+            logging.getLogger(__name__).warning("file '{0}' does not exist".format(filename))
+            if filename in self.recentFiles:
+                del self.recentFiles[filename]
+                with BlockSignals(self.filenameComboBox) as w:
+                    self.filenameModel.setStringList(self.recentFiles.keys())
+                    w.setCurrentIndex(-1)
+
+    def convertNodeToList(self, node):
+        nodeList = []
+        for childNode in node.children:
+            if childNode.nodeType==nodeTypes.segment:
+                nodeList.append( {'amplitude':childNode.amplitude,
+                                  'duration':childNode.duration,
+                                  'enabled':childNode.enabled}
+                                 )
+            elif childNode.nodeType==nodeTypes.segmentSet:
+                nodeList.append( {'repetitions':childNode.repetitions,
+                                  'enabled':childNode.enabled,
+                                  'segments':self.convertNodeToList(childNode)}
+                                 )
+        return nodeList
+
+    def convertListToNodes(self, data, parent=None, enabled=True, repetitions=None, isRoot=False):
+        node = AWGSegmentNode(parent=None) if isRoot else AWGSegmentSet(parent=parent, enabled=enabled, repetitions=repetitions)
+        for segment in data:
+            if 'duration' in segment:
+                childNode = AWGSegment(parent=node,
+                                       amplitude=segment['amplitude'],
+                                       duration=segment['duration'],
+                                       enabled=segment['enabled'])
+                node.children.append(childNode)
+            elif 'repetitions' in segment:
+                segmentSet = self.convertListToNodes(segment['segments'], parent=node, enabled=segment['enabled'], repetitions=segment['repetitions'])
+                node.children.append(segmentSet)
+            else:
+                logging.getLogger(__name__).error("Unable to convert list to nodes")
+        return node
 
     def onSaveFile(self):
         """Save button is clicked. Save data to segment file"""
-        logger.warning('fix me fix me fix me')
-        # channelData = [channelSettings['segmentList']
-        #             for channelSettings in self.settings.channelSettingsList]
-        # yamldata = {'channelData': channelData}
-        # variables={varname:
-        #                      {'value':float(varValueTextDict['value'].toStringTuple()[0]),
-        #                       'unit':varValueTextDict['value'].toStringTuple()[1],
-        #                       'text':varValueTextDict['text']}
-        #                  for varname, varValueTextDict in self.settings.varDict.iteritems()}
-        # yamldata.update({'variables':variables})
-        # with open(self.settings.filename, 'w') as f:
-        #     yaml.dump(yamldata, f, default_flow_style=False)
+        channelData = []
+        for channelSettings in self.settings.channelSettingsList:
+            segmentData = self.convertNodeToList(channelSettings['segmentDataRoot'])
+            channelData.append(segmentData)
+        yamldata = {'channelData': channelData}
+        variables={varname:
+                             {'value':float(varValueTextDict['value'].toStringTuple()[0]),
+                              'unit':varValueTextDict['value'].toStringTuple()[1],
+                              'text':varValueTextDict['text']}
+                         for varname, varValueTextDict in self.settings.varDict.iteritems()}
+        yamldata.update({'variables':variables})
+        with open(self.settings.filename, 'w') as f:
+            yaml.dump(yamldata, f, default_flow_style=False)
 
     def onReloadFile(self):
         self.openFile(self.settings.filename)

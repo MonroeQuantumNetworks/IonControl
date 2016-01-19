@@ -21,7 +21,7 @@ class AWGSegmentNode(object):
     def __init__(self, parent, *args, **kwds):
         self.parent = parent
         self.children = []
-        self.enabled = True
+        self.enabled = kwds.get('enabled', True)
 
     def childCount(self):
         return len(self.children)
