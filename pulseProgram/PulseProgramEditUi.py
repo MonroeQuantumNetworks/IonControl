@@ -117,11 +117,15 @@ class Ui_Form(object):
         self.actionFindNext = QtGui.QAction(Form)
         self.actionFindNext.setObjectName(_fromUtf8("actionFindNext"))
 
-
         self.retranslateUi(Form)
-        QtCore.QObject.connect(self.actionFind, QtCore.SIGNAL(_fromUtf8("triggered()")), self.findWidgetFrame.show)
+        QtCore.QObject.connect(self.actionFind, QtCore.SIGNAL(_fromUtf8("triggered()")), self.showFindDialog)
         QtCore.QObject.connect(self.actionFindNext, QtCore.SIGNAL(_fromUtf8("triggered()")), self.findNextButton.click)
         QtCore.QMetaObject.connectSlotsByName(Form)
+
+    def showFindDialog(self):
+        self.findWidgetFrame.show()
+        self.findLineEdit.setFocus(QtCore.Qt.ShortcutFocusReason)
+
 
     def retranslateUi(self, Form):
         Form.setWindowTitle(_translate("Form", "Form", None))
