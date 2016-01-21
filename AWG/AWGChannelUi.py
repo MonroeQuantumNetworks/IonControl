@@ -112,18 +112,18 @@ class AWGChannelUi(AWGChannelForm, AWGChannelBase):
         """Plot the waveform"""
         logger = logging.getLogger(__name__)
         if self.plotEnabled:
-            try:
-                points = self.waveform.evaluate()
-                points = points.tolist()
-                self.plot.getItem(0,0).clear()
-                if self.settings.channelSettingsList[self.channel]['plotStyle'] == self.settings.plotStyles.lines:
-                    self.plot.getItem(0,0).plot(points, pen=solidBluePen)
-                if self.settings.channelSettingsList[self.channel]['plotStyle'] == self.settings.plotStyles.points:
-                    self.plot.getItem(0,0).plot(points, pen=None, symbol='o', symbolSize=3, symbolPen=solidBluePen, symbolBrush=blueBrush)
-                if self.settings.channelSettingsList[self.channel]['plotStyle'] == self.settings.plotStyles.linespoints:
-                    self.plot.getItem(0,0).plot(points, pen=solidBluePen, symbol='o', symbolSize=3, symbolPen=solidBluePen, symbolBrush=blueBrush)
-            except Exception as e:
-                logger.warning(e.__class__.__name__ + ": " + str(e))
+            # try:
+            points = self.waveform.evaluate()
+            points = points.tolist()
+            self.plot.getItem(0,0).clear()
+            if self.settings.channelSettingsList[self.channel]['plotStyle'] == self.settings.plotStyles.lines:
+                self.plot.getItem(0,0).plot(points, pen=solidBluePen)
+            if self.settings.channelSettingsList[self.channel]['plotStyle'] == self.settings.plotStyles.points:
+                self.plot.getItem(0,0).plot(points, pen=None, symbol='o', symbolSize=3, symbolPen=solidBluePen, symbolBrush=blueBrush)
+            if self.settings.channelSettingsList[self.channel]['plotStyle'] == self.settings.plotStyles.linespoints:
+                self.plot.getItem(0,0).plot(points, pen=solidBluePen, symbol='o', symbolSize=3, symbolPen=solidBluePen, symbolBrush=blueBrush)
+            # except Exception as e:
+            #     logger.warning(e.__class__.__name__ + ": " + str(e))
 
     def onEquation(self):
         """Set equation to match the text box (which also updates the waveform)"""

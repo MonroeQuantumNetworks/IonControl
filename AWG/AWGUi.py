@@ -47,7 +47,7 @@ class Settings(object):
     deviceProperties = dict()
     stateFields = {'channelSettingsList':list(),
                    'deviceSettings':dict(),
-                   'waveformMode':waveformModes.equation,
+                   'waveformMode':waveformModes.segments,
                    'filename':'',
                    'varDict':SequenceDict()
                    }

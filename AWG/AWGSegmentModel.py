@@ -187,7 +187,7 @@ class AWGSegmentModel(QtCore.QAbstractItemModel):
             if strvalue in self.globalDict:
                 logging.getLogger(__name__).warning("'{0}' is already a global variable name".format(strvalue))
                 return False
-            elif (not isIdentifier(strvalue)) and (not isValueExpression(strvalue)) and index.column!=self.column.equation:
+            elif (not isIdentifier(strvalue)) and (not isValueExpression(strvalue)) and index.column()!=self.column.equation:
                 logging.getLogger(__name__).warning("'{0}' is not a valid variable name or value".format(strvalue))
                 return False
             else:

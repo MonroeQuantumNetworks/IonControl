@@ -114,63 +114,58 @@ class AWGWaveform(object):
     def evaluate(self):
         """evaluate the waveform based on either the equation or the segment list"""
         equationMode = self.settings.waveformMode==self.settings.waveformModes.equation
-        sampleList = self.evaluateEquation() if equationMode else self.evaluateSegments(self.segmentDataRoot.children)
+        _, sampleList = self.evaluateEquation() if equationMode else self.evaluateSegments(self.segmentDataRoot.children)
         return self.compliantSampleList(sampleList)
 
-    def evaluateSegments(self, nodeList):
+    def evaluateSegments(self, nodeList, startStep=0):
         """Evaluate the waveform based on the segment table.
-
+        Args:
+            nodeList: list of nodes to evaluate
+            startStep: the step number at which evaluation starts
         Returns:
-            sampleList: list of values to program to the AWG
+            startStep, sampleList: The step at which the next waveform begins, together with a list of samples
         """
         sampleList = numpy.array([])
         for node in nodeList:
             if node.enabled:
                 if node.nodeType==nodeTypes.segment:
-                    equation = self.settings.varDict[node.equation]['value'].to_base_units().val
-                    if isIdentifier(node.duration):
-                        duration = self.settings.varDict[node.duration]['value']
-                    else:
-                        duration = Expression().evaluateAsMagnitude(node.duration)
-                    numSamples = duration*self.sampleRate
-                    numSamples = int( numSamples.toval() ) #convert to float, then to integer
-                    sampleList = numpy.append(sampleList, [equation]*numSamples)
+                    duration = self.settings.varDict[node.duration]['value'] if isIdentifier(node.duration) else Expression().evaluateAsMagnitude(node.duration)
+                    startStep, newSamples = self.evaluateEquation(node, duration, startStep)
+                    sampleList = numpy.append(sampleList, newSamples)
                 elif node.nodeType==nodeTypes.segmentSet:
-                    if isIdentifier(node.repetitions):
-                        repMag = self.settings.varDict[node.repetitions]['value']
-                    else:
-                        repMag = Expression().evaluateAsMagnitude(node.repetitions)
+                    repMag = self.settings.varDict[node.repetitions]['value'] if isIdentifier(node.repetitions) else Expression().evaluateAsMagnitude(node.repetitions)
                     repetitions = int(repMag.to_base_units().val) #convert to float, then to integer
                     for n in range(repetitions):
-                        sampleList = numpy.append(sampleList, self.evaluateSegments(node.children)) #recursive
-        return sampleList
+                        startStep, newSamples = self.evaluateSegments(node.children, startStep) #recursive
+                        sampleList = numpy.append(sampleList, newSamples)
+        return startStep, sampleList
 
-    def evaluateEquation(self):
-        """Evaluate the waveform based on the equation.
+    def evaluateEquation(self, node, duration, startStep):
+        """Evaluate the waveform of the specified node's equation.
 
         Returns:
             sampleList: list of values to program to the AWG.
         """
         #calculate number of samples
-        numSamples = self.settings.varDict[self.durationName]['value']*self.sampleRate
+        numSamples = duration*self.sampleRate
         numSamples = int( numSamples.toval() ) #convert to float, then to integer
         numSamples = min(numSamples, self.maxSamples) #cap at maxSamples
 
         # first test expression with dummy variable to see if units match up, so user is warned otherwise
-        self.expression.variabledict = {varName:varValueTextDict['value'] for varName, varValueTextDict in self.settings.varDict.iteritems()}
-        self.expression.variabledict.update({'t':mg(1, 'us')})
-        self.expression.evaluateWithStack(self.stack[:])
+        node.expression.variabledict = {varName:varValueTextDict['value'] for varName, varValueTextDict in self.settings.varDict.iteritems()}
+        node.expression.variabledict.update({'t':mg(1, 'us')})
+        node.expression.evaluateWithStack(node.stack[:])
 
         varValueDict = {varName:varValueTextDict['value'].to_base_units().val for varName, varValueTextDict in self.settings.varDict.iteritems()}
-        varValueDict.pop(self.durationName)
         varValueDict['t'] = sympy.Symbol('t')
 
-        sympyExpr = parse_expr(self.equation, varValueDict) #parse the equation
+        sympyExpr = parse_expr(node.equation, varValueDict) #parse the equation
         func = sympy.lambdify(varValueDict['t'], sympyExpr, "numpy") #make into a python function
         func = numpy.vectorize(func, otypes=[numpy.float64]) #vectorize the function
         step = self.stepsize.toval(ounit='s')
-        sampleList = func( numpy.arange(numSamples)*step ) #apply the function to each time step value
-        return sampleList
+        sampleList = func( numpy.arange(numSamples)*step + startStep) #apply the function to each time step value
+        nextSegmentStartStep = (numSamples-1)*step + startStep + 1
+        return nextSegmentStartStep, sampleList
 
     def compliantSampleList(self, sampleList):
         """Make the sample list compliant with the capabilities of the AWG
@@ -193,3 +188,35 @@ class AWGWaveform(object):
             extraNumSamples = 0
         sampleList = numpy.append(sampleList, [self.padValue]*extraNumSamples)
         return sampleList
+
+if __name__ == '__main__':
+    from AWG.AWGSegmentModel import AWGSegmentNode, AWGSegment, AWGSegmentSet
+    class Settings:
+        deviceProperties = dict(
+        sampleRate = mg(1, 'GHz'), #rate at which the samples programmed are output by the AWG
+        minSamples = 1, #minimum number of samples to program
+        maxSamples = 4000000, #maximum number of samples to program
+        sampleChunkSize = 1, #number of samples must be a multiple of sampleCnunkSize
+        padValue = 2047, #the waveform will be padded with this number ot make it a multiple of sampleChunkSize, or to make it the length of minSamples
+        minAmplitude = 0, #minimum amplitude value (raw)
+        maxAmplitude = 4095, #maximum amplitude value (raw)
+        numChannels = 2,  #Number of channels
+        calibration = lambda voltage: 2047. + 3413.33*voltage, #function that returns raw amplitude number, given voltage
+        calibrationInv = lambda raw: -0.599707 + 0.000292969*raw #function that returns voltage, given raw amplitude number
+    )
+        waveformModes = enum('equation', 'segment')
+        waveformMode = 1
+        root = AWGSegmentSet(None)
+        channelSettingsList = [{'segmentDataRoot':root}]
+        varDict = {'a':{'value':mg(1, 'MHz'), 'text':None},
+                   'b':{'value':mg(1, ''), 'text':None}}
+    s = Settings()
+    w = AWGWaveform(0, s)
+    node1 = AWGSegment(equation='a*b*t', duration='5 ns', parent=s.root)
+    s.root.children.append(node1)
+    w.updateDependencies()
+    newtime, j = w.evaluateSegments(s.root.children)
+    print j
+    print len(j)
+
+
