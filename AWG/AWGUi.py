@@ -454,7 +454,7 @@ class AWGUi(AWGForm, AWGBase):
         nodeList = []
         for childNode in node.children:
             if childNode.nodeType==nodeTypes.segment:
-                nodeList.append( {'amplitude':childNode.amplitude,
+                nodeList.append( {'equation':childNode.equation,
                                   'duration':childNode.duration,
                                   'enabled':childNode.enabled}
                                  )
@@ -470,7 +470,7 @@ class AWGUi(AWGForm, AWGBase):
         for segment in data:
             if 'duration' in segment:
                 childNode = AWGSegment(parent=node,
-                                       amplitude=segment['amplitude'],
+                                       equation=segment['equation'],
                                        duration=segment['duration'],
                                        enabled=segment['enabled'])
                 node.children.append(childNode)

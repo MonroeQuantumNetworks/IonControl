@@ -100,7 +100,8 @@ class AWGWaveform(object):
     def updateSegmentDependencies(self, nodeList):
         for node in nodeList:
             if node.nodeType==nodeTypes.segment:
-                self.dependencies.add(node.amplitude)
+                #node.stack = node.expression._parse_expression()
+                self.dependencies.add(node.equation)
                 self.dependencies.add(node.duration)
             elif node.nodeType==nodeTypes.segmentSet:
                 self.dependencies.add(node.repetitions)
@@ -122,10 +123,10 @@ class AWGWaveform(object):
         for node in nodeList:
             if node.enabled:
                 if node.nodeType==nodeTypes.segment:
-                    amplitude = self.settings.varDict[node.amplitude]['value'].to_base_units().val
+                    equation = self.settings.varDict[node.equation]['value'].to_base_units().val
                     numSamples = self.settings.varDict[node.duration]['value']*self.sampleRate
                     numSamples = int( numSamples.toval() ) #convert to float, then to integer
-                    sampleList = numpy.append(sampleList, [amplitude]*numSamples)
+                    sampleList = numpy.append(sampleList, [equation]*numSamples)
                 elif node.nodeType==nodeTypes.segmentSet:
                     repetitions = int(self.settings.varDict[node.repetitions]['value'].to_base_units().val)
                     for n in range(repetitions):

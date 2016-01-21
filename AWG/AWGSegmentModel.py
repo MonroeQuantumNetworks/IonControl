@@ -40,6 +40,12 @@ class AWGSegmentNode(object):
         if 0 <= newRow < len(self.parent.children):
             self.parent.children.insert( newRow, self.parent.children.pop(self.row) )
 
+    def __getstate__(self):
+        dictcopy = dict(self.__dict__)
+        dictcopy.pop('expression', None)
+        dictcopy.pop('stack', None)
+        return dictcopy
+
 
 class AWGSegmentSet(AWGSegmentNode):
     def __init__(self, parent, *args, **kwds):
@@ -52,7 +58,9 @@ class AWGSegment(AWGSegmentNode):
     def __init__(self, parent, *args, **kwds):
         super(AWGSegment, self).__init__(parent)
         self.nodeType = nodeTypes.segment
-        self.amplitude = kwds.get('amplitude', 'V0')
+        self.expression = Expression()
+        self.stack = None
+        self.equation = kwds.get('equation', 'V0')
         self.duration = kwds.get('duration', 'T0')
 
 
@@ -65,33 +73,33 @@ class AWGSegmentModel(QtCore.QAbstractItemModel):
         self.settings = settings
         self.globalDict = globalDict
         self.root = self.settings.channelSettingsList[self.channel]['segmentDataRoot']
-        self.columnNames = ['enabled', 'amplitude', 'duration', 'repetitions']
+        self.columnNames = ['enabled', 'equation', 'duration', 'repetitions']
         self.numColumns = len(self.columnNames)
         self.column = enum(*self.columnNames)
         self.allowDeletion=True
         segmentSetBG = QtGui.QColor(255, 253, 222, 255)
         self.headerLookup = {
             (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, self.column.enabled): "",
-            (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, self.column.amplitude): "Amplitude",
+            (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, self.column.equation): "Equation",
             (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, self.column.duration): "Duration",
             (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, self.column.repetitions): "Repetitions"
             }
         self.dataLookup = {
             (QtCore.Qt.CheckStateRole,self.column.enabled): lambda node: QtCore.Qt.Checked if node.enabled else QtCore.Qt.Unchecked,
-            (QtCore.Qt.DisplayRole, self.column.amplitude): lambda node: node.amplitude if node.nodeType==nodeTypes.segment else None,
+            (QtCore.Qt.DisplayRole, self.column.equation): lambda node: node.equation if node.nodeType==nodeTypes.segment else None,
             (QtCore.Qt.DisplayRole, self.column.duration): lambda node:  node.duration if node.nodeType==nodeTypes.segment else None,
             (QtCore.Qt.DisplayRole, self.column.repetitions): lambda node:  node.repetitions if node.nodeType==nodeTypes.segmentSet else None,
             (QtCore.Qt.BackgroundColorRole, self.column.enabled): lambda node: segmentSetBG if node.nodeType==nodeTypes.segmentSet else None,
-            (QtCore.Qt.BackgroundColorRole, self.column.amplitude): lambda node: segmentSetBG if node.nodeType==nodeTypes.segmentSet else None,
+            (QtCore.Qt.BackgroundColorRole, self.column.equation): lambda node: segmentSetBG if node.nodeType==nodeTypes.segmentSet else None,
             (QtCore.Qt.BackgroundColorRole, self.column.duration): lambda node: segmentSetBG if node.nodeType==nodeTypes.segmentSet else None,
             (QtCore.Qt.BackgroundColorRole, self.column.repetitions): lambda node: segmentSetBG if node.nodeType==nodeTypes.segmentSet else None,
-            (QtCore.Qt.EditRole, self.column.amplitude): lambda node: node.amplitude if node.nodeType==nodeTypes.segment else None,
+            (QtCore.Qt.EditRole, self.column.equation): lambda node: node.equation if node.nodeType==nodeTypes.segment else None,
             (QtCore.Qt.EditRole, self.column.duration): lambda node:  node.duration if node.nodeType==nodeTypes.segment else None,
             (QtCore.Qt.EditRole, self.column.repetitions): lambda node:  node.repetitions if node.nodeType==nodeTypes.segmentSet else None
             }
         self.setDataLookup = {
             (QtCore.Qt.CheckStateRole, self.column.enabled): lambda index, value: self.setEnabled(index, value),
-            (QtCore.Qt.EditRole, self.column.amplitude): lambda index, value: self.setValue(index, value, 'amplitude'),
+            (QtCore.Qt.EditRole, self.column.equation): lambda index, value: self.setValue(index, value, 'equation'),
             (QtCore.Qt.EditRole, self.column.duration): lambda index, value: self.setValue(index, value, 'duration'),
             (QtCore.Qt.EditRole, self.column.repetitions): lambda index, value: self.setValue(index, value, 'repetitions'),
             }
@@ -143,7 +151,7 @@ class AWGSegmentModel(QtCore.QAbstractItemModel):
         col = index.column()
         if col==self.column.enabled:
             return QtCore.Qt.ItemIsEnabled |  QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsSelectable
-        elif col==self.column.amplitude and node.nodeType==nodeTypes.segment:
+        elif col==self.column.equation and node.nodeType==nodeTypes.segment:
             return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsSelectable
         elif col==self.column.duration and node.nodeType==nodeTypes.segment:
             return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsSelectable
@@ -168,7 +176,7 @@ class AWGSegmentModel(QtCore.QAbstractItemModel):
 
     def setValue(self, index, value, key):
         node = self.nodeFromIndex(index)
-        if (node.nodeType==nodeTypes.segment and (key=='amplitude' or key=='duration')) or \
+        if (node.nodeType==nodeTypes.segment and (key=='equation' or key=='duration')) or \
                 (node.nodeType==nodeTypes.segmentSet and key=='repetitions'):
             strvalue = str((value if api2 else value.toString()) if isinstance(value, QtCore.QVariant) else value)
             if strvalue in self.globalDict:
