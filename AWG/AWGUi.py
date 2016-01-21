@@ -30,9 +30,8 @@ class Settings(object):
        deviceSettings(dict): dynamic settings of the device, controlled by the parameterTree widget. Elements are defined
           in the device's 'paramDef' function
        channelSettingsList (list of dicts): each element corresponds to a channel of the AWG. Each element is a dict,
-          with keys that determine the channel's setting (e.g. 'equation' and 'plotEnabled', etc.)
-       waveformMode (enum): whether the AWG is programmed in equation mode or segment mode
-       filename (str): (segment mode only) the filename from which to save/load AWG segment data
+          with keys that determine the channel's setting (e.g. 'plotEnabled', etc.)
+       filename (str): the filename from which to save/load AWG segment data
        varDict (SequenceDict): the list of variables which determine the AWG waveform
        saveIfNecessary (function): the AWGUi's function that save's the settings
        replot (function): the AWGUi's function that replots all waveforms
@@ -40,14 +39,12 @@ class Settings(object):
     Note that "deviceProperties" are fixed settings of an AWG device, while "deviceSettings" are settings that can be
     changed on the fly.
     """
-    waveformModes = enum('equation', 'segments')
     plotStyles = enum('lines', 'points', 'linespoints')
     saveIfNecessary = None
     replot = None
     deviceProperties = dict()
     stateFields = {'channelSettingsList':list(),
                    'deviceSettings':dict(),
-                   'waveformMode':waveformModes.segments,
                    'filename':'',
                    'varDict':SequenceDict()
                    }
@@ -89,13 +86,11 @@ class AWGUi(AWGForm, AWGBase):
             for channel in range(deviceClass.deviceProperties['numChannels']):
                 if channel >= len(settings.channelSettingsList): #create new channels if it's necessary
                     settings.channelSettingsList.append({
-                        'equation' : 'A*sin(w*t+phi) + offset',
                         'segmentDataRoot':AWGSegmentNode(None),
                         'segmentTreeState':None,
                         'plotEnabled':True,
                         'plotStyle':Settings.plotStyles.lines})
                 else:
-                    settings.channelSettingsList[channel].setdefault('equation', 'A*sin(w*t+phi) + offset')
                     settings.channelSettingsList[channel].setdefault('segmentDataRoot', AWGSegmentNode(None))
                     settings.channelSettingsList[channel].setdefault('segmentTreeState', None)
                     settings.channelSettingsList[channel].setdefault('plotEnabled', True)
@@ -110,13 +105,6 @@ class AWGUi(AWGForm, AWGBase):
         AWGForm.setupUi(self,parent)
         self.setWindowTitle(self.device.displayName)
 
-        #mode
-        self.waveformModeComboBox.setCurrentIndex(self.settings.waveformMode)
-        self.waveformModeComboBox.currentIndexChanged[int].connect(self.onWaveformModeChanged)
-        equationMode = self.settings.waveformMode==self.settings.waveformModes.equation
-        self.fileFrame.setEnabled(not equationMode)
-        self.fileFrame.setVisible(not equationMode)
-
         self._varAsOutputChannelDict = dict()
         self.area = DockArea()
         self.splitter.insertWidget(0, self.area)
@@ -129,12 +117,6 @@ class AWGUi(AWGForm, AWGBase):
             dock = Dock("AWG Channel {0}".format(channel))
             dock.addWidget(awgChannelUi)
             self.area.addDock(dock, 'right')
-            awgChannelUi.equationFrame.setEnabled(equationMode)
-            awgChannelUi.equationFrame.setVisible(equationMode)
-            awgChannelUi.addRemoveSegmentFrame.setEnabled(not equationMode)
-            awgChannelUi.addRemoveSegmentFrame.setVisible(not equationMode)
-            awgChannelUi.segmentView.setEnabled(not equationMode)
-            awgChannelUi.segmentView.setVisible(not equationMode)
         self.refreshVarDict()
 
         # Settings control
@@ -290,22 +272,9 @@ class AWGUi(AWGForm, AWGBase):
             self.settings.update(self.settingsDict[self.settingsName])
             self.programmingOptionsTreeWidget.setParameters( self.device.parameter() )
             self.saveButton.setEnabled(False)
-            with BlockSignals(self.waveformModeComboBox) as w:
-                w.setCurrentIndex(self.settings.waveformMode)
             with BlockSignals(self.filenameComboBox) as w:
                 w.setCurrentIndex(w.findText(os.path.basename(self.settings.filename)))
-            equationMode = self.settings.waveformMode==self.settings.waveformModes.equation
-            self.fileFrame.setEnabled(not equationMode)
-            self.fileFrame.setVisible(not equationMode)
             for channelUi in self.awgChannelUiList:
-                channelUi.equationFrame.setEnabled(equationMode)
-                channelUi.equationFrame.setVisible(equationMode)
-                channelUi.addRemoveSegmentFrame.setEnabled(not equationMode)
-                channelUi.addRemoveSegmentFrame.setVisible(not equationMode)
-                channelUi.segmentView.setEnabled(not equationMode)
-                channelUi.segmentView.setVisible(not equationMode)
-                equation = self.settings.channelSettingsList[channelUi.channel]['equation']
-                channelUi.equationEdit.setText(equation)
                 channelUi.waveform.updateDependencies()
                 channelUi.plotCheckbox.setChecked(self.settings.channelSettingsList[channelUi.channel]['plotEnabled'])
                 with BlockSignals(channelUi.styleComboBox) as w:
@@ -358,21 +327,6 @@ class AWGUi(AWGForm, AWGBase):
         self.refreshVarDict()
         self.tableModel.endResetModel()
         self.saveIfNecessary()
-
-    def onWaveformModeChanged(self, mode):
-        """Waveform mode (equation/segment) changed"""
-        self.settings.waveformMode = mode
-        equationMode = mode==self.settings.waveformModes.equation
-        self.fileFrame.setEnabled(not equationMode)
-        self.fileFrame.setVisible(not equationMode)
-        for channelUi in self.awgChannelUiList:
-            channelUi.equationFrame.setVisible(equationMode)
-            channelUi.equationFrame.setEnabled(equationMode)
-            channelUi.addRemoveSegmentFrame.setVisible(not equationMode)
-            channelUi.addRemoveSegmentFrame.setEnabled(not equationMode)
-            channelUi.segmentView.setEnabled(not equationMode)
-            channelUi.segmentView.setVisible(not equationMode)
-        self.onDependenciesChanged()
 
     def onFilename(self, basename):
         """filename combo box is changed. Open selected file"""

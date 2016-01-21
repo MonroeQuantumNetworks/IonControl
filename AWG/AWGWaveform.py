@@ -23,15 +23,11 @@ class AWGWaveform(object):
     Attributes:
        settings (Settings): main settings
        channel (int): which channel this waveform belongs to
-       expression (Expression): used for parsing equation
-       durationName (str): the name to use for the duration of this waveform
        dependencies (set): The variable names that this waveform depends on
        """
     def __init__(self, channel, settings):
         self.settings = settings
         self.channel = channel
-        self.expression = Expression()
-        self.durationName = 'Duration (Channel {0})'.format(self.channel)
         self.dependencies = set()
         self.updateDependencies()
 
@@ -55,7 +51,6 @@ class AWGWaveform(object):
     def padValue(self):
         return self.calibrateInvIfNecessary(self.settings.deviceProperties['padValue'])
 
-
     @property
     def minAmplitude(self):
         return self.calibrateInvIfNecessary(self.settings.deviceProperties['minAmplitude'])
@@ -67,10 +62,6 @@ class AWGWaveform(object):
     @property
     def stepsize(self):
         return 1/self.sampleRate
-
-    @property
-    def equation(self):
-        return self.settings.channelSettingsList[self.channel]['equation']
 
     @property
     def segmentDataRoot(self):
@@ -86,24 +77,16 @@ class AWGWaveform(object):
     def updateDependencies(self):
         """Determine the set of variables that the waveform depends on"""
         logger = logging.getLogger(__name__)
-        if self.settings.waveformMode==self.settings.waveformModes.equation:
-            self.stack = self.expression._parse_expression(self.equation)
-            self.dependencies = self.expression.findDependencies(self.stack)
-            self.dependencies.remove('t')
-            for varname in self.dependencies:
-                if varname.startswith('Duration'):
-                    logger.exception("Equation variables cannot start with 'Duration'")
-            self.dependencies.add(self.durationName)
-        else:
-            self.dependencies = set()
-            self.updateSegmentDependencies(self.segmentDataRoot.children)
+        self.dependencies = set()
+        self.updateSegmentDependencies(self.segmentDataRoot.children)
         self.dependencies.discard('t')
 
     def updateSegmentDependencies(self, nodeList):
         for node in nodeList:
             if node.nodeType==nodeTypes.segment:
                 node.stack = node.expression._parse_expression(node.equation)
-                self.dependencies.update(node.expression.findDependencies(node.stack))
+                nodeDependencies = node.expression.findDependencies(node.stack)
+                self.dependencies.update(nodeDependencies)
                 if isIdentifier(node.duration):
                     self.dependencies.add(node.duration)
             elif node.nodeType==nodeTypes.segmentSet:
@@ -112,13 +95,12 @@ class AWGWaveform(object):
                 self.updateSegmentDependencies(node.children) #recursive
 
     def evaluate(self):
-        """evaluate the waveform based on either the equation or the segment list"""
-        equationMode = self.settings.waveformMode==self.settings.waveformModes.equation
-        _, sampleList = self.evaluateEquation() if equationMode else self.evaluateSegments(self.segmentDataRoot.children)
+        """evaluate the waveform"""
+        _, sampleList = self.evaluateSegments(self.segmentDataRoot.children)
         return self.compliantSampleList(sampleList)
 
     def evaluateSegments(self, nodeList, startStep=0):
-        """Evaluate the waveform based on the segment table.
+        """Evaluate the list of nodes in nodeList.
         Args:
             nodeList: list of nodes to evaluate
             startStep: the step number at which evaluation starts
@@ -149,8 +131,7 @@ class AWGWaveform(object):
         #calculate number of samples
         numSamples = duration*self.sampleRate
         numSamples = int( numSamples.toval() ) #convert to float, then to integer
-        numSamples = min(numSamples, self.maxSamples) #cap at maxSamples
-
+        numSamples = max(0, min(numSamples, self.maxSamples-startStep)) #cap at maxSamples-startStep, so that the last sample does not exceed maxSamples
         # first test expression with dummy variable to see if units match up, so user is warned otherwise
         try:
             node.expression.variabledict = {varName:varValueTextDict['value'] for varName, varValueTextDict in self.settings.varDict.iteritems()}
@@ -170,6 +151,7 @@ class AWGWaveform(object):
             func = numpy.vectorize(func, otypes=[numpy.float64]) #vectorize the function
             step = self.stepsize.toval(ounit='s')
             sampleList = func( (numpy.arange(numSamples)+startStep)*step ) #apply the function to each time step value
+            numpy.clip(sampleList, self.minAmplitude, self.maxAmplitude, out=sampleList) #force to be between min and max amplitude
             nextSegmentStartStep = numSamples + startStep
         return nextSegmentStartStep, sampleList
 
@@ -183,7 +165,6 @@ class AWGWaveform(object):
         numSamples = len(sampleList)
         if numSamples > self.maxSamples:
             sampleList = sampleList[:self.maxSamples]
-        numpy.clip(sampleList, self.minAmplitude, self.maxAmplitude, out=sampleList) #clip between minAmplitude and maxAmplitude
         if numSamples < self.minSamples:
             extraNumSamples = self.minSamples - numSamples #make sure there are at least minSamples
             if self.minSamples % self.sampleChunkSize != 0: #This should always be False if minSamples and sampleChunkSize are internally consistent
@@ -197,6 +178,7 @@ class AWGWaveform(object):
 
 if __name__ == '__main__':
     from AWG.AWGSegmentModel import AWGSegmentNode, AWGSegment, AWGSegmentSet
+    import timeit
     class Settings:
         deviceProperties = dict(
         sampleRate = mg(1, 'GHz'), #rate at which the samples programmed are output by the AWG
@@ -209,20 +191,40 @@ if __name__ == '__main__':
         numChannels = 2,  #Number of channels
         calibration = lambda voltage: 2047. + 3413.33*voltage, #function that returns raw amplitude number, given voltage
         calibrationInv = lambda raw: -0.599707 + 0.000292969*raw #function that returns voltage, given raw amplitude number
-    )
-        waveformModes = enum('equation', 'segment')
-        waveformMode = 1
+        )
+        deviceSettings = {}
         root = AWGSegmentSet(None)
         channelSettingsList = [{'segmentDataRoot':root}]
         varDict = {'a':{'value':mg(1, 'MHz'), 'text':None},
-                   'b':{'value':mg(1, ''), 'text':None}}
-    s = Settings()
-    w = AWGWaveform(0, s)
-    node1 = AWGSegment(equation='a*b*t', duration='5 ns', parent=s.root)
-    s.root.children.append(node1)
-    w.updateDependencies()
-    newtime, j = w.evaluateSegments(s.root.children)
-    print j
-    print len(j)
+                   'b':{'value':mg(3, ''), 'text':None},
+                   'w1':{'value':mg(.6, 'Hz'), 'text':None},
+                   'w2':{'value':mg(17, 'kHz'), 'text':None},
+                   'q':{'value':mg(12, ''), 'text':None},
+                   'd':{'value':mg(1, ''), 'text':None},
+                   'w':{'value':mg(200, 'GHz'), 'text':None},
+                   'w3':{'value':mg(1, 'GHz'), 'text':None}}
+
+    def setup():
+        s = Settings()
+        w = AWGWaveform(0, s)
+        node1 = AWGSegment(equation='sin(a*b*t)', duration='1 ms', parent=s.root)
+        node2 = AWGSegment(equation='sin(w1*t+q)+sin(w2*t+d)', duration='1 ms', parent=s.root)
+        node3 = AWGSegment(equation='cos(w*t)', duration='1 ms', parent=s.root)
+        node4 = AWGSegment(equation='sin(w1*t)*sin(w2*t)', duration='1 ms', parent=s.root)
+        node5 = AWGSegment(equation='sin(w3*t)', duration='1 ms', parent=s.root)
+        s.root.children.append(node1)
+        s.root.children.append(node2)
+        s.root.children.append(node3)
+        s.root.children.append(node4)
+        s.root.children.append(node5)
+        w.updateDependencies()
+        return w, s
+
+    def test(w, s):
+        w.evaluateSegments(s.root.children)
+
+    n=1
+    t=timeit.timeit("test(w,s)", setup="from __main__ import test, setup; w,s = setup()", number=n)
+    print t/n
 
 

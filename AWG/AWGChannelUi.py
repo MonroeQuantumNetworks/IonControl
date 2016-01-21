@@ -47,25 +47,8 @@ class AWGChannelUi(AWGChannelForm, AWGChannelBase):
         self.settings.channelSettingsList[self.channel]['plotEnabled'] = val
         self.settings.saveIfNecessary()
 
-    @property
-    def equation(self):
-        return self.settings.channelSettingsList[self.channel]['equation']
-
-    @equation.setter
-    def equation(self, val):
-        """update waveform dependencies whenever the equation is changed"""
-        self.settings.channelSettingsList[self.channel]['equation'] = val
-        self.waveform.updateDependencies()
-        self.dependenciesChanged.emit(self.channel)
-
     def setupUi(self, parent):
         AWGChannelForm.setupUi(self, parent)
-        #equation
-        self.equationEdit.setText(self.equation)
-        self.evalButton.clicked.connect(self.onEquation)
-        self.equationEdit.returnPressed.connect(self.onEquation)
-        self.equationEdit.setToolTip("use 't' for time variable")
-
         #segment table
         self.segmentModel = AWGSegmentModel(self.channel, self.settings, self.globalDict)
         self.segmentView.setModel(self.segmentModel)
@@ -124,10 +107,6 @@ class AWGChannelUi(AWGChannelForm, AWGChannelBase):
                 self.plot.getItem(0,0).plot(points, pen=solidBluePen, symbol='o', symbolSize=3, symbolPen=solidBluePen, symbolBrush=blueBrush)
             # except Exception as e:
             #     logger.warning(e.__class__.__name__ + ": " + str(e))
-
-    def onEquation(self):
-        """Set equation to match the text box (which also updates the waveform)"""
-        self.equation = str(self.equationEdit.text())
 
     def onSegmentChanged(self):
         """Update dependencies if a segment changed"""

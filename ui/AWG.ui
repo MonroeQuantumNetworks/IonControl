@@ -119,23 +119,6 @@
      </layout>
     </item>
     <item>
-     <widget class="QComboBox" name="waveformModeComboBox">
-      <property name="toolTip">
-       <string>waveform mode</string>
-      </property>
-      <item>
-       <property name="text">
-        <string>Equation</string>
-       </property>
-      </item>
-      <item>
-       <property name="text">
-        <string>Segments</string>
-       </property>
-      </item>
-     </widget>
-    </item>
-    <item>
      <widget class="QFrame" name="fileFrame">
       <property name="frameShape">
        <enum>QFrame::StyledPanel</enum>
