@@ -11,6 +11,7 @@ import sympy
 from sympy.parsing.sympy_parser import parse_expr
 
 from modules.Expression import Expression
+from modules.MagnitudeParser import isIdentifier, isValueExpression
 from modules.magnitude import mg
 from modules.enum import enum
 from AWGSegmentModel import nodeTypes
@@ -103,9 +104,11 @@ class AWGWaveform(object):
             if node.nodeType==nodeTypes.segment:
                 node.stack = node.expression._parse_expression(node.equation)
                 self.dependencies.update(node.expression.findDependencies(node.stack))
-                self.dependencies.add(node.duration)
+                if isIdentifier(node.duration):
+                    self.dependencies.add(node.duration)
             elif node.nodeType==nodeTypes.segmentSet:
-                self.dependencies.add(node.repetitions)
+                if isIdentifier(node.repetitions):
+                    self.dependencies.add(node.repetitions)
                 self.updateSegmentDependencies(node.children) #recursive
 
     def evaluate(self):
@@ -125,11 +128,18 @@ class AWGWaveform(object):
             if node.enabled:
                 if node.nodeType==nodeTypes.segment:
                     equation = self.settings.varDict[node.equation]['value'].to_base_units().val
-                    numSamples = self.settings.varDict[node.duration]['value']*self.sampleRate
+                    if isIdentifier(node.duration):
+                        duration = self.settings.varDict[node.duration]['value']
+                    else:
+                        duration = Expression().evaluateAsMagnitude(node.duration)
+                    numSamples = duration*self.sampleRate
                     numSamples = int( numSamples.toval() ) #convert to float, then to integer
                     sampleList = numpy.append(sampleList, [equation]*numSamples)
                 elif node.nodeType==nodeTypes.segmentSet:
-                    repetitions = int(self.settings.varDict[node.repetitions]['value'].to_base_units().val)
+                    if isIdentifier(node.repetitions):
+                        repetitions = int(self.settings.varDict[node.repetitions]['value'].to_base_units().val)
+                    else:
+                        repetitions = int(Expression().evaluateAsMagnitude(node.repetitions).to_base_units().val)
                     for n in range(repetitions):
                         sampleList = numpy.append(sampleList, self.evaluateSegments(node.children)) #recursive
         return sampleList

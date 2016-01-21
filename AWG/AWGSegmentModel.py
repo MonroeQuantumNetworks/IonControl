@@ -8,7 +8,7 @@ from PyQt4 import QtCore, QtGui
 from modules.Expression import Expression
 from modules.firstNotNone import firstNotNone
 from modules.enum import enum
-from modules.MagnitudeParser import isIdentifier
+from modules.MagnitudeParser import isIdentifier, isValueExpression
 from uiModules.KeyboardFilter import KeyListFilter
 import logging
 
@@ -187,8 +187,8 @@ class AWGSegmentModel(QtCore.QAbstractItemModel):
             if strvalue in self.globalDict:
                 logging.getLogger(__name__).warning("'{0}' is already a global variable name".format(strvalue))
                 return False
-            elif not isIdentifier(strvalue):
-                logging.getLogger(__name__).warning("'{0}' is not a valid variable name".format(strvalue))
+            elif (not isIdentifier(strvalue)) and (not isValueExpression(strvalue)) and index.column!=self.column.equation:
+                logging.getLogger(__name__).warning("'{0}' is not a valid variable name or value".format(strvalue))
                 return False
             else:
                 setattr(node, key, strvalue)
