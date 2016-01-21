@@ -96,12 +96,13 @@ class AWGWaveform(object):
         else:
             self.dependencies = set()
             self.updateSegmentDependencies(self.segmentDataRoot.children)
+        self.dependencies.discard('t')
 
     def updateSegmentDependencies(self, nodeList):
         for node in nodeList:
             if node.nodeType==nodeTypes.segment:
-                #node.stack = node.expression._parse_expression()
-                self.dependencies.add(node.equation)
+                node.stack = node.expression._parse_expression(node.equation)
+                self.dependencies.update(node.expression.findDependencies(node.stack))
                 self.dependencies.add(node.duration)
             elif node.nodeType==nodeTypes.segmentSet:
                 self.dependencies.add(node.repetitions)

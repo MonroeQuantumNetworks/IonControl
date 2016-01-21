@@ -63,6 +63,11 @@ class AWGSegment(AWGSegmentNode):
         self.equation = kwds.get('equation', 'V0')
         self.duration = kwds.get('duration', 'T0')
 
+    def __setstate__(self, state):
+        self.__dict__ = state
+        self.__dict__['expression'] = Expression()
+        self.__dict__['stack'] = None
+
 
 class AWGSegmentModel(QtCore.QAbstractItemModel):
     """Model for displaying AWG segments when the AWGUi is in segment mode"""
@@ -180,10 +185,10 @@ class AWGSegmentModel(QtCore.QAbstractItemModel):
                 (node.nodeType==nodeTypes.segmentSet and key=='repetitions'):
             strvalue = str((value if api2 else value.toString()) if isinstance(value, QtCore.QVariant) else value)
             if strvalue in self.globalDict:
-                logger.warning("'{0}' is already a global variable name".format(strvalue))
+                logging.getLogger(__name__).warning("'{0}' is already a global variable name".format(strvalue))
                 return False
             elif not isIdentifier(strvalue):
-                logger.warning("'{0}' is not a valid variable name".format(strvalue))
+                logging.getLogger(__name__).warning("'{0}' is not a valid variable name".format(strvalue))
                 return False
             else:
                 setattr(node, key, strvalue)
