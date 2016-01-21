@@ -17,6 +17,7 @@ from uiModules.ImportErrorPopup import importErrorPopup
 project=getProject()
 wavemeterEnabled = project.isEnabled('hardware', 'HighFinesse Wavemeter')
 visaEnabled = project.isEnabled('hardware', 'VISA')
+from PyQt4 import QtCore
 
 if wavemeterEnabled:
     from wavemeter.Wavemeter import Wavemeter
@@ -38,6 +39,7 @@ if visaEnabled:
         _outputLookup = { "Curr1": ("Curr",1,"A"), "Curr2": ("Curr",2,"A"), "Curr3": ("Curr",3,"A"), "Curr4": ("Curr",4,"A"),
                           "Volt1": ("Volt",1,"V"), "Volt2": ("Volt",2,"V"), "Volt3": ("Volt",3,"V"), "Volt4": ("Volt",4,"V")}
         _inputChannels = dict({"Curr1":"A", "Curr2":"A", "Curr3":"A", "Curr4":"A", "Volt1":"V", "Volt2":"V", "Volt3":"V", "Volt4":"V"})
+        newData = QtCore.pyqtSignal(object, object)
         def __init__(self, name, config, globalDict, instrument="QGABField"):
             logger = logging.getLogger(__name__)
             ExternalParameterBase.__init__(self, name, config, globalDict)
