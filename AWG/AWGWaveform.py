@@ -137,9 +137,10 @@ class AWGWaveform(object):
                     sampleList = numpy.append(sampleList, [equation]*numSamples)
                 elif node.nodeType==nodeTypes.segmentSet:
                     if isIdentifier(node.repetitions):
-                        repetitions = int(self.settings.varDict[node.repetitions]['value'].to_base_units().val)
+                        repMag = self.settings.varDict[node.repetitions]['value']
                     else:
-                        repetitions = int(Expression().evaluateAsMagnitude(node.repetitions).to_base_units().val)
+                        repMag = Expression().evaluateAsMagnitude(node.repetitions)
+                    repetitions = int(repMag.to_base_units().val) #convert to float, then to integer
                     for n in range(repetitions):
                         sampleList = numpy.append(sampleList, self.evaluateSegments(node.children)) #recursive
         return sampleList
