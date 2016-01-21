@@ -12,7 +12,7 @@ from sympy.parsing.sympy_parser import parse_expr
 
 from modules.Expression import Expression
 from modules.MagnitudeParser import isIdentifier, isValueExpression
-from modules.magnitude import mg
+from modules.magnitude import mg, MagnitudeError
 from modules.enum import enum
 from AWGSegmentModel import nodeTypes
 
@@ -152,19 +152,25 @@ class AWGWaveform(object):
         numSamples = min(numSamples, self.maxSamples) #cap at maxSamples
 
         # first test expression with dummy variable to see if units match up, so user is warned otherwise
-        node.expression.variabledict = {varName:varValueTextDict['value'] for varName, varValueTextDict in self.settings.varDict.iteritems()}
-        node.expression.variabledict.update({'t':mg(1, 'us')})
-        node.expression.evaluateWithStack(node.stack[:])
-
-        varValueDict = {varName:varValueTextDict['value'].to_base_units().val for varName, varValueTextDict in self.settings.varDict.iteritems()}
-        varValueDict['t'] = sympy.Symbol('t')
-
-        sympyExpr = parse_expr(node.equation, varValueDict) #parse the equation
-        func = sympy.lambdify(varValueDict['t'], sympyExpr, "numpy") #make into a python function
-        func = numpy.vectorize(func, otypes=[numpy.float64]) #vectorize the function
-        step = self.stepsize.toval(ounit='s')
-        sampleList = func( numpy.arange(numSamples)*step + startStep) #apply the function to each time step value
-        nextSegmentStartStep = (numSamples-1)*step + startStep + 1
+        try:
+            node.expression.variabledict = {varName:varValueTextDict['value'] for varName, varValueTextDict in self.settings.varDict.iteritems()}
+            node.expression.variabledict.update({'t':mg(1, 'us')})
+            node.expression.evaluateWithStack(node.stack[:])
+            error = False
+        except MagnitudeError:
+            logging.getLogger(__name__).warning("Must be dimensionless!")
+            error = True
+            nextSegmentStartStep = startStep
+            sampleList = numpy.array([])
+        if not error:
+            varValueDict = {varName:varValueTextDict['value'].to_base_units().val for varName, varValueTextDict in self.settings.varDict.iteritems()}
+            varValueDict['t'] = sympy.Symbol('t')
+            sympyExpr = parse_expr(node.equation, varValueDict) #parse the equation
+            func = sympy.lambdify(varValueDict['t'], sympyExpr, "numpy") #make into a python function
+            func = numpy.vectorize(func, otypes=[numpy.float64]) #vectorize the function
+            step = self.stepsize.toval(ounit='s')
+            sampleList = func( (numpy.arange(numSamples)+startStep)*step ) #apply the function to each time step value
+            nextSegmentStartStep = numSamples + startStep
         return nextSegmentStartStep, sampleList
 
     def compliantSampleList(self, sampleList):
