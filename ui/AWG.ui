@@ -128,6 +128,20 @@
       </property>
       <layout class="QHBoxLayout" name="horizontalLayout">
        <item>
+        <widget class="QLabel" name="label">
+         <property name="text">
+          <string>Waveform cache depth</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QSpinBox" name="cacheDepthSpinBox">
+         <property name="toolTip">
+          <string>number of waveforms to cache. Increasing this number can make evaluation faster, at the expense of memory usage.</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QComboBox" name="filenameComboBox">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Expanding" vsizetype="Fixed">

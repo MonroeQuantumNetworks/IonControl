@@ -46,7 +46,8 @@ class Settings(object):
     stateFields = {'channelSettingsList':list(),
                    'deviceSettings':dict(),
                    'filename':'',
-                   'varDict':SequenceDict()
+                   'varDict':SequenceDict(),
+                   'cacheDepth':0
                    }
     def __init__(self):
         [setattr(self, field, copy.copy(fieldDefault)) for field, fieldDefault in self.stateFields.iteritems()]
@@ -158,6 +159,10 @@ class AWGUi(AWGForm, AWGBase):
         self.saveFileButton.clicked.connect(self.onSaveFile)
         self.reloadFileButton.clicked.connect(self.onReloadFile)
 
+        #cache
+        self.cacheDepthSpinBox.setValue(self.settings.cacheDepth)
+        self.cacheDepthSpinBox.valueChanged.connect(self.onCacheDepth)
+
         #Restore GUI state
         state = self.config.get(self.configname+'.state')
         pos = self.config.get(self.configname+'.pos')
@@ -192,6 +197,10 @@ class AWGUi(AWGForm, AWGBase):
                 dock = Dock("AWG Channel {0}".format(channel))
                 dock.addWidget(channelUi)
                 self.area.addDock(dock, 'right')
+        self.saveIfNecessary()
+
+    def onCacheDepth(self, newVal):
+        self.settings.cacheDepth = newVal
         self.saveIfNecessary()
 
     def onComboBoxEditingFinished(self):
@@ -274,6 +283,8 @@ class AWGUi(AWGForm, AWGBase):
             self.saveButton.setEnabled(False)
             with BlockSignals(self.filenameComboBox) as w:
                 w.setCurrentIndex(w.findText(os.path.basename(self.settings.filename)))
+            with BlockSignals(self.cacheDepthSpinBox) as w:
+                w.setValue(self.settings.cacheDepth)
             for channelUi in self.awgChannelUiList:
                 channelUi.waveform.updateDependencies()
                 channelUi.plotCheckbox.setChecked(self.settings.channelSettingsList[channelUi.channel]['plotEnabled'])
