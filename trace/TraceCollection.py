@@ -388,7 +388,7 @@ class TraceCollection(object):
         self.description["columnspec"] = "x,y"
         for line in stream:
             line = line.strip()
-            if line[0]=='#':
+            if not line or line[0]=='#':
                 line = line.lstrip('# \t\r\n')
                 if line.find('\t')<0:
                     a = line.split(None,1)

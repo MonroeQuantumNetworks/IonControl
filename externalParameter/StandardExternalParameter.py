@@ -17,6 +17,7 @@ from uiModules.ImportErrorPopup import importErrorPopup
 project=getProject()
 wavemeterEnabled = project.isEnabled('hardware', 'HighFinesse Wavemeter')
 visaEnabled = project.isEnabled('hardware', 'VISA')
+from PyQt4 import QtCore
 
 if wavemeterEnabled:
     from wavemeter.Wavemeter import Wavemeter
@@ -27,6 +28,11 @@ if visaEnabled:
     except ImportError: #popup on failed import of enabled visa
         importErrorPopup('VISA')
 
+
+class qtHelper(QtCore.QObject):
+    newData = QtCore.pyqtSignal(object, object)
+    def __init__(self):
+        super(qtHelper, self).__init__()
 
 if visaEnabled:
     class N6700BPowerSupply(ExternalParameterBase):
@@ -47,6 +53,8 @@ if visaEnabled:
             logger.info( "opened {0}".format(instrument) )
             self.setDefaults()
             self.initializeChannelsToExternals()
+            self.qtHelper = qtHelper()
+            self.newData = self.qtHelper.newData
 
         def setValue(self, channel, v):
             function, index, unit = self._outputLookup[channel]

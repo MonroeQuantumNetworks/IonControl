@@ -76,8 +76,7 @@ class PulseProgramSourceEdit(Form, Base):
         
     def keyReleaseEvent(self, event):
         if event.matches(QtGui.QKeySequence.Find):
-            self.findWidgetFrame.show()
-            self.findLineEdit.setFocus(QtCore.Qt.ShortcutFocusReason)
+            self.showFindDialog()
         elif event.matches(QtGui.QKeySequence.FindNext):
             self.findWidgetFrame.show()
         elif event.matches(QtGui.QKeySequence.FindPrevious):
