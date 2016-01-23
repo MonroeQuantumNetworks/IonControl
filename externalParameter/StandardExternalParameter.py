@@ -460,4 +460,8 @@ class DummySingleParameter(ExternalParameterBase):
         logger = logging.getLogger(__name__)
         logger.info("Dummy output channel {0} set to: {1}".format(channel, value))
         return value
+
+    @classmethod
+    def connectedInstruments(cls):
+        return ['Anything will do']
          

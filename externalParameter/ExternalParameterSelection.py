@@ -66,7 +66,8 @@ class SelectionUi(SelectionForm,SelectionBase):
         self.classComboBox.currentIndexChanged[QtCore.QString].connect( self.getInstrumentSuggestions )
         self.addParameterButton.clicked.connect( self.onAddParameter )
         self.removeParameterButton.clicked.connect( self.onRemoveParameter )
-        for parameter in self.parameters.values():
+        self.refreshInstrumentComboBox.clicked.connect(self.getInstrumentSuggestions)
+        for parameter in list(self.parameters.values()):
             if parameter.enabled:
                 try:
                     self.enableInstrument(parameter)
@@ -89,13 +90,15 @@ class SelectionUi(SelectionForm,SelectionBase):
         self.outputChannelsChanged.emit( self.outputChannels() )
         self.inputChannelsChanged.emit( self.inputChannels() )
 
-    def getInstrumentSuggestions(self, className):
-        className = str(className)
+    def getInstrumentSuggestions(self, className=None):
+        className = str(className) if className else self.classComboBox.currentText()
         myclass = self.classdict[className]
         if hasattr( myclass, 'connectedInstruments'):
             updateComboBoxItems( self.instrumentComboBox, sorted(myclass.connectedInstruments()) )
+            self.refreshInstrumentComboBox.setEnabled(True)
         else:
             self.instrumentComboBox.clear()
+            self.refreshInstrumentComboBox.setEnabled(False)
 
     def onReorder(self, key):
         if key in [QtCore.Qt.Key_PageUp, QtCore.Qt.Key_PageDown]:
