@@ -73,6 +73,9 @@ class ConexLinear(ExternalParameterBase):
 
     @classmethod
     def connectedInstruments(cls):
+        if map(int,serial.VERSION.split('.'))[0] < 3:
+            logging.getLogger(__name__).warning("Found PySerial version {0}, expected at least version 3.0.1. Please update: 'pip install --update pyserial'".format(serial.VERSION))
+            return []
         return [desc.serial_number for desc in serial.tools.list_ports.comports() if desc.vid == 0 and desc.pid == 0]
 
 
