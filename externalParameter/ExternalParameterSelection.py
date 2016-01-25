@@ -62,7 +62,7 @@ class SelectionUi(SelectionForm,SelectionBase):
         self.filter = KeyListFilter( [QtCore.Qt.Key_PageUp, QtCore.Qt.Key_PageDown] )
         self.filter.keyPressed.connect( self.onReorder )
         self.tableView.installEventFilter(self.filter)
-        self.classComboBox.addItems( self.classdict.keys() )
+        self.classComboBox.addItems(sorted(self.classdict.keys()))
         self.classComboBox.currentIndexChanged[QtCore.QString].connect( self.getInstrumentSuggestions )
         self.addParameterButton.clicked.connect( self.onAddParameter )
         self.removeParameterButton.clicked.connect( self.onRemoveParameter )
@@ -93,8 +93,8 @@ class SelectionUi(SelectionForm,SelectionBase):
     def getInstrumentSuggestions(self, className=None):
         className = str(className) if className else self.classComboBox.currentText()
         myclass = self.classdict[className]
-        if hasattr( myclass, 'connectedInstruments'):
-            updateComboBoxItems( self.instrumentComboBox, sorted(myclass.connectedInstruments()) )
+        if hasattr(myclass, 'connectedInstruments'):
+            updateComboBoxItems(self.instrumentComboBox, sorted(myclass.connectedInstruments()))
             self.refreshInstrumentComboBox.setEnabled(True)
         else:
             self.instrumentComboBox.clear()
