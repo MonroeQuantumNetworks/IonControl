@@ -29,13 +29,13 @@ class AWGChannelUi(AWGChannelForm, AWGChannelBase):
        globalDict (dict): dictionary of global variables
     """
     dependenciesChanged = QtCore.pyqtSignal(int)
-    def __init__(self, channel, settings, globalDict, parent=None):
+    def __init__(self, channel, settings, globalDict, waveformCache, parent=None):
         AWGChannelBase.__init__(self, parent)
         AWGChannelForm.__init__(self)
         self.settings = settings
         self.channel = channel
         self.globalDict = globalDict
-        self.waveform = AWGWaveform(channel, settings)
+        self.waveform = AWGWaveform(channel, settings, waveformCache)
         self.waveform.updateDependencies()
 
     @property

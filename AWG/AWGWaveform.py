@@ -24,10 +24,14 @@ class AWGWaveform(object):
        settings (Settings): main settings
        channel (int): which channel this waveform belongs to
        dependencies (set): The variable names that this waveform depends on
+       waveformCache (OrderedDict): cache of evaluated waveforms. The key in the waveform cache is a waveform, with all
+       variables evaluated except 't' (e.g. 7*sin(3*t)+4). The value is a dict. The key to that dict is a range (min, max), and the
+       value is a numpy array of samples, e.g. {(0, 2): numpay.array([1,2,31]), (12, 15): numpy.array([6,16,23,5])}
        """
-    def __init__(self, channel, settings):
+    def __init__(self, channel, settings, waveformCache):
         self.settings = settings
         self.channel = channel
+        self.waveformCache = waveformCache
         self.dependencies = set()
         self.updateDependencies()
 
@@ -132,6 +136,8 @@ class AWGWaveform(object):
         numSamples = duration*self.sampleRate
         numSamples = int( numSamples.toval() ) #convert to float, then to integer
         numSamples = max(0, min(numSamples, self.maxSamples-startStep)) #cap at maxSamples-startStep, so that the last sample does not exceed maxSamples
+        stopStep = numSamples + startStep - 1
+        nextSegmentStartStep = stopStep + 1
         # first test expression with dummy variable to see if units match up, so user is warned otherwise
         try:
             node.expression.variabledict = {varName:varValueTextDict['value'] for varName, varValueTextDict in self.settings.varDict.iteritems()}
@@ -147,13 +153,50 @@ class AWGWaveform(object):
             varValueDict = {varName:varValueTextDict['value'].to_base_units().val for varName, varValueTextDict in self.settings.varDict.iteritems()}
             varValueDict['t'] = sympy.Symbol('t')
             sympyExpr = parse_expr(node.equation, varValueDict) #parse the equation
-            func = sympy.lambdify(varValueDict['t'], sympyExpr, "numpy") #make into a python function
-            func = numpy.vectorize(func, otypes=[numpy.float64]) #vectorize the function
-            step = self.stepsize.toval(ounit='s')
-            sampleList = func( (numpy.arange(numSamples)+startStep)*step ) #apply the function to each time step value
-            numpy.clip(sampleList, self.minAmplitude, self.maxAmplitude, out=sampleList) #force to be between min and max amplitude
-            nextSegmentStartStep = numSamples + startStep
+            key = str(sympyExpr)
+            if self.settings.cacheDepth > 0:
+                if key in self.waveformCache:
+                    self.waveformCache[key] = self.waveformCache.pop(key) #move key to the most recent position in cache
+                    for (sampleStartStep, sampleStopStep), samples in self.waveformCache[key].iteritems():
+                        if sampleStartStep==startStep and sampleStopStep==stopStep: #this means that there is an exact match
+                            sampleList = samples
+                            break
+                        elif max(startStep, sampleStartStep) > min(stopStep, sampleStopStep): #this means there is no overlap
+                            continue
+                        else: #This means there is some overlap, but not an exact match
+                            if startStep < sampleStartStep and stopStep < sampleStopStep:
+                                sampleList = self.computeFunction(sympyExpr, varValueDict['t'], startStep, sampleStartStep-1)
+                                sampleList = numpy.append(sampleList, samples[:stopStep]) #TODO: THIS IS PROBABLY OFF BY ONE
+                                
+                            break
+                    else: #This is an else on the for loop, it executes if there is no break (i.e. if there are no computed samples with overlap)
+                        sampleList = self.computeFunction(sympyExpr, varValueDict['t'], startStep, numSamples)
+                        self.waveformCache[key][(startStep, stopStep)] = sampleList
+                else:
+                    sampleList = self.computeFunction(sympyExpr, varValueDict['t'], startStep, numSamples)
+                    self.waveformCache[sympyExpr] = {(startStep, stopStep): sampleList}
+                    if len(self.waveformCache) > self.settings.cacheDepth:
+                        self.waveformCache.popitem(last=False) #remove the least recently used cache item
+            else:
+                sampleList = self.computeFunction(sympyExpr, varValueDict['t'], startStep, numSamples)
         return nextSegmentStartStep, sampleList
+
+    def computeFunction(self, sympyExpr, tVar, startStep, numSamples):
+        """Compute the value of a function over a specified range.
+        Args:
+            sympyExpr (str): A string containing a function of 't' (e.g. 7*sin(3*t))
+            tVar (Symbol): sympy symbol for 't'
+            startStep (int): where to start computation
+            numSamples (int): how many samples to compute
+        Returns:
+            sampleList (numpy.array): list of function values
+        """
+        func = sympy.lambdify(tVar, sympyExpr, "numpy") #turn string into a python function
+        clippedFunc = lambda t: max(self.minAmplitude, min(self.maxAmplitude, func(t))) #clip at min and max amplitude
+        vectorFunc = numpy.vectorize(clippedFunc, otypes=[numpy.float64]) #vectorize the function
+        step = self.stepsize.toval(ounit='s')
+        sampleList = vectorFunc( (numpy.arange(numSamples)+startStep)*step ) #apply the function to each time step value
+        return sampleList
 
     def compliantSampleList(self, sampleList):
         """Make the sample list compliant with the capabilities of the AWG

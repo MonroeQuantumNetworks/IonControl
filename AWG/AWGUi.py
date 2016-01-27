@@ -3,6 +3,7 @@ import logging
 import os
 import itertools
 import yaml
+from collections import OrderedDict
 
 import PyQt4.uic
 from PyQt4 import QtGui, QtCore
@@ -74,6 +75,7 @@ class AWGUi(AWGForm, AWGBase):
         self.configname = 'AWGUi.' + deviceClass.displayName
         self.globalDict = globalDict
         self.autoSave = self.config.get(self.configname+'.autoSave', True)
+        self.waveformCache = OrderedDict()
         self.settingsDict = self.config.get(self.configname+'.settingsDict', dict())
         self.settingsName = self.config.get(self.configname+'.settingsName', '')
         # self.settingsDict=dict()
@@ -111,7 +113,7 @@ class AWGUi(AWGForm, AWGBase):
         self.splitter.insertWidget(0, self.area)
         self.awgChannelUiList = []
         for channel in range(self.device.deviceProperties['numChannels']):
-            awgChannelUi = AWGChannelUi(channel, self.settings, self.globalDict, parent=self)
+            awgChannelUi = AWGChannelUi(channel, self.settings, self.globalDict, self.waveformCache, parent=self)
             awgChannelUi.setupUi(awgChannelUi)
             awgChannelUi.dependenciesChanged.connect(self.onDependenciesChanged)
             self.awgChannelUiList.append(awgChannelUi)
