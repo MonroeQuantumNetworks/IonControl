@@ -264,6 +264,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.objectListToSaveContext.append(self.DDSUi)
 
         self.DACUi, self.DACDockWidget = self.instantiateDACUi(self.pulser, "DAC", "dacUi", self.config, self.globalVariablesUi.globalDict)
+        self.objectListToSaveContext.append(self.DACUi)
 
 #         self.DDSUi9910 = DDSUi9910.DDSUi(self.config, self.pulser )
 #         self.DDSUi9910.setupUi(self.DDSUi9910)
