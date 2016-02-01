@@ -8,12 +8,12 @@ import logging
 import os
 
 import PyQt4.uic
-from PyQt4 import QtCore
+from PyQt4 import QtCore, QtGui
 from pyqtgraph import mkBrush
 from trace.pens import solidBluePen, blue
 
 from AWG.AWGWaveform import AWGWaveform
-from AWG.AWGSegmentTableModel import AWGSegmentTableModel
+from AWG.AWGSegmentModel import AWGSegmentModel, nodeTypes
 
 blueBrush = mkBrush(blue)
 
@@ -29,13 +29,13 @@ class AWGChannelUi(AWGChannelForm, AWGChannelBase):
        globalDict (dict): dictionary of global variables
     """
     dependenciesChanged = QtCore.pyqtSignal(int)
-    def __init__(self, channel, settings, globalDict, parent=None):
+    def __init__(self, channel, settings, globalDict, waveformCache, parent=None):
         AWGChannelBase.__init__(self, parent)
         AWGChannelForm.__init__(self)
         self.settings = settings
         self.channel = channel
         self.globalDict = globalDict
-        self.waveform = AWGWaveform(channel, settings)
+        self.waveform = AWGWaveform(channel, settings, waveformCache)
         self.waveform.updateDependencies()
 
     @property
@@ -47,31 +47,25 @@ class AWGChannelUi(AWGChannelForm, AWGChannelBase):
         self.settings.channelSettingsList[self.channel]['plotEnabled'] = val
         self.settings.saveIfNecessary()
 
-    @property
-    def equation(self):
-        return self.settings.channelSettingsList[self.channel]['equation']
-
-    @equation.setter
-    def equation(self, val):
-        """update waveform dependencies whenever the equation is changed"""
-        self.settings.channelSettingsList[self.channel]['equation'] = val
-        self.waveform.updateDependencies()
-        self.dependenciesChanged.emit(self.channel)
-
     def setupUi(self, parent):
         AWGChannelForm.setupUi(self, parent)
-        #equation
-        self.equationEdit.setText(self.equation)
-        self.evalButton.clicked.connect(self.onEquation)
-        self.equationEdit.returnPressed.connect(self.onEquation)
-        self.equationEdit.setToolTip("use 't' for time variable")
-
         #segment table
-        self.segmentModel = AWGSegmentTableModel(self.channel, self.settings, self.globalDict)
+        self.segmentModel = AWGSegmentModel(self.channel, self.settings, self.globalDict)
         self.segmentView.setModel(self.segmentModel)
+        self.segmentView.restoreTreeState(self.settings.channelSettingsList[self.channel]['segmentTreeState'])
         self.segmentModel.segmentChanged.connect(self.onSegmentChanged)
+        self.segmentView.segmentChanged.connect(self.onSegmentChanged)
         self.addSegmentButton.clicked.connect(self.onAddSegment)
         self.removeSegmentButton.clicked.connect(self.onRemoveSegment)
+
+        #Context menu
+        self.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
+        addToSetAction = QtGui.QAction("Add to Set", self)
+        removeFromSetAction = QtGui.QAction("Remove From Set", self)
+        self.addAction(addToSetAction)
+        addToSetAction.triggered.connect(self.onAddToSet)
+        self.addAction(removeFromSetAction)
+        removeFromSetAction.triggered.connect(self.onRemoveFromSet)
 
         #plot
         self.plot.setTimeAxis(False)
@@ -101,24 +95,20 @@ class AWGChannelUi(AWGChannelForm, AWGChannelBase):
         """Plot the waveform"""
         logger = logging.getLogger(__name__)
         if self.plotEnabled:
-            try:
-                points = self.waveform.evaluate()
-                points = points.tolist()
-                self.plot.getItem(0,0).clear()
-                if self.settings.channelSettingsList[self.channel]['plotStyle'] == self.settings.plotStyles.lines:
-                    self.plot.getItem(0,0).plot(points, pen=solidBluePen)
-                if self.settings.channelSettingsList[self.channel]['plotStyle'] == self.settings.plotStyles.points:
-                    self.plot.getItem(0,0).plot(points, pen=None, symbol='o', symbolSize=3, symbolPen=solidBluePen, symbolBrush=blueBrush)
-                if self.settings.channelSettingsList[self.channel]['plotStyle'] == self.settings.plotStyles.linespoints:
-                    self.plot.getItem(0,0).plot(points, pen=solidBluePen, symbol='o', symbolSize=3, symbolPen=solidBluePen, symbolBrush=blueBrush)
-            except Exception as e:
-                logger.warning(e.__class__.__name__ + ": " + str(e))
+            # try:
+            points = self.waveform.evaluate()
+            points = points.tolist()
+            self.plot.getItem(0,0).clear()
+            if self.settings.channelSettingsList[self.channel]['plotStyle'] == self.settings.plotStyles.lines:
+                self.plot.getItem(0,0).plot(points, pen=solidBluePen)
+            if self.settings.channelSettingsList[self.channel]['plotStyle'] == self.settings.plotStyles.points:
+                self.plot.getItem(0,0).plot(points, pen=None, symbol='o', symbolSize=3, symbolPen=solidBluePen, symbolBrush=blueBrush)
+            if self.settings.channelSettingsList[self.channel]['plotStyle'] == self.settings.plotStyles.linespoints:
+                self.plot.getItem(0,0).plot(points, pen=solidBluePen, symbol='o', symbolSize=3, symbolPen=solidBluePen, symbolBrush=blueBrush)
+            # except Exception as e:
+            #     logger.warning(e.__class__.__name__ + ": " + str(e))
 
-    def onEquation(self):
-        """Set equation to match the text box (which also updates the waveform)"""
-        self.equation = str(self.equationEdit.text())
-
-    def onSegmentChanged(self, channel=None, row=None, column=None, value=None):
+    def onSegmentChanged(self):
         """Update dependencies if a segment changed"""
         self.waveform.updateDependencies()
         self.dependenciesChanged.emit(self.channel)
@@ -126,14 +116,48 @@ class AWGChannelUi(AWGChannelForm, AWGChannelBase):
 
     def onAddSegment(self):
         """Add segment button is clicked."""
-        self.segmentModel.addSegment()
+        indexList = self.segmentView.selectedRowIndexes()
+        if indexList:
+            selectedNode = self.segmentModel.nodeFromIndex(indexList[-1])
+            parent = selectedNode if selectedNode.nodeType==nodeTypes.segmentSet else selectedNode.parent
+        else:
+            parent = self.segmentModel.root
+        self.segmentModel.addNode(parent, nodeTypes.segment)
         self.onSegmentChanged()
 
     def onRemoveSegment(self):
         """Remove segment button is clicked."""
-        selectedIndexes = self.segmentView.selectedIndexes()
-        selectedRows = list({index.row() for index in selectedIndexes})
-        selectedRows.sort(reverse=True) #go backwards so the earlier rows don't change their row number
-        for row in selectedRows:
-            self.segmentModel.removeSegment(row)
+        self.segmentView.onDelete()
         self.onSegmentChanged()
+
+    def onAddToSet(self):
+        logger = logging.getLogger(__name__)
+        indexList = self.segmentView.selectedRowIndexes()
+        nodeList = [self.segmentModel.nodeFromIndex(index) for index in indexList]
+        if nodeList:
+            oldParent = nodeList[-1].parent
+            sameParent = all([node.parent==oldParent for node in nodeList])
+            if not sameParent:
+                logger.warning("Selected nodes do not all have the same parent")
+            else:
+                newParent=self.segmentModel.addNode(oldParent, nodeTypes.segmentSet, nodeList[-1].row+1)
+                self.segmentModel.changeParent(nodeList, oldParent, newParent)
+                self.segmentView.expandAll()
+                self.onSegmentChanged()
+
+    def onRemoveFromSet(self):
+        logger = logging.getLogger(__name__)
+        indexList = self.segmentView.selectedRowIndexes()
+        nodeList = [self.segmentModel.nodeFromIndex(index) for index in indexList]
+        if nodeList:
+            oldParent = nodeList[-1].parent
+            sameParent = all([node.parent==oldParent for node in nodeList])
+            if not sameParent:
+                logger.warning("Selected nodes do not all have the same parent")
+            elif oldParent is self.segmentModel.root:
+                pass
+            else:
+                newParent=oldParent.parent
+                self.segmentModel.changeParent(nodeList, oldParent, newParent, oldParent.row)
+                self.segmentView.expandAll()
+                self.onSegmentChanged()
