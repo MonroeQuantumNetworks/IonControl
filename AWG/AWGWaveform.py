@@ -129,6 +129,23 @@ class AWGWaveform(object):
     def evaluateEquation(self, node, duration, startStep):
         """Evaluate the waveform of the specified node's equation.
 
+        The waveform caching works as follows: if self.settings.cacheDepth is greater than zero, waveform values are saved
+        to self.waveformCache as they are calculated, to speed up future waveform computations. self.waveformCache is an OrderedDict,
+        and the length is constrained to self.settings.cacheDepth. A key to the OrderedDict is an equation string, i.e. "7*sin(5*t)+3".
+        The value is a dict. A key to that dict is a sample range (start, stop), and the value is the values that equation takes over
+        that range.
+
+        When a waveform is requested, this function first looks to see if that waveform has a cache entry. If it does, it iterates
+        through the dict associated with that waveform, looking for a (start, stop) range that overlaps with the requested range.
+        If it finds an overlap, it computes only the non-overlapping part, and uses the cache for the remainder. It then updates
+        the cache entry. If it does not find an overlap, it calculates the entire waveform, and then adds an entry to the waveform's
+        dict of saved values.
+
+        Args:
+            node: The node whose equation is to be evaluated
+            duration: the length of time for which to evaluate the equation
+            startStep: the step at which to start evaluation
+
         Returns:
             sampleList: list of values to program to the AWG.
         """
@@ -154,48 +171,69 @@ class AWGWaveform(object):
             varValueDict['t'] = sympy.Symbol('t')
             sympyExpr = parse_expr(node.equation, varValueDict) #parse the equation
             key = str(sympyExpr)
-            if self.settings.cacheDepth > 0:
+
+            if self.settings.cacheDepth > 0: #meaning, use the cache
                 if key in self.waveformCache:
                     self.waveformCache[key] = self.waveformCache.pop(key) #move key to the most recent position in cache
                     for (sampleStartStep, sampleStopStep), samples in self.waveformCache[key].iteritems():
-                        if sampleStartStep==startStep and sampleStopStep==stopStep: #this means that there is an exact match
-                            sampleList = samples
+                        if startStep >= sampleStartStep and stopStep <= sampleStopStep: #this means the required waveform is contained within the cached waveform
+                            sliceStart = startStep - sampleStartStep
+                            sliceStop  = stopStep  - sampleStartStep + 1
+                            sampleList = samples[sliceStart:sliceStop]
                             break
                         elif max(startStep, sampleStartStep) > min(stopStep, sampleStopStep): #this means there is no overlap
                             continue
                         else: #This means there is some overlap, but not an exact match
-                            if startStep < sampleStartStep and stopStep < sampleStopStep:
-                                sampleList = self.computeFunction(sympyExpr, varValueDict['t'], startStep, sampleStartStep-1)
-                                sampleList = numpy.append(sampleList, samples[:stopStep]) #TODO: THIS IS PROBABLY OFF BY ONE
-                                
+                            if startStep < sampleStartStep: #compute the first part of the sampleList
+                                sampleListStart = self.computeFunction(sympyExpr, varValueDict['t'], startStep, sampleStartStep-1)
+                                if stopStep <= sampleStopStep: #use the cached part for the rest
+                                    sliceStop = stopStep - sampleStartStep + 1
+                                    sampleList = numpy.append(sampleListStart, samples[:sliceStop])
+                                    self.waveformCache[key].pop((sampleStartStep, sampleStopStep)) #update cache entry with new samples
+                                    self.waveformCache[key][(startStep, sampleStopStep)] = numpy.append(sampleListStart, samples)
+                                else: #compute the end of the sampleList, then use the cached part for the middle
+                                    sampleListEnd = self.computeFunction(sympyExpr, varValueDict['t'], sampleStopStep+1, stopStep)
+                                    sampleList = numpy.append(numpy.append(sampleListStart, samples), sampleListEnd)
+                                    self.waveformCache[key].pop((sampleStartStep, sampleStopStep))
+                                    self.waveformCache[key][(startStep, stopStep)] = sampleList
+                            else: #compute the end of the sampleList, and use the cached part for the beginning
+                                sampleListEnd = self.computeFunction(sympyExpr, varValueDict['t'], sampleStopStep+1, stopStep)
+                                sliceStart = startStep - sampleStartStep
+                                sampleList = numpy.append(samples[sliceStart:], sampleListEnd)
+                                self.waveformCache[key].pop((sampleStartStep, sampleStopStep))
+                                self.waveformCache[key][(sampleStartStep, stopStep)] = numpy.append(samples, sampleListEnd)
                             break
                     else: #This is an else on the for loop, it executes if there is no break (i.e. if there are no computed samples with overlap)
-                        sampleList = self.computeFunction(sympyExpr, varValueDict['t'], startStep, numSamples)
+                        sampleList = self.computeFunction(sympyExpr, varValueDict['t'], startStep, stopStep)
                         self.waveformCache[key][(startStep, stopStep)] = sampleList
-                else:
-                    sampleList = self.computeFunction(sympyExpr, varValueDict['t'], startStep, numSamples)
-                    self.waveformCache[sympyExpr] = {(startStep, stopStep): sampleList}
+                else: #if the waveform is not in the cache
+                    sampleList = self.computeFunction(sympyExpr, varValueDict['t'], startStep, stopStep)
+                    self.waveformCache[key] = {(startStep, stopStep): sampleList}
                     if len(self.waveformCache) > self.settings.cacheDepth:
                         self.waveformCache.popitem(last=False) #remove the least recently used cache item
-            else:
-                sampleList = self.computeFunction(sympyExpr, varValueDict['t'], startStep, numSamples)
+            else: #if we're not using the cache at all
+                sampleList = self.computeFunction(sympyExpr, varValueDict['t'], startStep, stopStep)
         return nextSegmentStartStep, sampleList
 
-    def computeFunction(self, sympyExpr, tVar, startStep, numSamples):
+    def computeFunction(self, sympyExpr, tVar, startStep, stopStep):
         """Compute the value of a function over a specified range.
         Args:
-            sympyExpr (str): A string containing a function of 't' (e.g. 7*sin(3*t))
+            sympyExpr (str): A string containing a function of 't' (e.g. '7*sin(3*t)')
             tVar (Symbol): sympy symbol for 't'
             startStep (int): where to start computation
-            numSamples (int): how many samples to compute
+            stopStep (int): the last sample to compute
         Returns:
             sampleList (numpy.array): list of function values
         """
-        func = sympy.lambdify(tVar, sympyExpr, "numpy") #turn string into a python function
-        clippedFunc = lambda t: max(self.minAmplitude, min(self.maxAmplitude, func(t))) #clip at min and max amplitude
-        vectorFunc = numpy.vectorize(clippedFunc, otypes=[numpy.float64]) #vectorize the function
-        step = self.stepsize.toval(ounit='s')
-        sampleList = vectorFunc( (numpy.arange(numSamples)+startStep)*step ) #apply the function to each time step value
+        numSamples = stopStep-startStep+1
+        if numSamples <= 0:
+            sampleList = numpy.array([])
+        else:
+            func = sympy.lambdify(tVar, sympyExpr, "numpy") #turn string into a python function
+            clippedFunc = lambda t: max(self.minAmplitude, min(self.maxAmplitude, func(t))) #clip at min and max amplitude
+            vectorFunc = numpy.vectorize(clippedFunc, otypes=[numpy.float64]) #vectorize the function
+            step = self.stepsize.toval(ounit='s')
+            sampleList = vectorFunc( (numpy.arange(numSamples)+startStep)*step ) #apply the function to each time step value
         return sampleList
 
     def compliantSampleList(self, sampleList):
