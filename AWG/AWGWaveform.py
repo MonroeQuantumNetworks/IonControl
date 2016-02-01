@@ -141,6 +141,8 @@ class AWGWaveform(object):
         the cache entry. If it does not find an overlap, it calculates the entire waveform, and then adds an entry to the waveform's
         dict of saved values.
 
+        A cacheDepth value less than zero indicates an unbounded cache.
+
         Args:
             node: The node whose equation is to be evaluated
             duration: the length of time for which to evaluate the equation
@@ -172,7 +174,7 @@ class AWGWaveform(object):
             sympyExpr = parse_expr(node.equation, varValueDict) #parse the equation
             key = str(sympyExpr)
 
-            if self.settings.cacheDepth > 0: #meaning, use the cache
+            if self.settings.cacheDepth != 0: #meaning, use the cache
                 if key in self.waveformCache:
                     self.waveformCache[key] = self.waveformCache.pop(key) #move key to the most recent position in cache
                     for (sampleStartStep, sampleStopStep), samples in self.waveformCache[key].iteritems():
@@ -209,7 +211,7 @@ class AWGWaveform(object):
                 else: #if the waveform is not in the cache
                     sampleList = self.computeFunction(sympyExpr, varValueDict['t'], startStep, stopStep)
                     self.waveformCache[key] = {(startStep, stopStep): sampleList}
-                    if len(self.waveformCache) > self.settings.cacheDepth:
+                    if self.settings.cacheDepth > 0 and len(self.waveformCache) > self.settings.cacheDepth:
                         self.waveformCache.popitem(last=False) #remove the least recently used cache item
             else: #if we're not using the cache at all
                 sampleList = self.computeFunction(sympyExpr, varValueDict['t'], startStep, stopStep)
@@ -259,7 +261,8 @@ class AWGWaveform(object):
 
 if __name__ == '__main__':
     from AWG.AWGSegmentModel import AWGSegmentNode, AWGSegment, AWGSegmentSet
-    import timeit
+    from collections import OrderedDict
+    from time import time
     class Settings:
         deviceProperties = dict(
         sampleRate = mg(1, 'GHz'), #rate at which the samples programmed are output by the AWG
@@ -276,6 +279,7 @@ if __name__ == '__main__':
         deviceSettings = {}
         root = AWGSegmentSet(None)
         channelSettingsList = [{'segmentDataRoot':root}]
+        cacheDepth = -1
         varDict = {'a':{'value':mg(1, 'MHz'), 'text':None},
                    'b':{'value':mg(3, ''), 'text':None},
                    'w1':{'value':mg(.6, 'Hz'), 'text':None},
@@ -283,29 +287,28 @@ if __name__ == '__main__':
                    'q':{'value':mg(12, ''), 'text':None},
                    'd':{'value':mg(1, ''), 'text':None},
                    'w':{'value':mg(200, 'GHz'), 'text':None},
-                   'w3':{'value':mg(1, 'GHz'), 'text':None}}
+                   'w3':{'value':mg(1, 'GHz'), 'text':None},
+                   'j':{'value':mg(1.1, 'ms'), 'text':None}}
 
-    def setup():
-        s = Settings()
-        w = AWGWaveform(0, s)
-        node1 = AWGSegment(equation='sin(a*b*t)', duration='1 ms', parent=s.root)
-        node2 = AWGSegment(equation='sin(w1*t+q)+sin(w2*t+d)', duration='1 ms', parent=s.root)
-        node3 = AWGSegment(equation='cos(w*t)', duration='1 ms', parent=s.root)
-        node4 = AWGSegment(equation='sin(w1*t)*sin(w2*t)', duration='1 ms', parent=s.root)
-        node5 = AWGSegment(equation='sin(w3*t)', duration='1 ms', parent=s.root)
-        s.root.children.append(node1)
-        s.root.children.append(node2)
-        s.root.children.append(node3)
-        s.root.children.append(node4)
-        s.root.children.append(node5)
-        w.updateDependencies()
-        return w, s
-
-    def test(w, s):
-        w.evaluateSegments(s.root.children)
-
-    n=1
-    t=timeit.timeit("test(w,s)", setup="from __main__ import test, setup; w,s = setup()", number=n)
-    print t/n
-
+    settings = Settings()
+    waveformCache = OrderedDict()
+    waveform = AWGWaveform(0, settings, waveformCache)
+    node1 = AWGSegment(equation='sin(a*b*t)', duration='1 ms', parent=settings.root)
+    node2 = AWGSegment(equation='sin(w1*t+q)+sin(w2*t+d)', duration='1 ms', parent=settings.root)
+    node3 = AWGSegment(equation='cos(w*t)', duration='1 ms', parent=settings.root)
+    node4 = AWGSegment(equation='sin(w1*t)*sin(w2*t)', duration='1 ms', parent=settings.root)
+    node5 = AWGSegment(equation='sin(w3*t)', duration='1 ms', parent=settings.root)
+    settings.root.children.append(node1)
+    settings.root.children.append(node2)
+    settings.root.children.append(node3)
+    settings.root.children.append(node4)
+    settings.root.children.append(node5)
+    waveform.updateDependencies()
+    t = time()
+    waveform.evaluateSegments(settings.root.children)
+    print time()-t
+    node2.duration='j'
+    t = time()
+    waveform.evaluateSegments(settings.root.children)
+    print time()-t
 
