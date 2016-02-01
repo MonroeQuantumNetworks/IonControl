@@ -164,6 +164,7 @@ class AWGUi(AWGForm, AWGBase):
         #cache
         self.cacheDepthSpinBox.setValue(self.settings.cacheDepth)
         self.cacheDepthSpinBox.valueChanged.connect(self.onCacheDepth)
+        self.clearCacheButton.clicked.connect(self.onClearCache)
 
         #Restore GUI state
         state = self.config.get(self.configname+'.state')
@@ -204,6 +205,9 @@ class AWGUi(AWGForm, AWGBase):
     def onCacheDepth(self, newVal):
         self.settings.cacheDepth = newVal
         self.saveIfNecessary()
+
+    def onClearCache(self):
+        self.waveformCache.clear()
 
     def onComboBoxEditingFinished(self):
         """a settings name is typed into the combo box"""
