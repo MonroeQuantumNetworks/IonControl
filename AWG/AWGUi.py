@@ -101,7 +101,7 @@ class AWGUi(AWGForm, AWGBase):
         self.settings = Settings() #we always run settings through the constructor
         if self.settingsName in self.settingsDict:
             self.settings.update(self.settingsDict[self.settingsName])
-        self.device = deviceClass(self.settings, self.globalDict)
+        self.device = deviceClass(self.settings)
 
     def setupUi(self,parent):
         logger = logging.getLogger(__name__)
@@ -120,6 +120,7 @@ class AWGUi(AWGForm, AWGBase):
             dock = Dock("AWG Channel {0}".format(channel))
             dock.addWidget(awgChannelUi)
             self.area.addDock(dock, 'right')
+            self.device.waveforms[channel] = awgChannelUi.waveform
         self.refreshVarDict()
 
         # Settings control
