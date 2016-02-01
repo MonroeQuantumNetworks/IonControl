@@ -137,7 +137,14 @@
        <item>
         <widget class="QSpinBox" name="cacheDepthSpinBox">
          <property name="toolTip">
-          <string>number of waveforms to cache. Increasing this number can make evaluation faster, at the expense of memory usage.</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;number of waveforms to cache. Increasing this number makes evaluation faster, at the expense of memory usage. A value less than zero indicates an unbounded cache.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="clearCacheButton">
+         <property name="text">
+          <string>Clear cache</string>
          </property>
         </widget>
        </item>
