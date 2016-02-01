@@ -65,10 +65,9 @@ from AWG.AWGSegmentModel import AWGSegmentNode
 
 class AWGDeviceBase(object):
     """base class for AWG Devices"""
-    def __init__(self, settings, globalDict):
+    def __init__(self, settings):
         self.open()
         self.settings = settings
-        self.globalDict = globalDict
         for channel in range(self.deviceProperties['numChannels']):
             if channel >= len(self.settings.channelSettingsList): #create new channels if it's necessary
                 self.settings.channelSettingsList.append({'segmentDataRoot':AWGSegmentNode(None, ''),
@@ -144,8 +143,8 @@ class ChaseDA12000(AWGDeviceBase):
                     ("TrigEn", c_ulong),
                     ("NextSegNum", c_ulong)]
 
-    def __init__(self, settings, globalDict):
-        super(ChaseDA12000, self).__init__(settings, globalDict)
+    def __init__(self, settings):
+        super(ChaseDA12000, self).__init__(settings)
         if not self.project.isEnabled('hardware', self.displayName):
             self.enabled = False
         else:
