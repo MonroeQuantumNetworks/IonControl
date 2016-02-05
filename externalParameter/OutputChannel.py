@@ -31,6 +31,7 @@ class OutputChannel(QtCore.QObject):
     useTracker = UseTracker()
 
     def __init__(self, device, deviceName, channelName, globalDict, settings=None, outputUnit=''):
+    #def __init__(self, device, deviceName, channelName, globalDict, settings=dict(), outputUnit=''):
         super(OutputChannel, self).__init__()
         self.device = device
         self.deviceName = deviceName
@@ -46,7 +47,8 @@ class OutputChannel(QtCore.QObject):
         self.expressionValue.string = self.settings.strValue
         self.expressionValue.value = self.settings.targetValue
         self.expressionValue.valueChanged.connect(self.onExpressionUpdate)
-        
+
+
     def setDefaults(self):
         self.settings.__dict__.setdefault('value', magnitude.mg(0, self.outputUnit))  # the current value
         self.settings.__dict__.setdefault('persistDelay', magnitude.mg(60, 's'))     # delay for persistency

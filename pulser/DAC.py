@@ -78,6 +78,7 @@ class DAC:
         self.numChannels = config.dac.numChannels if config else 0
         self.dacInfo = config.dac if config else DAADInfo() 
         self.sendCommand(0, 7, 1) # enable internal reference
+        self.sendCommand(0, 7, 1) # enable internal reference works if done twice, don't ask me why
 
     def rawToMagnitude(self, raw):
         return decode( raw, self.dacInfo.encoding )

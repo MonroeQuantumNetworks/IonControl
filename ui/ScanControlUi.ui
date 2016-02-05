@@ -256,6 +256,16 @@
         </layout>
        </item>
        <item>
+        <widget class="RedBlackComboBox" name="parallelInternalScanComboBox">
+         <property name="toolTip">
+          <string>IN parallel scanned internal parameter. Use None for no internal scan.</string>
+         </property>
+         <property name="maxVisibleItems">
+          <number>100</number>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QSplitter" name="splitter_2">
          <property name="orientation">
           <enum>Qt::Vertical</enum>

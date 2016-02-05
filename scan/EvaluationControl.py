@@ -201,7 +201,8 @@ class EvaluationControl(ControlForm, ControlBase ):
         self.saveButton.clicked.connect( self.onSave )
         self.removeButton.clicked.connect( self.onRemove )
         self.reloadButton.clicked.connect( self.onReload )
-        self.evalTableModel = EvaluationTableModel( self.checkSettingsSavable, plotnames=self.plotnames, analysisNames=self.analysisNames, counterNames=self.counterNames )
+        self.evalTableModel = EvaluationTableModel(self.checkSettingsSavable, plotnames=self.plotnames, analysisNames=self.analysisNames,
+                                                   counterNames=self.counterNames, globalDict=self.globalDict)
         self.evalTableModel.dataChanged.connect( self.checkSettingsSavable )
         self.evalTableModel.dataChanged.connect( self.onActiveEvalChanged )
         self.evalTableView.setModel( self.evalTableModel )

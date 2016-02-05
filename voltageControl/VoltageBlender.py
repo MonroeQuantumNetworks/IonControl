@@ -21,24 +21,22 @@ from Chassis.itfParser import itfParser
 from pulser.DACController import DACControllerException
 
 project = getProject()
-voltageHardware = project.exptConfig['software']['Voltages']['hardware']
+#only one voltage controller is currently allowed, so we can just take the first (and only) value in the software voltages dictionary
+voltageHardware = project.exptConfig['software']['Voltages'].values()[0]['hardware']
+hardwareObjName, hardwareName = project.fromFullName(voltageHardware)
+hardwareDict = project.isEnabled('hardware',hardwareObjName).get(hardwareName)
 
-NI_name = 'NI DAC Chassis'
-NI = project.hardware.get(NI_name)
-NI_enabled = project.isEnabled('hardware', NI_name)
+NIObjName = 'NI DAC Chassis'
+FPGAObjName = 'Opal Kelly FPGA'
 
-FPGA_DAC_name = 'Opal Kelly FPGA: DAC'
-FPGA_DAC = project.hardware.get(FPGA_DAC_name)
-FPGA_DAC_enabled = project.isEnabled('hardware', FPGA_DAC_name)
-
-if NI_enabled:
+if hardwareDict and hardwareObjName==NIObjName:
     try:
         from Chassis import DAQmxUtility
         from Chassis.WaveformChassis import WaveformChassis
         from Chassis.DAQmxUtility import Mode
         import PyDAQmx.DAQmxFunctions
     except ImportError as e:
-        importErrorPopup(NI_name)
+        importErrorPopup(NIObjName)
 
 
 class HardwareException(Exception):
@@ -65,13 +63,13 @@ class NoneHardware(object):
 
 
 class NIHardware(object):
-    name = NI_name
+    name = voltageHardware if hardwareObjName==NIObjName else NIObjName
     nativeShuttling = False
     def __init__(self):
         try:
             self.chassis = WaveformChassis()
             self.chassis.mode = Mode.Static
-            ConfigFilename = NI['configFile']
+            ConfigFilename = hardwareDict['configFile']
             self.chassis.initFromFile( ConfigFilename )
             self.DoLine = self.chassis.createFalseDoBuffer()
             self.DoLine[0] = 1
@@ -113,7 +111,7 @@ class NIHardware(object):
 
 
 class FPGAHardware(object):
-    name = FPGA_DAC_name
+    name = voltageHardware if hardwareObjName==FPGAObjName else FPGAObjName
     nativeShuttling = True
     def __init__(self, dacController):
         self.dacController = dacController
@@ -157,9 +155,9 @@ class VoltageBlender(QtCore.QObject):
         super(VoltageBlender,self).__init__()
         self.dacController = dacController
 
-        if voltageHardware==FPGA_DAC_name and FPGA_DAC_enabled:
+        if hardwareObjName==FPGAObjName and hardwareDict:
             self.hardware = FPGAHardware(self.dacController)
-        elif voltageHardware==NI_name and NI_enabled:
+        elif hardwareObjName==NIObjName and hardwareDict:
             self.hardware = NIHardware()
         else:
             self.hardware = NoneHardware()

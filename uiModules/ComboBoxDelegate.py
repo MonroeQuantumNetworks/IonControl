@@ -2,6 +2,8 @@ from functools import partial
 
 from PyQt4 import QtGui, QtCore
 
+from modules.PyqtUtility import BlockSignals
+
 
 class ComboBoxDelegateMixin(object):
     def createEditor(self, parent, option, index ):
@@ -19,7 +21,8 @@ class ComboBoxDelegateMixin(object):
         """Set the data in the editor based on the model"""
         value = index.model().data(index, QtCore.Qt.EditRole)
         if value:
-            editor.setCurrentIndex( editor.findText(value) )
+            with BlockSignals(editor) as e:
+                e.setCurrentIndex( e.findText(value) )
 
     def setModelData(self, editor, model, index):
         """Set the data in the model based on the editor"""

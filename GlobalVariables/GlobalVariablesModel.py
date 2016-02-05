@@ -145,21 +145,22 @@ class GlobalVariablesModel(CategoryTreeModel):
 
     def setName(self, index, value):
         """Change the name of a global variable"""
-        logger = logging.getLogger(__name__)
         node = self.nodeFromIndex(index)
         var = node.content
         newName = str(value if api2 else str(value.toString())).strip()
-        if isIdentifier(newName):
-            del self._globalDict_[var.name]
-            try:
-                var.name = newName
-            except HistoryException as e:
-                logging.getLogger(__name__).warning(str(e))
-            self._globalDict_[newName] = var
-            return True
-        else:
-            logger.warning("'{0}' is not a valid identifier".format(newName))
-            return False
+        if var.name != newName:
+            if isIdentifier(newName):
+                del self._globalDict_[var.name]
+                try:
+                    var.name = newName
+                except HistoryException as e:
+                    logging.getLogger(__name__).warning(str(e))
+                self._globalDict_[newName] = var
+                return True
+            else:
+                logging.getLogger(__name__).warning("'{0}' is not a valid identifier".format(newName))
+                return False
+        return True
 
     def setValue(self, index, value):
         """Change the value of a global variable"""

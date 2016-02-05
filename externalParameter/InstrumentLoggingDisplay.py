@@ -58,11 +58,11 @@ class InstrumentLoggingDisplayTableModel( QtCore.QAbstractTableModel ):
             if key not in inputChannels:
                 self.data.pop(key)
                 channel = self.inputChannels.pop(key)
-                channel.observable.unsubscribe( self.updateHandler )
+                channel.newData.disconnect(self.updateHandler)
         for key, channel in inputChannels.iteritems():
             if key not in self.data: 
                 self.data[key] = InputData() 
-                channel.observable.subscribe( self.updateHandler )
+                channel.newData.connect(self.updateHandler)
                 self.inputChannels[key] = channel
         self.endResetModel()
         
@@ -85,11 +85,10 @@ class InstrumentLoggingDisplayTableModel( QtCore.QAbstractTableModel ):
             return self.headerLookup[section]
         return None #QtCore.QVariant()
  
-    def updateHandler(self, event):
-        #self.update( event.name, event.data )
-        if event.name in self.data and event.data is not None:
-            self.data[event.name].raw = event.data[1]
-            index = self.data.index(event.name)
+    def updateHandler(self, name, data):
+        if name in self.data and data is not None:
+            self.data[name].raw = data[1]
+            index = self.data.index(name)
             leftInd = self.createIndex(index, 1)
             rightInd = self.createIndex(index, 3)
             self.dataChanged.emit(leftInd, rightInd) 

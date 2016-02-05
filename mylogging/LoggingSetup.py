@@ -101,7 +101,7 @@ qtHandler.setFormatter(formatter)
 
 qtWarningButtonHandler = QtWarningButtonHandler()
 qtWarningButtonHandler.setFormatter(formatter)
-qtWarningButtonHandler.addFilter(LevelListFilter( (logging.WARNING,) ) )
+qtWarningButtonHandler.addFilter(LevelListFilter((logging.WARNING, logging.ERROR)))
 
 logger.addHandler(stdoutHandler)
 logger.addHandler(stderrHandler)

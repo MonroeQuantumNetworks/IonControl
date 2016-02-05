@@ -50,6 +50,9 @@ from gui.StashButton import StashButtonControl
 import ctypes
 import locket
 import scan.EvaluationAlgorithms #@UnusedImport
+import Experiment_rc
+from AWG.AWGUi import AWGUi
+from AWG import AWGDevices
 
 setID = ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID
 if __name__=='__main__': #imports that aren't just definitions
@@ -90,6 +93,9 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.shutterNameDict = config.get('Settings.ShutterNameDict', ChannelNameDict())
         if self.shutterNameDict.__class__.__name__ == 'ChannelNameMap':
             self.shutterNameDict = ChannelNameDict( self.shutterNameDict.names )
+        if self.shutterNameDict.customDict.__class__.__name__ == 'ChannelNameMap':
+            self.shutterNameDict = ChannelNameDict(self.shutterNameDict.customDict._fwd, self.shutterNameDict.defaultDict )
+
         self.shutterNameSignal = DataChanged()
         self.triggerNameDict = config.get('Settings.TriggerNameDict', ChannelNameDict())
         if self.triggerNameDict.__class__.__name__ == 'ChannelNameMap':
@@ -97,6 +103,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.triggerNameSignal = DataChanged()
         if self.loggingLevel not in self.levelValueList: self.loggingLevel = logging.INFO
         self.dbConnection = project.dbConnection
+        self.objectListToSaveContext = list()
 
     def __enter__(self):
         self.pulser = PulserHardware()
@@ -118,10 +125,10 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.loggerDock.hide()
 
         logger = logging.getLogger()
-        self.toolBar.addWidget(ExceptionLogButton())
+        self.exceptionToolBar.addWidget(ExceptionLogButton())
 
         self.warningLogButton = LogButton(messageIcon=":/petersIcons/icons/Warning.png", messageName="warnings")
-        self.toolBar.addWidget(self.warningLogButton)
+        self.exceptionToolBar.addWidget(self.warningLogButton)
         qtWarningButtonHandler.textWritten.connect(self.warningLogButton.addMessage)
 
         # Setup Console Dockwidget
@@ -140,16 +147,8 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         if self.project.isEnabled('software', 'Memory Profiler'):
             self.memoryProfiler = MemoryProfiler(self)
 
-        #determine if AWG software is enabled and import class if it is
-        self.AWGEnabled = self.project.isEnabled('software', 'AWG')
-        if self.AWGEnabled:
-            from AWG.AWGUi import AWGUi
-
         #determine if Voltages software is enabled and import class if it is
-        softwareVoltages = self.project.software.get('Voltages')
         self.voltagesEnabled = self.project.isEnabled('software', 'Voltages')
-        hardwareVoltagesName = softwareVoltages.get('hardware') if softwareVoltages else None
-        hardwareVoltagesEnabled = self.project.isEnabled('hardware', hardwareVoltagesName)
         if self.voltagesEnabled:
             from voltageControl.VoltageControl import VoltageControl
 
@@ -210,14 +209,10 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
             widget.stashChanged.connect(self.onStashChanged)
                     
         self.scanExperiment = self.tabDict["Scan"]
-                    
-        self.shutterUi = ShutterUi.ShutterUi(self.pulser, 'shutter', self.config, (self.shutterNameDict, self.shutterNameSignal), size=49 )
-        self.shutterUi.setupUi(self.shutterUi, True)
-        self.shutterDockWidget.setWidget( self.shutterUi )
-        self.pulser.ppActiveChanged.connect( self.shutterUi.setDisabled )
-        logger.debug( "ShutterUi representation:" + repr(self.shutterUi) )
 
-        self.triggerUi = ShutterUi.TriggerUi(self.pulser, 'trigger', self.config, (self.triggerNameDict, self.triggerNameSignal) )
+        self.shutterUi, self.shutterDockWidget = self.instantiateShutterUi(self.pulser, 'Shutters', "ShutterUi", self.config, self.globalVariablesUi.globalDict, self.shutterNameDict, self.shutterNameSignal)
+
+        self.triggerUi = ShutterUi.TriggerUi(self.pulser, 'ShutterUi', 'trigger', self.config, (self.triggerNameDict, self.triggerNameSignal) )
         self.triggerUi.offColor =  QtGui.QColor(QtCore.Qt.white)
         self.triggerUi.setupUi(self.triggerUi)
         self.pulser.ppActiveChanged.connect( self.triggerUi.setDisabled )
@@ -230,46 +225,53 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.preferencesUiDock.setObjectName("_preferencesUi")
         self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.preferencesUiDock)
 
-        if self.AWGEnabled:
-            self.AWGUi = AWGUi(self.pulser, self.config, self.globalVariablesUi.globalDict)
-            self.AWGUi.setupUi(self.AWGUi)
-            self.AWGUiDock = QtGui.QDockWidget("AWG")
-            self.AWGUiDock.setWidget(self.AWGUi)
-            self.AWGUiDock.setObjectName("_AWGUi")
-            self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.AWGUiDock)
-            self.AWGUi.outputChannelsChanged.connect( partial(self.scanExperiment.updateScanTarget, 'AWG') )
-            self.scanExperiment.updateScanTarget( 'AWG', self.AWGUi.outputChannels() )
-            self.globalVariablesUi.valueChanged.connect( self.AWGUi.evaluate )
+        #AWGs
+        enabledAWGDict = {displayName:className for displayName,className in AWGDevices.AWGDeviceDict.iteritems()
+                          if self.project.isEnabled('hardware', displayName)}
+        self.AWGUiDict = dict()
+        if enabledAWGDict:
+            AWGIcon = QtGui.QIcon()
+            AWGPixmap = QtGui.QPixmap(":/other/icons/AWG.png")
+            AWGIcon.addPixmap(AWGPixmap)
+            AWGButton = QtGui.QToolButton()
+            AWGButton.setIcon(AWGIcon)
+            self.toolBar.addWidget(AWGButton)
+            if len(enabledAWGDict) > 1:
+                menu = QtGui.QMenu("AWG")
+                AWGButton.setMenu(menu)
+                AWGButton.setPopupMode(QtGui.QToolButton.InstantPopup)
+                menu.setIcon(AWGIcon)
+                self.menuWindows.addMenu(menu)
+            for displayName, className in enabledAWGDict.iteritems():
+                awgUi = AWGUi(getattr(AWGDevices, className), self.config, self.globalVariablesUi.globalDict, self.scanExperiment.pulseProgramUi)
+                self.AWGUiDict[displayName] = awgUi
+                awgUi.setupUi(awgUi)
+                awgUi.varDictChanged.connect( partial(self.scanExperiment.updateScanTarget, displayName) )
+                self.scanExperiment.updateScanTarget( displayName, awgUi.varAsOutputChannelDict )
+                self.globalVariablesUi.valueChanged.connect( awgUi.evaluate )
+                action = QtGui.QAction(AWGIcon, displayName, self)
+                action.triggered.connect(partial(self.onAWG, displayName))
+                if len(enabledAWGDict) > 1:
+                    menu.addAction(action)
+                else:
+                    self.menuWindows.addAction(action)
+                    AWGButton.clicked.connect(action.trigger)
 
-        self.pulserParameterUi = PulserParameterUi(self.pulser, self.config, self.globalVariablesUi.globalDict)
-        self.pulserParameterUi.setupUi()
-        self.pulserParameterUiDock = QtGui.QDockWidget("Pulser Parameters")
-        self.pulserParameterUiDock.setWidget(self.pulserParameterUi)
-        self.pulserParameterUiDock.setObjectName("_pulserParameterUi")
-        self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.pulserParameterUiDock)
-        self.tabDict['Scan'].NeedsDDSRewrite.connect( self.pulserParameterUi.onWriteAll )
+        ParameterUi, self.pulserParameterUiDock = self.instantiateParametersUi(self.pulser, "Pulser Parameters", "PulserParameterUi", self.config, self.globalVariablesUi.globalDict)
+        self.objectListToSaveContext.append(ParameterUi)
 
-        self.DDSUi = DDSUi.DDSUi(self.config, self.pulser, self.globalVariablesUi.globalDict )
-        self.DDSUi.setupUi(self.DDSUi)
-        self.DDSDockWidget.setWidget( self.DDSUi )
-        self.globalVariablesUi.valueChanged.connect( self.DDSUi.evaluate )
-        self.pulser.ppActiveChanged.connect( self.DDSUi.setDisabled )
-        self.tabDict['Scan'].NeedsDDSRewrite.connect( self.DDSUi.onWriteAll )
-        
-        self.DACUi = DACUi(self.config, self.pulser, self.globalVariablesUi.globalDict )
-        self.DACUi.setupUi(self.DACUi)
-        self.DACDockWidget = QtGui.QDockWidget("DAC")
-        self.DACDockWidget.setObjectName("_DAC_")
-        self.DACDockWidget.setWidget( self.DACUi )
-        self.pulser.ppActiveChanged.connect( self.DACUi.setDisabled )
-        self.tabDict['Scan'].NeedsDDSRewrite.connect( self.DACUi.onWriteAll )
-        self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.DACDockWidget )
+        self.DDSUi, self.DDSDockWidget = self.instantiateDDSUi(self.pulser, "DDS", "DDSUi", self.config, self.globalVariablesUi.globalDict)
+        self.objectListToSaveContext.append(self.DDSUi)
+
+        self.DACUi, self.DACDockWidget = self.instantiateDACUi(self.pulser, "DAC", "dacUi", self.config, self.globalVariablesUi.globalDict)
+        self.objectListToSaveContext.append(self.DACUi)
 
 #         self.DDSUi9910 = DDSUi9910.DDSUi(self.config, self.pulser )
 #         self.DDSUi9910.setupUi(self.DDSUi9910)
 #         self.DDS9910DockWidget.setWidget( self.DDSUi9910 )
 #        self.pulser.ppActiveChanged.connect( self.DDSUi9910.setDisabled )
         #self.tabDict['Scan'].NeedsDDSRewrite.connect( self.DDSUi9910.onWriteAll )
+        self.instantiateAuxiliaryPulsers()
 
         self.valueHistoryUi = ValueHistoryUi(self.config, self.dbConnection)
         self.valueHistoryUi.setupUi( self.valueHistoryUi )
@@ -288,8 +290,6 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
 #        self.tabifyDockWidget( self.DDS9910DockWidget, self.globalVariablesDock )
         self.tabifyDockWidget( self.DACDockWidget, self.globalVariablesDock )
         self.tabifyDockWidget( self.globalVariablesDock, self.valueHistoryDock )
-        if self.AWGEnabled:
-            self.tabifyDockWidget( self.valueHistoryDock, self.AWGUiDock )
         self.triggerDockWidget.hide()
         self.preferencesUiDock.hide()
 
@@ -326,8 +326,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.todoListDock.setWidget(self.todoList)
         self.todoListDock.setObjectName("_todoList")
         self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.todoListDock)
-        if self.AWGEnabled: self.tabifyDockWidget(self.AWGUiDock, self.todoListDock)
-        else: self.tabifyDockWidget(self.valueHistoryDock, self.todoListDock)
+        self.tabifyDockWidget(self.valueHistoryDock, self.todoListDock)
 
         for name, widget in self.tabDict.iteritems():
             if hasattr( widget, 'scanConfigurationListChanged' ) and widget.scanConfigurationListChanged is not None:
@@ -446,6 +445,50 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.stashButton = StashButtonControl(self.actionResume)
         self.stashButton.resume.connect(self.onResume)
 
+    def instantiateParametersUi(self, pulser, windowName, configName, config, globalDict):
+        ui = PulserParameterUi(pulser, config, configName, globalDict)
+        ui.setupUi()
+        uiDock = QtGui.QDockWidget(windowName)
+        uiDock.setWidget(ui)
+        uiDock.setObjectName(windowName)
+        self.addDockWidget(QtCore.Qt.RightDockWidgetArea, uiDock)
+        self.tabDict['Scan'].NeedsDDSRewrite.connect(ui.onWriteAll)
+        return ui, uiDock
+
+    def instantiateDDSUi(self, pulser, windowName, configName, config, globalDict):
+        ui = DDSUi.DDSUi(pulser, config, configName, globalDict)
+        ui.setupUi(ui)
+        uiDock = QtGui.QDockWidget(windowName)
+        uiDock.setWidget(ui)
+        uiDock.setObjectName(windowName)
+        self.addDockWidget(QtCore.Qt.RightDockWidgetArea, uiDock)
+        self.globalVariablesUi.valueChanged.connect(ui.evaluate)
+        pulser.ppActiveChanged.connect(ui.setDisabled)
+        self.tabDict['Scan'].NeedsDDSRewrite.connect(ui.onWriteAll)
+        return ui, uiDock
+
+    def instantiateDACUi(self, pulser, windowName, configName, config, globalDict):
+        ui = DACUi(pulser, config, configName, globalDict)
+        ui.setupUi(ui)
+        uiDock = QtGui.QDockWidget(windowName)
+        uiDock.setObjectName(windowName)
+        uiDock.setWidget(ui)
+        self.addDockWidget(QtCore.Qt.RightDockWidgetArea, uiDock)
+        pulser.ppActiveChanged.connect(ui.setDisabled)
+        self.tabDict['Scan'].NeedsDDSRewrite.connect(ui.onWriteAll)
+        return ui, uiDock
+
+    def instantiateShutterUi(self, pulser, windowName, configName, config, globalDict, nameDict, nameSignal):
+        ui = ShutterUi.ShutterUi(pulser, configName, 'shutter', self.config, (nameDict, nameSignal), size=49)
+        ui.setupUi(ui, True)
+        uiDock = QtGui.QDockWidget(windowName)
+        uiDock.setObjectName(windowName)
+        uiDock.setWidget(ui)
+        self.addDockWidget(QtCore.Qt.RightDockWidgetArea, uiDock)
+        pulser.ppActiveChanged.connect(ui.setDisabled)
+        logger.debug("ShutterUi representation:" + repr(ui))
+        return ui, uiDock
+
     def callWhenDoneAdjusting(self, callback):
         self.ExternalParametersUi.callWhenDoneAdjusting(callback)
 
@@ -483,7 +526,13 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.scriptingWindow.show()
         self.scriptingWindow.setWindowState(QtCore.Qt.WindowActive)
         self.scriptingWindow.raise_()
-        
+
+    def onAWG(self, displayName):
+        awgUi = self.AWGUiDict[displayName]
+        awgUi.show()
+        awgUi.setWindowState(QtCore.Qt.WindowActive)
+        awgUi.raise_()
+
     def onMeasurementLog(self):
         self.measurementLog.show()
         self.measurementLog.setWindowState(QtCore.Qt.WindowActive)
@@ -647,10 +696,14 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.measurementLog.close()
         if self.voltagesEnabled:
             self.voltageControlWindow.close()
+        for awgUi in self.AWGUiDict.values():
+            awgUi.close()
         numTempAreas = len(self.scanExperiment.area.tempAreas)
         for i in range(numTempAreas):
             if len(self.scanExperiment.area.tempAreas) > 0:
                 self.scanExperiment.area.tempAreas[0].win.close()
+        # close auxiliary pulsers
+        map(lambda x: x.shutdown(), self.auxiliaryPulsers)
 
     def saveConfig(self):
         self.config['MainWindow.State'] = self.parent.saveState()
@@ -667,9 +720,6 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.config['Settings.consoleEnable'] = self.consoleEnable 
         self.pulseProgramDialog.saveConfig()
         self.scriptingWindow.saveConfig()
-        self.DDSUi.saveConfig()
-        self.DACUi.saveConfig()
-        #self.DDSUi9910.saveConfig()
         self.shutterUi.saveConfig()
         self.triggerUi.saveConfig()
         self.dedicatedCountersWindow.saveConfig()
@@ -685,9 +735,9 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.measurementLog.saveConfig()
         self.valueHistoryUi.saveConfig()
         self.ExternalParametersUi.saveConfig()
-        self.pulserParameterUi.saveConfig()
-        if self.AWGEnabled:
-            self.AWGUi.saveConfig()
+        map(lambda x: x.saveConfig(), self.objectListToSaveContext)  # call saveConfig() for each element in the list
+        for awgUi in self.AWGUiDict.values():
+            awgUi.saveConfig()
         
     def onProjectSelection(self):
         ui = ProjectInfoUi(self.project)
@@ -746,69 +796,110 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
             if voltageControlWindowVisible: self.voltageControlWindow.show()
             else: self.voltageControlWindow.hide()
 
-        self.raise_()
+        if self.AWGUiDict:
+            for awgUi in self.AWGUiDict.values():
+                awgUiVisible = self.config.get(awgUi.configname+'.isVisible', False)
+                if awgUiVisible: awgUi.show()
+                else: awgUi.hide()
+
+        self.setFocus(True)
 
     def setupFPGAs(self):
         """Setup all Opal Kelly FPGAs"""
-        self.pmt32 = OKBase() #32 channel PMT
         self.dac = DACController() #100 channel DAC board
 
-        #Determine what's enabled
-        softwarePulserConfig = self.project.software.get('Pulser')
-        softwarePulserEnabled = softwarePulserConfig.get('enabled') if softwarePulserConfig else False
-        hardwarePulserName = softwarePulserConfig.get('hardware') if softwarePulserConfig else None
-        hardwarePulserConfig = self.project.hardware.get(hardwarePulserName)
-        hardwarePulserEnabled = hardwarePulserConfig.get('enabled') if hardwarePulserConfig else False
-        self.pulserEnabled = softwarePulserEnabled and hardwarePulserEnabled
-
-        pmt32Name = "Opal Kelly FPGA: 32 Channel PMT"
-        pmt32Config = self.project.hardware.get(pmt32Name)
-        self.pmt32Enabled = pmt32Config.get('enabled') if pmt32Config else False
-
-        dacName = "Opal Kelly FPGA: DAC"
-        dacConfig = self.project.hardware.get(dacName)
-        self.dacEnabled = dacConfig.get('enabled') if dacConfig else False
-
+        #determine name of FPGA used for Pulser, if any
+        pulserName=None
+        pulserSoftwareEnabled = self.project.isEnabled('software', 'Pulser')
+        if pulserSoftwareEnabled:
+            pulserHardware = pulserSoftwareEnabled.values()[0]['hardware']
+            hardwareObjName, hardwareName = project.fromFullName(pulserHardware)
+            if hardwareObjName=='Opal Kelly FPGA':
+                pulserName=hardwareName
         self.settings = FPGASettings() #settings for pulser specifically
-        if not any([self.pulserEnabled, self.pmt32Enabled, self.dacEnabled]): #if nothing is enabled, no need to do anything
-            return
 
-        self.OK_FPGA_Dict = self.pulser.listBoards() #all connected Opal Kelly FPGA boards
+        #determine name of FPGA used for DAC, if any
+        dacName=None
+        voltageSoftwareEnabled = self.project.isEnabled('software', 'Voltages')
+        if voltageSoftwareEnabled:
+            voltageHardware = voltageSoftwareEnabled.values()[0]['hardware']
+            hardwareObjName, hardwareName = project.fromFullName(voltageHardware)
+            if hardwareObjName=='Opal Kelly FPGA':
+                dacName=hardwareName
+
+        self.OK_FPGA_Dict = self.pulser.listBoards() #list all connected Opal Kelly FPGA boards
         logger.info( "Opal Kelly Devices found: {0}".format({k:v.modelName for k,v in self.OK_FPGA_Dict.iteritems()}) )
 
-        for FPGA, FPGAName, FPGAConfig, FPGAEnabled, hasConfig in [(self.pulser, hardwarePulserName, hardwarePulserConfig, self.pulserEnabled, True),
-                                                                   (self.dac, dacName, dacConfig, self.dacEnabled, False),
-                                                                   (self.pmt32, pmt32Name, pmt32Config, self.pmt32Enabled, False)]:
-            if FPGAEnabled:
-                deviceName=FPGAConfig.get('device') #The 'device' field of an FPGA should be the identifier of the FPGA.
-                if not deviceName:
-                    logger.error("No FPGA specified: 'device' field missing in '{0}' config".format(FPGAName))
-                elif deviceName not in self.OK_FPGA_Dict:
-                    logger.error("FPGA device {0} specified in '{1}' config cannot be found".format(deviceName, FPGAName))
-                else:
-                    device=self.OK_FPGA_Dict[deviceName]
-                    FPGA.openBySerial(device.serial)
-                    bitFile=FPGAConfig.get('bitFile')
-                    checkFileValid(bitFile, 'bitfile', FPGAName)
-                    if hasConfig:
-                        configFile = os.path.splitext(bitFile)[0] + '.xml'
-                        checkFileValid(configFile, 'config file', FPGAName)
-                    if FPGAConfig.get('uploadOnStartup'):
-                        FPGA.uploadBitfile(bitFile)
-                        logger.info("Uploaded file '{0}' to {1} (model {2}) in '{3}' config".format(bitFile, deviceName, device.modelName, FPGAName))
-                    if hasConfig:   # check and make sure corrct hardware is loaded
-                        FPGA.pulserConfiguration(configFile)
-                    if FPGA==self.pulser:
-                        self.settings.deviceSerial = device.serial
-                        self.settings.deviceDescription = device.identifier
-                        self.settings.deviceInfo = device
+        enabledFPGAs = self.project.isEnabled('hardware', 'Opal Kelly FPGA') #Dict of enabled FPGAs
+        for FPGAName, FPGAConfig in enabledFPGAs.iteritems():
+            FPGA = self.pulser if FPGAName==pulserName else (self.dac if FPGAName==dacName else OKBase())
+            deviceName=FPGAConfig.get('device') #The 'device' field of an FPGA should be the identifier of the FPGA.
+            if not deviceName:
+                logger.error("No FPGA specified: 'device' field missing in Opal Kelly FPGA: '{0}' config".format(FPGAName))
+            elif deviceName not in self.OK_FPGA_Dict:
+                logger.error("FPGA device {0} specified in Opal Kelly FPGA: '{1}' config cannot be found".format(deviceName, FPGAName))
+            else:
+                device=self.OK_FPGA_Dict[deviceName]
+                FPGA.openBySerial(device.serial)
+                bitFile=FPGAConfig.get('bitFile')
+                checkFileValid(bitFile, 'bitfile', FPGAName)
+                if FPGAName==pulserName:
+                    configFile = os.path.splitext(bitFile)[0] + '.xml'
+                    checkFileValid(configFile, 'config file', FPGAName)
+                if FPGAConfig.get('uploadOnStartup'):
+                    FPGA.uploadBitfile(bitFile)
+                    logger.info("Uploaded file '{0}' to {1} (model {2}) in Opal Kelly FPGA: '{3}' config".format(bitFile, deviceName, device.modelName, FPGAName))
+                if FPGAName==pulserName:   # check and make sure correct hardware is loaded
+                    FPGA.pulserConfiguration(configFile)
+                if FPGA==self.pulser:
+                    self.settings.deviceSerial = device.serial
+                    self.settings.deviceDescription = device.identifier
+                    self.settings.deviceInfo = device
         pulserHardwareId = self.pulser.hardwareConfigurationId()
         if pulserHardwareId:
             logger.info("Pulser Configuration {0:x}".format(pulserHardwareId))
         else:
             logger.error("No pulser available")
 
-
+    def instantiateAuxiliaryPulsers(self):
+        self.auxiliaryPulsers = list()
+        for FPGAName, FPGAConfig in self.project.isEnabled('hardware', 'Auxiliary Pulser').iteritems():
+            FPGA = PulserHardware()
+            deviceName=FPGAConfig.get('device') #The 'device' field of an FPGA should be the identifier of the FPGA.
+            if not deviceName:
+                logger.error("No FPGA specified: 'device' field missing in Auxiliary Opal Kelly FPGA: '{0}' config".format(FPGAName))
+            elif deviceName not in self.OK_FPGA_Dict:
+                logger.error("FPGA device {0} specified in Auxiliary Opal Kelly FPGA: '{1}' config cannot be found".format(deviceName, FPGAName))
+            else:
+                device=self.OK_FPGA_Dict[deviceName]
+                FPGA.openBySerial(device.serial)
+                bitFile=FPGAConfig.get('bitFile')
+                checkFileValid(bitFile, 'bitfile', FPGAName)
+                configFile = os.path.splitext(bitFile)[0] + '.xml'
+                checkFileValid(configFile, 'config file', FPGAName)
+                if FPGAConfig.get('uploadOnStartup'):
+                    FPGA.uploadBitfile(bitFile)
+                    logger.info("Uploaded file '{0}' to {1} (model {2}) in Opal Kelly FPGA: '{3}' config".format(bitFile, deviceName, device.modelName, FPGAName))
+                FPGA.pulserConfiguration(configFile)
+                pulserHardwareId = self.pulser.hardwareConfigurationId()
+                if pulserHardwareId:
+                    logger.info("Auxiliary Pulser {1} Configuration {0:x}".format(pulserHardwareId, FPGAName))
+                else:
+                    logger.error("No pulser available")
+                if FPGAConfig.get('PulserParameters'):
+                    ui, _ = self.instantiateParametersUi(FPGA, "{0} Pulser Config".format(FPGAName),
+                                                 "{0}.PulserParameterUi".format(FPGAName), self.config, self.globalVariablesUi.globalDict)
+                    self.objectListToSaveContext.append(ui)
+                if FPGAConfig.get('DDS'):
+                    ui, _ = self.instantiateDDSUi(FPGA, "{0} DDS".format(FPGAName), "{0}.DDSUi".format(FPGAName), self.config, self.globalVariablesUi.globalDict)
+                    self.objectListToSaveContext.append(ui)
+                if FPGAConfig.get('DAC'):
+                    ui, _ = self.instantiateDACUi(FPGA, "{0} DAC".format(FPGAName), "{0}.dacUi".format(FPGAName), self.config, self.globalVariablesUi.globalDict)
+                    self.objectListToSaveContext.append(ui)
+                if FPGAConfig.get('Shutters'):
+                    ui, _ = self.instantiateShutterUi(FPGA, "{0} Shutter".format(FPGAName), "{0}.ShutterUi".format(FPGAName), self.config, self.globalVariablesUi.globalDict, None, None)
+                    self.objectListToSaveContext.append(ui)
+                self.auxiliaryPulsers.append(FPGA)
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)

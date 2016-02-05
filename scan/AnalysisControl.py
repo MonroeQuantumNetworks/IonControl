@@ -470,9 +470,15 @@ class AnalysisControl(ControlForm, ControlBase ):
         
     def fitAll(self):
         allResults = dict()
+        failedList = list()
         for evaluation in self.analysisDefinition:
-            allResults[evaluation.name] = self.fit(evaluation)
+            try:
+                allResults[evaluation.name] = self.fit(evaluation)
+            except Exception as e:
+                logging.getLogger(__name__).error("Analysis '{0}' failed with error '{1}'".format(evaluation.name, e))
+                failedList.append(evaluation.name)
         self.analysisResultSignal.emit(allResults)
+        return failedList
     
     def onLoadFitFunction(self, name=None):
         name = str(name) if name is not None else self.currentAnalysisName
@@ -501,7 +507,8 @@ class AnalysisControl(ControlForm, ControlBase ):
     def analyze(self, plottedTraceDict ):
         self.setPlottedTraceDict(plottedTraceDict)
         self.fitAll()
-        return self.pushAll()
+        failedToPush = self.pushAll()
+        return failedToPush
 
     def evaluate(self, name=None):
         if self.fitfunction is not None:

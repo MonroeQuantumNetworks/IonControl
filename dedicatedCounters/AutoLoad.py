@@ -218,6 +218,7 @@ class AutoLoad(UiForm,UiBase):
         self.globalAdjustRevertList = list()
         self.voltageNodeBeforeLoading = ""
         self.externalInstrumentObservable = externalInstrumentObservable
+        self.originalResetValue = 0
         
     def constructStatemachine(self):
         self.statemachine = Statemachine('AutoLoad', now=now )
@@ -309,7 +310,9 @@ class AutoLoad(UiForm,UiBase):
                                          lambda state, data: state.timeInState() > self.settings.postSequenceWaitTime and
                                                              data.data[self.settings.counterChannel]/data.integrationTime < self.settings.thresholdRunning,
                                          description="postSequenceWaitTime" )
-        self.statemachine.addTransition( 'data', 'Load', 'Check', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime > self.settings.thresholdOven+self.settings.thresholdBare,
+        self.statemachine.addTransition( 'data', 'Load', 'Check', lambda state, data: data.integrationTime and
+                                                                                      data.data[self.settings.counterChannel] and
+                                                                                      data.data[self.settings.counterChannel]/data.integrationTime > self.settings.thresholdOven+self.settings.thresholdBare,
                                          description="thresholdOven"  )
         self.statemachine.addTransition( 'data', 'Check', 'BeyondThreshold', lambda state, data: state.timeInState() > self.settings.checkTime/2 and
                                                                                                  data.data[self.settings.counterChannel]/data.integrationTime > self.settings.beyondThresholdLimit,
@@ -826,7 +829,8 @@ class AutoLoad(UiForm,UiBase):
     
     def onData(self, data ):
         """Execute when count rate data is received. Change state based on count rate."""
-        self.statemachine.processEvent( 'data', data )
+        if data:
+            self.statemachine.processEvent('data', data)
     
     def onClose(self):
         self.statemachine.processEvent( 'stopButton' )
@@ -859,9 +863,13 @@ class AutoLoad(UiForm,UiBase):
         self.settings.loadAlgorithm = number
 
     def setBeyondThreshold(self):
-        self.originalResetValue = self.globalVariablesUi.globalDict[self.settings.resetField]
-        self.globalVariablesUi.globalDict[self.settings.resetField] = self.settings.resetValue
+        self.originalResetValue = self.globalVariablesUi.globalDict.get(self.settings.resetField)
+        if self.originalResetValue is not None:
+            self.globalVariablesUi.globalDict[self.settings.resetField] = self.settings.resetValue
+        else:
+            logging.getLogger(__name__).warning("invalid global variable '{0}'".format(self.settings.resetField))
         self.statusLabel.setText("Too many ions, dumping them :(")
 
     def exitBeyondThreshold(self):
-        self.globalVariablesUi.globalDict[self.settings.resetField] = self.originalResetValue
+        if self.originalResetValue is not None:
+            self.globalVariablesUi.globalDict[self.settings.resetField] = self.originalResetValue

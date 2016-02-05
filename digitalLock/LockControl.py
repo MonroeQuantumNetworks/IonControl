@@ -2,6 +2,8 @@ import PyQt4.uic
 from PyQt4 import QtCore
 
 import logging
+
+from modules.PyqtUtility import BlockSignals
 from modules.magnitude import mg
 from modules.enum import enum
 
@@ -24,6 +26,7 @@ def setBit( var, index, val ):
 
 class ClientHandler( QtCore.QThread ):
     setOutputFrequencySignal = QtCore.pyqtSignal( object )
+    setHarmonicSignal = QtCore.pyqtSignal(object)
     def __init__(self, client_c, lockSettingsInstance, clientaddress):
         QtCore.QThread.__init__(self)
         self.client_c = client_c
@@ -49,12 +52,22 @@ class ClientHandler( QtCore.QThread ):
                 
     def setOutputFrequency(self, frequency ):
         self.setOutputFrequencySignal.emit( frequency )
-        return True   
+        return self.getOutputFrequency()
     
     def getOutputFrequency(self):
         with QtCore.QMutexLocker(self.lockSettingsInstance.mutex):
             currentFreq = self.lockSettingsInstance.lockSettings.outputFrequency
         return currentFreq
+
+    def setHarmonic(self, harmonic):
+        self.setHarmonicSignal.emit(harmonic)
+        return self.getHarmonic()
+
+    def getHarmonic(self):
+        with QtCore.QMutexLocker(self.lockSettingsInstance.mutex):
+            harmonic = self.lockSettingsInstance.lockSettings.harmonic
+        return harmonic
+
 
 class LockServer( QtCore.QThread ):
     def __init__(self, address, authkey, locksettingsInstance):
@@ -71,6 +84,7 @@ class LockServer( QtCore.QThread ):
                 clientaddress = server_c.last_accepted
                 handler = ClientHandler(client_c, self.lockSettingsInstance, clientaddress)
                 handler.setOutputFrequencySignal.connect( self.lockSettingsInstance.setOutputFrequencyGui )
+                handler.setHarmonicSignal.connect(self.lockSettingsInstance.setHarmonicGui)
                 handler.start()
         except Exception as e:
             logging.getLogger(__name__).exception(e)  
@@ -245,6 +259,11 @@ class LockControl(Form, Base):
         self.controller.setOutputAmplitude(binvalue)
         self.lockSettings.outputAmplitude = value
         self.dataChanged.emit( self.lockSettings )
+
+    def setHarmonicGui(self, harmonic):
+        with BlockSignals(self.magHarmonic):
+            self.magHarmonic.setValue(harmonic)
+        self.setHarmonic(harmonic)
 
     def setHarmonic(self, value):
         self.lockSettings.harmonic = value

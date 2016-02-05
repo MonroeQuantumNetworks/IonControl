@@ -9,6 +9,8 @@ from ExternalParameterBase import ExternalParameterBase
 from modules import magnitude
 import math
 import logging
+import serial.tools.list_ports
+
 
 class ConexLinear(ExternalParameterBase):
     """
@@ -20,6 +22,11 @@ class ConexLinear(ExternalParameterBase):
                              {'name': 'limit', 'type': 'magnitude', 'value': magnitude.mg(25,'mm')})}
 
     def __init__(self, name, config, globalDict, instrument="COM3"):
+        if instrument[0:3].upper() != 'COM':  # we assume it is a serial number
+            found = [desc for desc in serial.tools.list_ports.comports() if desc.serial_number == instrument]
+            if not found:
+                raise ConexInstrumentException("Device with serial number '{0}' not found.".format(instrument))
+            instrument = found[0].device
         logger = logging.getLogger(__name__)
         ExternalParameterBase.__init__(self, name, config, globalDict)
         logger.info( "trying to open '{0}'".format(instrument) )
@@ -64,6 +71,13 @@ class ConexLinear(ExternalParameterBase):
         arrived = not self.instrument.motionRunning()
         return reported, arrived
 
+    @classmethod
+    def connectedInstruments(cls):
+        if map(int,serial.VERSION.split('.'))[0] < 3:
+            logging.getLogger(__name__).warning("Found PySerial version {0}, expected at least version 3.0.1. Please upgrade: 'pip install --upgrade pyserial'".format(serial.VERSION))
+            return []
+        return [desc.serial_number for desc in serial.tools.list_ports.comports() if desc.vid == 1027 and desc.pid == 24577]
+
 
 class ConexRotation(ExternalParameterBase):
     """
@@ -73,6 +87,11 @@ class ConexRotation(ExternalParameterBase):
     _outputChannels = {None: ''}
 
     def __init__(self, name, config, globalDict, instrument="COM3"):
+        if instrument[0:3].upper() != 'COM':  # we assume it is a serial number
+            found = [desc for desc in serial.tools.list_ports.comports() if desc.serial_number == instrument]
+            if not found:
+                raise ConexInstrumentException("Device with serial numnber '{0}' not found.".format(instrument))
+            instrument = found[0].device
         logger = logging.getLogger(__name__)
         ExternalParameterBase.__init__(self, name, config, globalDict)
         logger.info( "trying to open '{0}'".format(instrument) )
@@ -122,12 +141,24 @@ class ConexRotation(ExternalParameterBase):
         arrived = not self.instrument.motionRunning()
         return reported, arrived
     
-    
+    @classmethod
+    def connectedInstruments(cls):
+        if map(int,serial.VERSION.split('.'))[0] < 3:
+            logging.getLogger(__name__).warning("Found PySerial version {0}, expected at least version 3.0.1. Please upgrade: 'pip install --upgrade pyserial'".format(serial.VERSION))
+            return []
+        return [desc.serial_number for desc in serial.tools.list_ports.comports() if desc.vid == 1027 and desc.pid == 24577]
+
+
 class PowerWaveplate(ExternalParameterBase):
     className = "Power Waveplate"
     _outputChannels = {None: 'W'}
 
     def __init__(self, name, config, globalDict, instrument="COM3"):
+        if instrument[0:3].upper() != 'COM':  # we assume it is a serial number
+            found = [desc for desc in serial.tools.list_ports.comports() if desc.serial_number == instrument]
+            if not found:
+                raise ConexInstrumentException("Device with serial numnber '{0}' not found.".format(instrument))
+            instrument = found[0].device
         logger = logging.getLogger(__name__)
         ExternalParameterBase.__init__(self, name, config, globalDict)
         logger.info( "trying to open '{0}'".format(instrument) )
@@ -223,3 +254,10 @@ class PowerWaveplate(ExternalParameterBase):
         self.settings.max_angle_limit = max( self.settings.angle_at_min, highangle)
         self._parameter['min_angle_limit'] = self.settings.min_angle_limit
         self._parameter['max_angle_limit'] = self.settings.max_angle_limit
+
+    @classmethod
+    def connectedInstruments(cls):
+        if map(int,serial.VERSION.split('.'))[0] < 3:
+            logging.getLogger(__name__).warning("Found PySerial version {0}, expected at least version 3.0.1. Please upgrade: 'pip install --upgrade pyserial'".format(serial.VERSION))
+            return []
+        return [desc.serial_number for desc in serial.tools.list_ports.comports() if desc.vid == 1027 and desc.pid == 24577]

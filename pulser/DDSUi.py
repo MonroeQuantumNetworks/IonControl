@@ -68,8 +68,7 @@ class DDSChannelSettings(object):
         return False
 
 class DDSUi(DDSForm, DDSBase):
-    persistSpace = 'DDS'
-    def __init__(self,config,pulser,globalDict,parent=None):
+    def __init__(self, pulser, config, configName='DDSUi', globalDict=dict(), parent=None):
         DDSBase.__init__(self,parent)
         DDSForm.__init__(self)
         if pulser.pulserConfiguration():
@@ -78,14 +77,18 @@ class DDSUi(DDSForm, DDSBase):
             self.channelInfo = []
         self.numChannels = len(self.channelInfo)
         self.config = config
+        self.channelConfigName = '{0}.ddsChannels'.format(configName)
+        self.autoApplyConfigName = '{0}.autoApply'.format(configName)
+        self.guiStateConfigName = '{0}.guiState'.format(configName)
         self.ad9912 = Ad9912.Ad9912(pulser)
-        oldDDSChannels = self.config.get('DDSUi.ddsChannels', [])
+        oldDDSChannels = self.config.get(self.channelConfigName, [])
         self.ddsChannels = [oldDDSChannels[i] if i < len(oldDDSChannels) else DDSChannelSettings() for i in range(self.numChannels)]
-        self.autoApply = self.config.get('DDSUi.autoApply',True)
+        self.autoApply = self.config.get(self.autoApplyConfigName, True)
         self.decimation = defaultdict( lambda: StaticDecimation(mg(30,'s')) )
         self.persistence = DBPersist()
         self.globalDict = globalDict
         self.pulser = pulser
+        self.persistSpace = 'DDS'
         for index, channelinfo in enumerate(self.channelInfo):
             self.ddsChannels[index].channel = channelinfo.channel
             self.ddsChannels[index].shutter = channelinfo.shutter
@@ -114,7 +117,7 @@ class DDSUi(DDSForm, DDSBase):
         self.ddsTableModel.enableChanged.connect( self.onEnableChanged )
         self.ddsTableModel.squareChanged.connect( self.onSquareChanged )
         self.pulser.shutterChanged.connect( self.onShutterChanged )
-        restoreGuiState( self, self.config.get('DDSUi.guiState') )
+        restoreGuiState(self, self.config.get(self.guiStateConfigName))
 
     def onShutterChanged(self, shutterBitmask):
         for channel in self.ddsChannels:
@@ -174,9 +177,9 @@ class DDSUi(DDSForm, DDSBase):
             self.onApply()
         
     def saveConfig(self):
-        self.config['DDSUi.ddsChannels'] = self.ddsChannels
-        self.config['DDSUi.autoApply'] = self.autoApply
-        self.config['DDSUi.guiState'] = saveGuiState( self )
+        self.config[self.channelConfigName] = self.ddsChannels
+        self.config[self.autoApplyConfigName] = self.autoApply
+        self.config[self.guiStateConfigName] = saveGuiState(self)
         
     def onApply(self):
         self.ad9912.update(0xff)
