@@ -61,17 +61,19 @@ from pyqtgraph.parametertree.Parameter import Parameter
 from ProjectConfig.Project import getProject
 from modules.magnitude import mg, new_mag
 
+from AWG.AWGSegmentModel import AWGSegmentNode
 
 class AWGDeviceBase(object):
     """base class for AWG Devices"""
-    def __init__(self, settings, globalDict):
+    def __init__(self, settings):
         self.open()
         self.settings = settings
-        self.globalDict = globalDict
+        self.waveforms = []
         for channel in range(self.deviceProperties['numChannels']):
+            self.waveforms.append(None)
             if channel >= len(self.settings.channelSettingsList): #create new channels if it's necessary
-                self.settings.channelSettingsList.append({'equation' : 'A*sin(w*t+phi) + offset',
-                                                          'segmentList':[],
+                self.settings.channelSettingsList.append({'segmentDataRoot':AWGSegmentNode(None, ''),
+                                                          'segmentTreeState':None,
                                                           'plotEnabled' : True,
                                                           'plotStyle':self.settings.plotStyles.lines})
         self.project = getProject()
@@ -143,8 +145,8 @@ class ChaseDA12000(AWGDeviceBase):
                     ("TrigEn", c_ulong),
                     ("NextSegNum", c_ulong)]
 
-    def __init__(self, settings, globalDict):
-        super(ChaseDA12000, self).__init__(settings, globalDict)
+    def __init__(self, settings):
+        super(ChaseDA12000, self).__init__(settings)
         if not self.project.isEnabled('hardware', self.displayName):
             self.enabled = False
         else:
@@ -177,7 +179,7 @@ class ChaseDA12000(AWGDeviceBase):
     def program(self):
         logger = logging.getLogger(__name__)
         if self.enabled:
-            pts = self.settings.channelSettingsList[0]['waveform'].evaluate()
+            pts = self.waveforms[0].evaluate()
             if self.settings.deviceSettings.get('useCalibration'):
                 calibration = self.settings.deviceProperties['calibration']
                 calibration = numpy.vectorize(calibration, otypes=[numpy.int])
@@ -219,8 +221,20 @@ class DummyAWG(AWGDeviceBase):
     
     def open(self): pass
     def close(self): pass
-    def program(self): pass
     def trigger(self): pass
+    def program(self):
+        logger = logging.getLogger(__name__)
+        pts0 = self.waveforms[0].evaluate()
+        pts1 = self.waveforms[1].evaluate()
+        if self.settings.deviceSettings.get('useCalibration'):
+            calibration = self.settings.deviceProperties['calibration']
+            calibration = numpy.vectorize(calibration, otypes=[numpy.int])
+            pts0 = calibration(pts0)
+            pts1 = calibration(pts1)
+        pts0.tolist()
+        pts1.tolist()
+        logger.info("points to write to AWG channel 0: " + str(len(pts0)))
+        logger.info("points to write to AWG channel 1: " + str(len(pts1)))
 
 def isAWGDevice(obj):
     """Determine if obj is an AWG device.

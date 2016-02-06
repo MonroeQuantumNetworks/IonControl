@@ -3,6 +3,7 @@ import logging
 import os
 import itertools
 import yaml
+from collections import OrderedDict
 
 import PyQt4.uic
 from PyQt4 import QtGui, QtCore
@@ -10,6 +11,7 @@ from pyqtgraph.dockarea import DockArea, Dock
 
 from AWG.AWGChannelUi import AWGChannelUi
 from AWG.AWGTableModel import AWGTableModel
+from AWG.AWGSegmentModel import AWGSegmentNode, AWGSegment, AWGSegmentSet, nodeTypes
 from AWG.VarAsOutputChannel import VarAsOutputChannel
 from modules.PyqtUtility import BlockSignals
 from modules.SequenceDict import SequenceDict
@@ -29,9 +31,8 @@ class Settings(object):
        deviceSettings(dict): dynamic settings of the device, controlled by the parameterTree widget. Elements are defined
           in the device's 'paramDef' function
        channelSettingsList (list of dicts): each element corresponds to a channel of the AWG. Each element is a dict,
-          with keys that determine the channel's setting (e.g. 'equation' and 'plotEnabled', etc.)
-       waveformMode (enum): whether the AWG is programmed in equation mode or segment mode
-       filename (str): (segment mode only) the filename from which to save/load AWG segment data
+          with keys that determine the channel's setting (e.g. 'plotEnabled', etc.)
+       filename (str): the filename from which to save/load AWG segment data
        varDict (SequenceDict): the list of variables which determine the AWG waveform
        saveIfNecessary (function): the AWGUi's function that save's the settings
        replot (function): the AWGUi's function that replots all waveforms
@@ -39,16 +40,15 @@ class Settings(object):
     Note that "deviceProperties" are fixed settings of an AWG device, while "deviceSettings" are settings that can be
     changed on the fly.
     """
-    waveformModes = enum('equation', 'segments')
     plotStyles = enum('lines', 'points', 'linespoints')
     saveIfNecessary = None
     replot = None
     deviceProperties = dict()
     stateFields = {'channelSettingsList':list(),
                    'deviceSettings':dict(),
-                   'waveformMode':waveformModes.equation,
                    'filename':'',
-                   'varDict':SequenceDict()
+                   'varDict':SequenceDict(),
+                   'cacheDepth':0
                    }
     def __init__(self):
         [setattr(self, field, copy.copy(fieldDefault)) for field, fieldDefault in self.stateFields.iteritems()]
@@ -75,8 +75,11 @@ class AWGUi(AWGForm, AWGBase):
         self.configname = 'AWGUi.' + deviceClass.displayName
         self.globalDict = globalDict
         self.autoSave = self.config.get(self.configname+'.autoSave', True)
+        self.waveformCache = OrderedDict()
         self.settingsDict = self.config.get(self.configname+'.settingsDict', dict())
         self.settingsName = self.config.get(self.configname+'.settingsName', '')
+        # self.settingsDict=dict()
+        # self.settingsName=''
         self.recentFiles = self.config.get(self.configname+'.recentFiles', dict()) #dict of form {basename: filename}, where filename has path and basename doesn't
         self.lastDir = self.config.get(self.configname+'.lastDir', getProject().configDir)
         Settings.deviceProperties = deviceClass.deviceProperties
@@ -86,50 +89,38 @@ class AWGUi(AWGForm, AWGBase):
             for channel in range(deviceClass.deviceProperties['numChannels']):
                 if channel >= len(settings.channelSettingsList): #create new channels if it's necessary
                     settings.channelSettingsList.append({
-                        'equation' : 'A*sin(w*t+phi) + offset',
-                        'segmentList':[],
+                        'segmentDataRoot':AWGSegmentNode(None),
+                        'segmentTreeState':None,
                         'plotEnabled':True,
                         'plotStyle':Settings.plotStyles.lines})
                 else:
-                    settings.channelSettingsList[channel].setdefault('equation', 'A*sin(w*t+phi) + offset')
-                    settings.channelSettingsList[channel].setdefault('segmentList', [])
+                    settings.channelSettingsList[channel].setdefault('segmentDataRoot', AWGSegmentNode(None))
+                    settings.channelSettingsList[channel].setdefault('segmentTreeState', None)
                     settings.channelSettingsList[channel].setdefault('plotEnabled', True)
                     settings.channelSettingsList[channel].setdefault('plotStyle', Settings.plotStyles.lines)
         self.settings = Settings() #we always run settings through the constructor
         if self.settingsName in self.settingsDict:
             self.settings.update(self.settingsDict[self.settingsName])
-        self.device = deviceClass(self.settings, self.globalDict)
+        self.device = deviceClass(self.settings)
 
     def setupUi(self,parent):
         logger = logging.getLogger(__name__)
         AWGForm.setupUi(self,parent)
         self.setWindowTitle(self.device.displayName)
 
-        #mode
-        self.waveformModeComboBox.setCurrentIndex(self.settings.waveformMode)
-        self.waveformModeComboBox.currentIndexChanged[int].connect(self.onWaveformModeChanged)
-        equationMode = self.settings.waveformMode==self.settings.waveformModes.equation
-        self.fileFrame.setEnabled(not equationMode)
-        self.fileFrame.setVisible(not equationMode)
-
         self._varAsOutputChannelDict = dict()
         self.area = DockArea()
         self.splitter.insertWidget(0, self.area)
         self.awgChannelUiList = []
         for channel in range(self.device.deviceProperties['numChannels']):
-            awgChannelUi = AWGChannelUi(channel, self.settings, self.globalDict, parent=self)
+            awgChannelUi = AWGChannelUi(channel, self.settings, self.globalDict, self.waveformCache, parent=self)
             awgChannelUi.setupUi(awgChannelUi)
             awgChannelUi.dependenciesChanged.connect(self.onDependenciesChanged)
             self.awgChannelUiList.append(awgChannelUi)
             dock = Dock("AWG Channel {0}".format(channel))
             dock.addWidget(awgChannelUi)
             self.area.addDock(dock, 'right')
-            awgChannelUi.equationFrame.setEnabled(equationMode)
-            awgChannelUi.equationFrame.setVisible(equationMode)
-            awgChannelUi.addRemoveSegmentFrame.setEnabled(not equationMode)
-            awgChannelUi.addRemoveSegmentFrame.setVisible(not equationMode)
-            awgChannelUi.segmentView.setEnabled(not equationMode)
-            awgChannelUi.segmentView.setVisible(not equationMode)
+            self.device.waveforms[channel] = awgChannelUi.waveform
         self.refreshVarDict()
 
         # Settings control
@@ -142,6 +133,12 @@ class AWGUi(AWGForm, AWGBase):
         self.settingsComboBox.setCurrentIndex( self.settingsComboBox.findText(self.settingsName) )
         self.settingsComboBox.currentIndexChanged[str].connect( self.onLoad )
         self.settingsComboBox.lineEdit().editingFinished.connect( self.onComboBoxEditingFinished )
+        self.autoSaveCheckBox.setChecked(self.autoSave)
+        self.saveButton.setEnabled( not self.autoSave )
+        self.saveButton.setVisible( not self.autoSave )
+        self.reloadButton.setEnabled( not self.autoSave )
+        self.reloadButton.setVisible( not self.autoSave )
+        self.autoSaveCheckBox.stateChanged.connect(self.onAutoSave)
 
         #programming options widget
         self.programmingOptionsTreeWidget.setParameters( self.device.parameter() )
@@ -165,14 +162,10 @@ class AWGUi(AWGForm, AWGBase):
         self.saveFileButton.clicked.connect(self.onSaveFile)
         self.reloadFileButton.clicked.connect(self.onReloadFile)
 
-        # Context Menu
-        self.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
-        self.autoSaveAction = QtGui.QAction( "auto save" , self)
-        self.autoSaveAction.setCheckable(True)
-        self.autoSaveAction.setChecked(self.autoSave )
-        self.saveButton.setEnabled( not self.autoSave )
-        self.autoSaveAction.triggered.connect( self.onAutoSave )
-        self.addAction( self.autoSaveAction )
+        #cache
+        self.cacheDepthSpinBox.setValue(self.settings.cacheDepth)
+        self.cacheDepthSpinBox.valueChanged.connect(self.onCacheDepth)
+        self.clearCacheButton.clicked.connect(self.onClearCache)
 
         #Restore GUI state
         state = self.config.get(self.configname+'.state')
@@ -209,6 +202,13 @@ class AWGUi(AWGForm, AWGBase):
                 dock.addWidget(channelUi)
                 self.area.addDock(dock, 'right')
         self.saveIfNecessary()
+
+    def onCacheDepth(self, newVal):
+        self.settings.cacheDepth = newVal
+        self.saveIfNecessary()
+
+    def onClearCache(self):
+        self.waveformCache.clear()
 
     def onComboBoxEditingFinished(self):
         """a settings name is typed into the combo box"""
@@ -247,6 +247,7 @@ class AWGUi(AWGForm, AWGBase):
         self.config[self.configname+".guiState"] = saveGuiState(self)
         for awgChannelUi in self.awgChannelUiList:
             self.config[self.configname+"channel{0}.guiState".format(awgChannelUi.channel)] = saveGuiState(awgChannelUi)
+            self.settings.channelSettingsList[awgChannelUi.channel]['segmentTreeState'] = awgChannelUi.segmentView.saveTreeState()
         self.config[self.configname+'.state'] = self.saveState()
         self.config[self.configname+'.pos'] = self.pos()
         self.config[self.configname+'.size'] = self.size()
@@ -271,12 +272,14 @@ class AWGUi(AWGForm, AWGBase):
             self.onLoad(self.settingsName)
 
     def onReload(self):
-        """Reload segment data from file"""
+        """Reload settings"""
         name = str(self.settingsComboBox.currentText())
         self.onLoad(name)
        
     def onLoad(self, name):
-        """load segment data from file"""
+        """load settings"""
+        for channelUi in self.awgChannelUiList:
+            self.settings.channelSettingsList[channelUi.channel]['segmentTreeState'] = channelUi.segmentView.saveTreeState()
         name = str(name)
         if name in self.settingsDict:
             self.settingsName = name
@@ -285,36 +288,31 @@ class AWGUi(AWGForm, AWGBase):
             self.settings.update(self.settingsDict[self.settingsName])
             self.programmingOptionsTreeWidget.setParameters( self.device.parameter() )
             self.saveButton.setEnabled(False)
-            with BlockSignals(self.waveformModeComboBox) as w:
-                w.setCurrentIndex(self.settings.waveformMode)
             with BlockSignals(self.filenameComboBox) as w:
                 w.setCurrentIndex(w.findText(os.path.basename(self.settings.filename)))
-            equationMode = self.settings.waveformMode==self.settings.waveformModes.equation
-            self.fileFrame.setEnabled(not equationMode)
-            self.fileFrame.setVisible(not equationMode)
+            with BlockSignals(self.cacheDepthSpinBox) as w:
+                w.setValue(self.settings.cacheDepth)
             for channelUi in self.awgChannelUiList:
-                channelUi.equationFrame.setEnabled(equationMode)
-                channelUi.equationFrame.setVisible(equationMode)
-                channelUi.addRemoveSegmentFrame.setEnabled(not equationMode)
-                channelUi.addRemoveSegmentFrame.setVisible(not equationMode)
-                channelUi.segmentView.setEnabled(not equationMode)
-                channelUi.segmentView.setVisible(not equationMode)
-                equation = self.settings.channelSettingsList[channelUi.channel]['equation']
-                channelUi.equationEdit.setText(equation)
                 channelUi.waveform.updateDependencies()
                 channelUi.plotCheckbox.setChecked(self.settings.channelSettingsList[channelUi.channel]['plotEnabled'])
                 with BlockSignals(channelUi.styleComboBox) as w:
                     w.setCurrentIndex(self.settings.channelSettingsList[channelUi.channel]['plotStyle'])
+                channelUi.segmentModel.root = self.settings.channelSettingsList[channelUi.channel]['segmentDataRoot']
                 channelUi.replot()
             self.onDependenciesChanged()
             self.saveButton.setEnabled(False)
             self.tableModel.endResetModel()
             [channelUi.segmentModel.endResetModel() for channelUi in self.awgChannelUiList]
+            for channelUi in self.awgChannelUiList:
+                channelUi.segmentView.restoreTreeState(self.settings.channelSettingsList[channelUi.channel]['segmentTreeState'])
 
     def onAutoSave(self, checked):
         """autosave is changed"""
         self.autoSave = checked
-        self.saveButton.setEnabled(not checked)
+        self.saveButton.setEnabled( not checked )
+        self.saveButton.setVisible( not checked )
+        self.reloadButton.setEnabled( not checked )
+        self.reloadButton.setVisible( not checked )
         if checked:
             self.onSave()
 
@@ -347,21 +345,6 @@ class AWGUi(AWGForm, AWGBase):
         self.refreshVarDict()
         self.tableModel.endResetModel()
         self.saveIfNecessary()
-
-    def onWaveformModeChanged(self, mode):
-        """Waveform mode (equation/segment) changed"""
-        self.settings.waveformMode = mode
-        equationMode = mode==self.settings.waveformModes.equation
-        self.fileFrame.setEnabled(not equationMode)
-        self.fileFrame.setVisible(not equationMode)
-        for channelUi in self.awgChannelUiList:
-            channelUi.equationFrame.setVisible(equationMode)
-            channelUi.equationFrame.setEnabled(equationMode)
-            channelUi.addRemoveSegmentFrame.setVisible(not equationMode)
-            channelUi.addRemoveSegmentFrame.setEnabled(not equationMode)
-            channelUi.segmentView.setEnabled(not equationMode)
-            channelUi.segmentView.setVisible(not equationMode)
-        self.onDependenciesChanged()
 
     def onFilename(self, basename):
         """filename combo box is changed. Open selected file"""
@@ -415,9 +398,10 @@ class AWGUi(AWGForm, AWGBase):
             self.tableModel.beginResetModel()
             [channelUi.segmentModel.beginResetModel() for channelUi in self.awgChannelUiList]
             if channelData:
-                for channel, channelSettings in enumerate(self.settings.channelSettingsList):
-                    if channel < len(channelData):
-                        channelSettings['segmentList'] = channelData[channel]
+                for channelUi in self.awgChannelUiList:
+                    if channelUi.channel < len(channelData):
+                        self.settings.channelSettingsList[channelUi.channel]['segmentDataRoot'] = self.convertListToNodes(channelData[channelUi.channel], isRoot=True)
+                        channelUi.segmentModel.root = self.settings.channelSettingsList[channelUi.channel]['segmentDataRoot']
             if variables:
                 for varname, vardata in variables.iteritems():
                     self.settings.varDict.setdefault(varname, dict())
@@ -429,6 +413,7 @@ class AWGUi(AWGForm, AWGBase):
             self.onDependenciesChanged()
             self.tableModel.endResetModel()
             [channelUi.segmentModel.endResetModel() for channelUi in self.awgChannelUiList]
+            [channelUi.segmentView.expandAll() for channelUi in self.awgChannelUiList]
         else:
             logging.getLogger(__name__).warning("file '{0}' does not exist".format(filename))
             if filename in self.recentFiles:
@@ -437,10 +422,43 @@ class AWGUi(AWGForm, AWGBase):
                     self.filenameModel.setStringList(self.recentFiles.keys())
                     w.setCurrentIndex(-1)
 
+    def convertNodeToList(self, node):
+        nodeList = []
+        for childNode in node.children:
+            if childNode.nodeType==nodeTypes.segment:
+                nodeList.append( {'equation':childNode.equation,
+                                  'duration':childNode.duration,
+                                  'enabled':childNode.enabled}
+                                 )
+            elif childNode.nodeType==nodeTypes.segmentSet:
+                nodeList.append( {'repetitions':childNode.repetitions,
+                                  'enabled':childNode.enabled,
+                                  'segments':self.convertNodeToList(childNode)}
+                                 )
+        return nodeList
+
+    def convertListToNodes(self, data, parent=None, enabled=True, repetitions=None, isRoot=False):
+        node = AWGSegmentNode(parent=None) if isRoot else AWGSegmentSet(parent=parent, enabled=enabled, repetitions=repetitions)
+        for segment in data:
+            if 'duration' in segment:
+                childNode = AWGSegment(parent=node,
+                                       equation=segment['equation'],
+                                       duration=segment['duration'],
+                                       enabled=segment['enabled'])
+                node.children.append(childNode)
+            elif 'repetitions' in segment:
+                segmentSet = self.convertListToNodes(segment['segments'], parent=node, enabled=segment['enabled'], repetitions=segment['repetitions'])
+                node.children.append(segmentSet)
+            else:
+                logging.getLogger(__name__).error("Unable to convert list to nodes")
+        return node
+
     def onSaveFile(self):
         """Save button is clicked. Save data to segment file"""
-        channelData = [channelSettings['segmentList']
-                    for channelSettings in self.settings.channelSettingsList]
+        channelData = []
+        for channelSettings in self.settings.channelSettingsList:
+            segmentData = self.convertNodeToList(channelSettings['segmentDataRoot'])
+            channelData.append(segmentData)
         yamldata = {'channelData': channelData}
         variables={varname:
                              {'value':float(varValueTextDict['value'].toStringTuple()[0]),
