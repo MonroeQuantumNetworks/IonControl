@@ -240,7 +240,7 @@ class WaveformChassis(object):
         #calculate the samples per channel from the length of data and the total
         #number of channels
         #print "Number of Channels: " + str(totalNumChnls)
-        sampsPerChannel = len(data)/totalNumChnls
+        sampsPerChannel = int(len(data)/totalNumChnls)
         #print 'samples per channel: ' +str(sampsPerChannel)
         
         #taks a subset of data and input into the buffer for each generator
