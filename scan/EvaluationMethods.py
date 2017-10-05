@@ -169,7 +169,7 @@ class ThresholdEvaluation(EvaluationBase):
     def setDefault(self):
         self.settings.setdefault('threshold',1)
         self.settings.setdefault('invert',False)
-        
+
     def evaluate(self, data, evaluation, expected=None, ppDict=None, globalDict=None ):
         countarray = evaluation.getChannelData(data)
         if not countarray:
@@ -783,4 +783,51 @@ class FourIonEvaluation(EvaluationBase):
         for name, tooltip in tooltipLookup.items():
             parameterDict[name] = Parameter(name=name, dataType='magnitude', value=self.settings[name],
                                             text=self.settings.get( (name, 'text') ), tooltip=tooltip)
+        return parameterDict
+
+
+class FractionEvaluation(EvaluationBase):
+    """Combines two individual evaluations on two counters to get the ratio sum(A)/(sum(A)+sum(B)).  A and B are individually thresholded first (in separate threshold evaluations) before summing."""
+    name = "Fraction"
+    tooltip = "Fraction A/(A+B) of two thresholded counters"
+    hasChannel = False
+
+    def __init__(self, globalDict=None, settings=None):
+        EvaluationBase.__init__(self, globalDict, settings)
+
+    def setDefault(self):
+        self.settings.setdefault('evaluation_A', '')
+        self.settings.setdefault('evaluation_B', '')
+
+    def evaluate(self, data, evaluation, expected=None, ppDict=None, globalDict=None ):
+        name1, name2 = self.settings['evaluation_A'], self.settings['evaluation_B']
+        eval1, eval2 = data.evaluated.get(name1), data.evaluated.get(name2)
+        if eval1 is None:
+            raise EvaluationException("Cannot find data '{0}'".format(name1))
+        if eval2 is None:
+            raise EvaluationException("Cannot find data '{0}'".format(name2))
+        if len(eval1)!=len(eval2):
+            raise EvaluationException("Evaluated arrays have different length {0}, {1}".format(len(eval1),len(eval2)))
+        A = numpy.sum(eval1)
+        B = numpy.sum(eval2)
+        N = A+B
+        p = A/N
+        # Wilson score interval with continuity correction
+        # see http://en.wikipedia.org/wiki/Binomial_proportion_confidence_interval
+        rootp = 3-1/N -4*p+4*N*(1-p)*p
+        top = min( 1, (2 + 2*N*p + math.sqrt(rootp))/(2*(N+1)) ) if rootp>=0 else 1
+        rootb = -1-1/N +4*p+4*N*(1-p)*p
+        bottom = max( 0, (2*N*p - math.sqrt(rootb))/(2*(N+1)) ) if rootb>=0 else 0
+        if expected is not None:
+            p = abs(expected-p)
+            bottom = abs(expected-bottom)
+            top = abs(expected-top)
+        return p, (p-bottom, top-p), N
+
+    def parameters(self):
+        parameterDict = super(FractionEvaluation, self).parameters()
+        parameterDict['evaluation_A'] = Parameter(name='evaluation_A', dataType='str', value=self.settings['evaluation_A'],
+                                           tooltip='The threshold evaluation for counter A')
+        parameterDict['evaluation_B'] = Parameter(name='evaluation_B', dataType='str', value=self.settings['evaluation_B'],
+                                           tooltip='The threshold evaluation for counter B')
         return parameterDict
