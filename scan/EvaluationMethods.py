@@ -802,12 +802,14 @@ class FractionEvaluation(EvaluationBase):
     def evaluate(self, data, evaluation, expected=None, ppDict=None, globalDict=None ):
         name1, name2 = self.settings['evaluation_A'], self.settings['evaluation_B']
         eval1, eval2 = data.evaluated.get(name1), data.evaluated.get(name2)
+
         if eval1 is None:
             raise EvaluationException("Cannot find data '{0}'".format(name1))
         if eval2 is None:
             raise EvaluationException("Cannot find data '{0}'".format(name2))
         if len(eval1)!=len(eval2):
             raise EvaluationException("Evaluated arrays have different length {0}, {1}".format(len(eval1),len(eval2)))
+
         A = numpy.sum(eval1)
         B = numpy.sum(eval2)
         N = A+B
@@ -830,4 +832,61 @@ class FractionEvaluation(EvaluationBase):
                                            tooltip='The threshold evaluation for counter A')
         parameterDict['evaluation_B'] = Parameter(name='evaluation_B', dataType='str', value=self.settings['evaluation_B'],
                                            tooltip='The threshold evaluation for counter B')
+        return parameterDict
+
+class ArbitraryExpressionEvaluation(EvaluationBase):
+    """Takes in a list of other evaluations, in a comma separated list with no spaces (for example: eval1,eval2,eval3) and assigns the values of those evaluations to an array as x[0],x[1],x[2], etc.  Then it calculates and returns an expression which uses these variables.  numpy is available."""
+    name = 'ArbitraryExpressionEvaluation'
+    tooltip = 'Takes in a list of other evaluations, in a comma separated list with no spaces (for example: eval1,eval2,eval3) and assigns the values of those evaluations to a numpy array as x[0],x[1],x[2], etc.  Then it calculates and returns an expression which uses these variables.  numpy is available.'
+    hasChannel = False
+
+    def __init__(self, globalDict=None, settings=None):
+        EvaluationBase.__init__(self, globalDict, settings)
+
+    def setDefault(self):
+        self.settings.setdefault('evaluation_list', 'evaluation1,evaluation2,evaluation3')
+        self.settings.setdefault('expression', 'x[1]/(x[0]+x[1]+x[2]')
+
+    def evaluate(self, data, evaluation, expected=None, ppDict=None, globalDict=None ):
+        evaluation_name_list = self.settings['evaluation_list'].split()
+        evaluation_value_list = [data.evaluated.get(a) for a in evaluation_name_list]
+
+        # check that all the referenced evaluations exist
+        for value, name in zip(evaluation_value_list,evaluation_name_list):
+            if value is None:
+                raise EvaluationException("Cannot find data '{0}".format(name))
+
+        # check that the lengths match
+        evaluation_length_list = [len(a) for a in evaluation_value_list]
+        for l in evaluation_length_list:
+            if l!=evaluation_length_list[0]:
+                raise EvaluationException("Evaluated arrays have different lengths "+','.join([str(l) for l in evaluation_length_list]))
+
+        # cast the values to a numpy array
+        np = numpy
+        x = np.array(evaluation_value_list)
+        expression = self.settings['expression']
+
+        N = evaluation_length_list[0]
+        p = eval(expression)
+        # Wilson score interval with continuity correction
+        # see http://en.wikipedia.org/wiki/Binomial_proportion_confidence_interval
+        rootp = 3-1/N -4*p+4*N*(1-p)*p
+        top = min( 1, (2 + 2*N*p + math.sqrt(rootp))/(2*(N+1)) ) if rootp>=0 else 1
+        rootb = -1-1/N +4*p+4*N*(1-p)*p
+        bottom = max( 0, (2*N*p - math.sqrt(rootb))/(2*(N+1)) ) if rootb>=0 else 0
+        if expected is not None:
+            p = abs(expected-p)
+            bottom = abs(expected-bottom)
+            top = abs(expected-top)
+        return p, (p-bottom, top-p), N
+
+    def parameters(self):
+        parameterDict = super(ArbitraryExpressionEvaluation, self).parameters()
+
+        self.settings.setdefault('expression', 'x[1]/(x[0]+x[1]+x[2]')
+        parameterDict['evaluation_list'] = Parameter(name='evaluation_list', dataType='str', value=self.settings['evaluation_list'],
+                                           tooltip='A comma separated list, no spaces, of other evaluations')
+        parameterDict['expression'] = Parameter(name='expression', dataType='str', value=self.settings['expression'],
+                                           tooltip='An expression using the values from other evaluations as numpy array x[0],x[1],etc.')
         return parameterDict
