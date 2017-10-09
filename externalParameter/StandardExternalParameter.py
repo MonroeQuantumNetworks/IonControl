@@ -17,6 +17,7 @@ from .qtHelper import qtHelper
 project=getProject()
 wavemeterEnabled = project.isEnabled('hardware', 'HighFinesse Wavemeter')
 visaEnabled = project.isEnabled('hardware', 'VISA')
+deformableMirrorEnabled = project.isEnabled('hardware', 'Deformable Mirror')
 from PyQt5 import QtCore
 
 if wavemeterEnabled:
@@ -28,6 +29,8 @@ if visaEnabled:
     except ImportError: #popup on failed import of enabled visa
         importErrorPopup('VISA')
 
+if deformableMirrorEnabled:
+    from DeformableMirror.DeformableMirror import DeformableMirror
 
 if visaEnabled:
     class N6700BPowerSupply(ExternalParameterBase):
@@ -426,6 +429,169 @@ if wavemeterEnabled:
             superior.append({'name': 'maxDeviation', 'type': 'magnitude', 'value': self.settings.maxDeviation})
             superior.append({'name': 'maxAge', 'type': 'magnitude', 'value': self.settings.maxAge})
             return superior
+
+
+if deformableMirrorEnabled:
+    class DmControl(ExternalParameterBase):
+        className = "Deformable Mirror Control"
+        _outputChannels = OrderedDict([("Amp", ""), ("Angle", "angular_degree"), ("Ast45", ""), ("Defocus", ""),
+                                       ("Ast0", ""), ("TreY", ""), ("ComX", ""), ("ComY", ""), ("TreX", ""),
+                                       ("TetY", ""), ("SAstY", ""), ("SAb", ""), ("SAstX", ""), ("TetX", ""),
+                                       ("TipTilt1", "V"), ("TipTilt2", "V"), ("TipTilt3", "V"), ("A1", "V"),
+                                       ("A2", "V"), ("A3", "V"), ("A4", "V"), ("A5", "V"), ("A6", "V"), ("A7", "V"),
+                                       ("A8", "V"), ("A9", "V"), ("A10", "V"), ("A11", "V"), ("A12", "V"), ("A13", "V"),
+                                       ("A14", "V"), ("A15", "V"), ("A16", "V"), ("A17", "V"), ("A18", "V"),
+                                       ("A19", "V"), ("A20", "V"), ("A21", "V"), ("A22", "V"), ("A23", "V"),
+                                       ("A24", "V"), ("A25", "V"), ("A26", "V"), ("A27", "V"), ("A28", "V"),
+                                       ("A29", "V"), ("A30", "V"), ("A31", "V"), ("A32", "V"), ("A33", "V"),
+                                       ("A34", "V"), ("A35", "V"), ("A36", "V"), ("A37", "V"), ("A38", "V"), ("A39", "V"),
+                                       ("A40", "V"), ("MirrorHysteresisCompensation", ""),
+                                       ("TiltHysteresisCompensation", ""), ("Temp", "degC")])
+
+        _outputLookup = {"Ast45": 4, "Defocus": 5, "Ast0": 6, "TreY": 7, "ComX": 8, "ComY": 9,
+                         "TreX": 10, "TetY": 11, "SAstY": 12, "SAb": 13, "SAstX": 14, "TetX": 15,
+                         "A1": 0, "A2": 1, "A3": 2, "A4": 3, "A5": 4, "A6": 5, "A7": 6, "A8": 7, "A9": 8, "A10": 9,
+                         "A11": 10, "A12": 11, "A13": 12, "A14": 13, "A15": 14, "A16": 15, "A17": 16, "A18": 17,
+                         "A19": 18, "A20": 19, "A21": 20, "A22": 21, "A23": 22, "A24": 23, "A25": 24, "A26": 25,
+                         "A27": 26, "A28": 27, "A29": 28, "A30": 29, "A31": 30, "A32": 31, "A33": 32, "A34": 33,
+                         "A35": 34, "A36": 35, "A37": 36, "A38": 37, "A39": 38, "A40": 39, "TipTilt1": 0,
+                         "TipTilt2": 1, "TipTilt3": 2}
+
+        _zernikes = ["Ast45", "Defocus", "Ast0", "TreY", "ComX", "ComY", "TreX", "TetY", "SAstY", "SAb", "SAstX", "TetX"]
+        _tiptilt = ["TipTilt1", "TipTilt2", "TipTilt3"]
+        _actuators = ["A1", "A2", "A3", "A4", "A5", "A6", "A7", "A8", "A9", "A10", "A11", "A12", "A13", "A14", "A15",
+                      "A16", "A17", "A18", "A19", "A20", "A21", "A22", "A23", "A24", "A25", "A26", "A27", "A28", "A29",
+                      "A30", "A31", "A32", "A33", "A34", "A35", "A36", "A37", "A38", "A39", "A40"]
+
+        def __init__(self, name, config, globalDict, instrument='DeformableMirror'):
+            logger = logging.getLogger(__name__)
+            ExternalParameterBase.__init__(self, name, config, globalDict)
+            logger.info("trying to open '{0}'".format(instrument))
+            try:
+                self.dm = DeformableMirror()
+                #self.dm.relax_mirror()
+                #self.dm.relax_tilt()
+                self.mirr_hyst_status = self.dm.hysteresis_compensation_status(0)
+                self.tilt_hyst_status = self.dm.hysteresis_compensation_status(1)
+                self.dm.angle = 0
+                self.dm.tiltamp = 0
+                self.dm.zernike_amplitudes = numpy.zeros(12)
+                self.dm.enable_hysteresis_compensation(0, False)
+                self.dm.enable_hysteresis_compensation(1, False)
+                self.dm.mirr_hyst_state = 0
+                self.dm.tilt_hyst_state = 0
+            except:
+                logger.error(self.dm.errmsg)
+            else:
+                self.setDefaults()
+                for channel in self._outputChannels:
+                    val = super().getValue(channel)
+                    self.setValue(channel, val)
+
+        def setValue(self, channel, value):
+            logger = logging.getLogger(__name__)
+            try:
+                if channel in self._zernikes:
+                    zernike = self._outputLookup[channel]
+                    zernike_string = 'z' + str(zernike)
+                    self.dm.set_mirror_shape(zernike_string, value) # Value must be >= -1 and <= 1
+                    if -1 <= value <= 1:
+                        self.dm.zernike_amplitudes[zernike - 4] = value
+                        ext_value = value
+                        for actChannel in self._actuators:
+                            self.getValue(actChannel)
+                elif channel in self._actuators:
+                    actIndex = self._outputLookup[channel]
+                    val = float('{0}'.format(value.m_as('V')))
+                    self.dm.set_segment_voltage(actIndex, val)
+                    ext_value = self.getValue(channel)
+                elif channel in self._tiptilt:
+                    tipIndex = self._outputLookup[channel]
+                    val = float('{0}'.format(value.m_as('V')))
+                    self.dm.set_tilt_voltage(tipIndex, val)
+                    ext_value = self.getValue(channel)
+                elif channel=="Amp":
+                    self.dm.set_tilt_amplitude_angle(value, self.dm.angle)
+                    self.dm.tiltamp = value
+                    ext_value = value
+                elif channel == "Angle":
+                    val = float('{0}'.format(value.m_as('angular_degree')))
+                    self.dm.set_tilt_amplitude_angle(self.dm.tiltamp, val)
+                    self.dm.angle = val
+                    ext_value = value
+                elif channel == "MirrorHysteresisCompensation": # value = 0 turns hysteresis compensation off
+                    if value == 0:
+                        self.dm.enable_hysteresis_compensation(0, value)
+                    else:
+                        self.dm.enable_hysteresis_compensation(0, 1)
+                    ext_value = self.getValue(channel)
+                elif channel == "TiltHysteresisCompensation":
+                    if value == 0:
+                        self.dm.enable_hysteresis_compensation(1, value)
+                    else:
+                        self.dm.enable_hysteresis_compensation(1, 1)
+                    ext_value = self.getValue(channel)
+                elif channel == "Temp":
+                    ext_value = self.getValue("Temp")
+                return ext_value
+            except:
+                logger.error('Problem setting value for channel {0}'.format(channel))
+
+        def getValue(self, channel):
+            logger = logging.getLogger(__name__)
+            if channel in self._zernikes:
+                zernike = self._outputLookup[channel]
+                meas = self.dm.zernike_amplitudes[zernike - 4]
+                unit = ""
+                value = Q(meas, unit)
+                return value
+            elif channel in self._actuators:
+                actIndex = self._outputLookup[channel]
+                self.dm.measured_segment_voltage(actIndex)
+                meas = self.dm.meas_segVolt
+                unit = "V"
+                value = Q(meas, unit)
+                return value
+            elif channel in self._tiptilt:
+                tipIndex = self._outputLookup[channel]
+                self.dm.measured_tilt_voltage(tipIndex)
+                meas = self.dm.meas_tiptilt_volt
+                unit = "V"
+                value = Q(meas, unit)
+                return value
+            elif channel == "Temp":
+                self.dm.mirror_temps()
+                meas = self.dm.mirror_temp
+                unit = "degC"
+                value = Q(meas, unit)
+                return value
+            elif channel == "MirrorHysteresisCompensation":
+                self.dm.hysteresis_compensation_status(0)
+                if self.dm.mirr_hyst_state == 1:
+                    meas = 1
+                else:
+                    meas = 0
+                unit = ""
+                value = Q(meas, unit)
+                return value
+            elif channel == "TiltHysteresisCompensation":
+                self.dm.hysteresis_compensation_status(1)
+                if self.dm.tilt_hyst_state:
+                    meas = 1
+                else:
+                    meas = 0
+                unit = ""
+                value = Q(meas, unit)
+                return value
+
+        def close(self):
+            self.dm.end_session()
+            del self.dm
+
+
+
+
+
 
 class DummyParameter(ExternalParameterBase):
     """

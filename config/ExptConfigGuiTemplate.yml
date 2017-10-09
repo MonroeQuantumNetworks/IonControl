@@ -75,3 +75,7 @@ hardware:
     description: communication with peripherals (e.g. GPIB, RS232, USB, Ethernet)
   HighFinesse Wavemeter:
     description: HighFinesse Wavemeter from Toptica photonics for reading laser wavelengths, with Java applet web interface
+  Deformable Mirror:
+    description: Thorlabs DMP40-P01 deformable mirror
+    fields:
+      device: int

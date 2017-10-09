@@ -79,3 +79,7 @@ hardware:
     description: HighFinesse Wavemeter from Toptica photonics for reading laser wavelengths, with Java applet web interface
     fields:
         uri: str
+  Deformable Mirror:
+    description: Thorlabs DMP40-P01 deformable mirror
+    fields:
+      device: int
