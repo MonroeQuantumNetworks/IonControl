@@ -99,7 +99,13 @@ class NumberEvaluation(EvaluationBase):
         countarray = evaluation.getChannelData(data)
         if not countarray:
             return 0, None, 0
-        return len(countarray), None, len(countarray)
+
+        # store the result value in a way that it can be accessed by other evaluations
+        length = len(countarray)
+        if evaluation.name:
+            data.evaluated[evaluation.name] = length
+
+        return length, None, length
 
 class FeedbackEvaluation(EvaluationBase):
     name = 'Feedback'
@@ -875,6 +881,10 @@ class ArbitraryExpressionEvaluation(EvaluationBase):
             p = abs(expected-p)
             bottom = abs(expected-bottom)
             top = abs(expected-top)
+
+        # store the result value in a way that it can be accessed by other evaluations
+        if evaluation.name:
+            data.evaluated[evaluation.name] = p
 
         # return the evaluated expression, error bars, and use 1 for the length
         return p, (p-bottom, top-p), 1
