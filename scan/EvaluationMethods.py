@@ -850,7 +850,9 @@ class ArbitraryExpressionEvaluation(EvaluationBase):
 
     def setDefault(self):
         self.settings.setdefault('evaluation_list', 'evaluation1,evaluation2,evaluation3')
-        self.settings.setdefault('expression', 'x[1]/(x[0]+x[1]+x[2]')
+        self.settings.setdefault('expression', 'x[1]/(x[0]+x[1])')
+        self.settings.setdefault('error_top_expression', 'np.sqrt(x[2])')
+        self.settings.setdefault('error_bottom_expression', 'np.sqrt(x[2])')
 
     def evaluate(self, data, evaluation, expected=None, ppDict=None, globalDict=None ):
         evaluation_name_list = self.settings['evaluation_list'].split(',')
@@ -861,30 +863,21 @@ class ArbitraryExpressionEvaluation(EvaluationBase):
             if value is None:
                 raise EvaluationException("Cannot find data {0}".format(name))
 
-        # check that the lengths match
-        evaluation_length_list = [len(a) for a in evaluation_value_list]
-        for l in evaluation_length_list:
-            if l!=evaluation_length_list[0]:
-                raise EvaluationException("Evaluated arrays have different lengths "+','.join([str(l) for l in evaluation_length_list]))
-
-        # cast the values to a numpy array
+        # cast the evaluated values to a numpy array, and make "np" and "x" available in the expressions
         np = numpy
         x = np.array(evaluation_value_list)
-        expression = self.settings['expression']
+        # giving the user access to arbitrary "eval" is not secure, but all users are superusers anyway.
+        p = eval(self.settings['expression'])
+        top = eval(self.settings['error_top_expression'])
+        bottom = eval(self.settings['error_bottom_expression'])
 
-        N = evaluation_length_list[0]
-        p = eval(expression)
-        # Wilson score interval with continuity correction
-        # see http://en.wikipedia.org/wiki/Binomial_proportion_confidence_interval
-        rootp = 3-1/N -4*p+4*N*(1-p)*p
-        top = min( 1, (2 + 2*N*p + math.sqrt(rootp))/(2*(N+1)) ) if rootp>=0 else 1
-        rootb = -1-1/N +4*p+4*N*(1-p)*p
-        bottom = max( 0, (2*N*p - math.sqrt(rootb))/(2*(N+1)) ) if rootb>=0 else 0
         if expected is not None:
             p = abs(expected-p)
             bottom = abs(expected-bottom)
             top = abs(expected-top)
-        return p, (p-bottom, top-p), N
+
+        # return the evaluated expression, error bars, and use 1 for the length
+        return p, (p-bottom, top-p), 1
 
     def parameters(self):
         parameterDict = super(ArbitraryExpressionEvaluation, self).parameters()
@@ -893,5 +886,9 @@ class ArbitraryExpressionEvaluation(EvaluationBase):
         parameterDict['evaluation_list'] = Parameter(name='evaluation_list', dataType='str', value=self.settings['evaluation_list'],
                                            tooltip='A comma separated list, no spaces, of other evaluations')
         parameterDict['expression'] = Parameter(name='expression', dataType='str', value=self.settings['expression'],
-                                           tooltip='An expression using the values from other evaluations as numpy array x[0],x[1],etc.')
+                                           tooltip='An expression for the result, using the values from other evaluations as numpy array x[0],x[1],etc.')
+        parameterDict['error_top_expression'] = Parameter(name='error_top_expression', dataType='str', value=self.settings['error_top_expression'],
+                                                tooltip='An expression for the top error bar, using the values from other evaluations as numpy array x[0],x[1],etc.')
+        parameterDict['error_bottom_expression'] = Parameter(name='error_bottom_expression', dataType='str', value=self.settings['error_bottom_expression'],
+                                                tooltip='An expression for the bottom error bar, using the values from other evaluations as numpy array x[0],x[1],etc.')
         return parameterDict
