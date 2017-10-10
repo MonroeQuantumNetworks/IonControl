@@ -71,6 +71,11 @@ class MeanEvaluation(EvaluationBase):
             mydict['y'] = mean-minus
             minus = float(self.expression.evaluate(self.settings['transformation'], mydict))
             return mean, (mean-minus, plus-mean), raw
+
+        # store the mean value in a way that it can be accessed by other evaluations
+        if evaluation.name:
+            data.evaluated[evaluation.name] = mean
+
         return mean, (minus, plus), raw
 
     def parameters(self):
