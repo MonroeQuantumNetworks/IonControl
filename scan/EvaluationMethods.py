@@ -848,13 +848,13 @@ class ArbitraryExpressionEvaluation(EvaluationBase):
         self.settings.setdefault('expression', 'x[1]/(x[0]+x[1]+x[2]')
 
     def evaluate(self, data, evaluation, expected=None, ppDict=None, globalDict=None ):
-        evaluation_name_list = self.settings['evaluation_list'].split()
+        evaluation_name_list = self.settings['evaluation_list'].split(',')
         evaluation_value_list = [data.evaluated.get(a) for a in evaluation_name_list]
 
         # check that all the referenced evaluations exist
         for value, name in zip(evaluation_value_list,evaluation_name_list):
             if value is None:
-                raise EvaluationException("Cannot find data '{0}".format(name))
+                raise EvaluationException("Cannot find data {0}".format(name))
 
         # check that the lengths match
         evaluation_length_list = [len(a) for a in evaluation_value_list]
