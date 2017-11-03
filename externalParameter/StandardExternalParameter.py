@@ -446,7 +446,8 @@ if deformableMirrorEnabled:
                                        ("A29", "V"), ("A30", "V"), ("A31", "V"), ("A32", "V"), ("A33", "V"),
                                        ("A34", "V"), ("A35", "V"), ("A36", "V"), ("A37", "V"), ("A38", "V"), ("A39", "V"),
                                        ("A40", "V"), ("MirrorHysteresisCompensation", ""),
-                                       ("TiltHysteresisCompensation", ""), ("Temp", "degC")])
+                                       ("TiltHysteresisCompensation", ""), ("Temp", "degC"), ("RelaxMirror", ""),
+                                       ("RelaxTilt","")])
 
         _outputLookup = {"Ast45": 4, "Defocus": 5, "Ast0": 6, "TreY": 7, "ComX": 8, "ComY": 9,
                          "TreX": 10, "TetY": 11, "SAstY": 12, "SAb": 13, "SAstX": 14, "TetX": 15,
@@ -469,8 +470,8 @@ if deformableMirrorEnabled:
             logger.info("trying to open '{0}'".format(instrument))
             try:
                 self.dm = DeformableMirror()
-                #self.dm.relax_mirror()
-                #self.dm.relax_tilt()
+                self.dm.relax_mirror()
+                self.dm.relax_tilt()
                 self.mirr_hyst_status = self.dm.hysteresis_compensation_status(0)
                 self.tilt_hyst_status = self.dm.hysteresis_compensation_status(1)
                 self.dm.angle = 0
@@ -533,9 +534,16 @@ if deformableMirrorEnabled:
                     ext_value = self.getValue(channel)
                 elif channel == "Temp":
                     ext_value = self.getValue("Temp")
+                elif channel == "RelaxMirror":
+                    self.dm.relax_mirror()
+                    ext_value = value
+                elif channel == "RelaxTilt":
+                    self.dm.relax_tilt()
+                    ext_value = value
                 return ext_value
-            except:
+            except Exception as err:
                 logger.error('Problem setting value for channel {0}'.format(channel))
+                logger.error(''.format(err))
 
         def getValue(self, channel):
             logger = logging.getLogger(__name__)

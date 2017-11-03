@@ -144,6 +144,7 @@ class DeformableMirror():
                                                 ctypes.c_int(0), ctypes.byref(rem_steps)))  # Calculate voltage pattern to relax mirror
             if err != 0:
                 msg = 'Problem relaxing deformable mirror.'
+                print(msg)
                 self.error_exit(err, msg, True)
         except:
             raise
@@ -152,6 +153,7 @@ class DeformableMirror():
                 err = self.tldfm_dll.TLDFM_set_segment_voltages(self.instHdl, rlx_array)  # Apply voltage pattern
                 if err != 0:
                     msg = 'Problem setting actuator voltages when relaxing deformable mirror.'
+                    print(msg)
                     self.error_exit(err, msg, False)
             except:
                 raise
@@ -163,6 +165,7 @@ class DeformableMirror():
                                                        ctypes.c_int(0), ctypes.byref(rem_steps)))
                         if err != 0:
                             msg = 'Problem relaxing deformable mirror.'
+                            print(msg)
                             self.error_exit(err, msg, True)
                     except:
                         raise
@@ -170,6 +173,7 @@ class DeformableMirror():
                         try:
                             err = self.tldfm_dll.TLDFM_set_segment_voltages(self.instHdl, rlx_array)
                             if err != 0:
+                                print(msg)
                                 msg = 'Problem setting actuator voltages when relaxing deformable mirror.'
                                 self.error_exit(err, msg, False)
                         except:
