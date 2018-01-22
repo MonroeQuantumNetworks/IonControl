@@ -462,9 +462,9 @@ class DeformableMirror():
                     self.error_exit(err, msg, False)
             except:
                 raise
-        elif (0.0 <= amplitude <= 1.0) and -180.0 <= angle <= 180.0:
+        elif (0.0 > amplitude or 1.0 < amplitude) and -180.0 <= angle <= 180.0:
             logger.warning('Tilt amplitude out of range.')
-        else:
+        elif 0 <= amplitude <= 1.0 and (-180.0 > angle or 180.0 < angle):
             logger.warning('Tilt angle out of range.')
 
     def set_mirror_shape(self, zernikes, amp):

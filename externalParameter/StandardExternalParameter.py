@@ -466,7 +466,7 @@ if deformableMirrorEnabled:
 
         def __init__(self, name, config, globalDict, instrument='DeformableMirror'):
             logger = logging.getLogger(__name__)
-            ExternalParameterBase.__init__(self, name, config, globalDict)
+            super().__init__(name, config, globalDict)
             logger.info("trying to open '{0}'".format(instrument))
             try:
                 self.dm = DeformableMirror()
@@ -481,13 +481,17 @@ if deformableMirrorEnabled:
                 self.dm.enable_hysteresis_compensation(1, False)
                 self.dm.mirr_hyst_state = 0
                 self.dm.tilt_hyst_state = 0
+                self.setDefaults()
             except:
                 logger.error(self.dm.errmsg)
             else:
-                self.setDefaults()
                 for channel in self._outputChannels:
                     val = super().getValue(channel)
                     self.setValue(channel, val)
+
+        def setDefaults(self):
+            super().setDefaults()
+            self.settings.__dict__.setdefault('jump', True)
 
         def setValue(self, channel, value):
             logger = logging.getLogger(__name__)
