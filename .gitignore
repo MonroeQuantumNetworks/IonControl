@@ -6,6 +6,8 @@
 
 #ignore thumbnails created by windows
 Thumbs.db
+**/.cache/*
+offline/*
 
 # Compiled files
 *.pyc
@@ -55,3 +57,10 @@ profile.pdf
 profile.pkl
 clr.pyd
 dll/
+tests/tutorial_files/
+unittests/pygsti_addons/temp*
+*.pkl
+.vscode/
+tests/push.py
+evaltree.db
+*.pem

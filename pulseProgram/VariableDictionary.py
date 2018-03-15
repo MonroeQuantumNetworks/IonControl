@@ -7,11 +7,18 @@
 import logging
 
 from networkx import DiGraph, simple_cycles, dfs_postorder_nodes, dfs_preorder_nodes
+from networkx import __version__ as nx_version
 
 from modules.Expression import Expression
 from modules.SequenceDict import SequenceDict
 import copy
 
+if float(nx_version) < 2:
+    def nx_indegree_iter(g):
+        return g.in_degree_iter()
+else:
+    def nx_indegree_iter(g):
+        return g.in_degree()
 
 class CyclicDependencyException(Exception):
     pass
@@ -56,13 +63,18 @@ class VariableDictionary(SequenceDict):
     def __getstate__(self):
         return dict((key, value) for key, value in self.__dict__ if key not in ['globaldict'])
 
+    def __setstate__(self, state):
+        state.pop('dependencyGraph', None)  # Unpickling of networkx 1.x objects into  networkx 2.x objects fails
+        self.__dict__.update(state)
+
     def __reduce__(self):
         theclass, theitems, inst_dict = super(VariableDictionary, self).__reduce__()
         inst_dict.pop('globaldict', None)
         return theclass, theitems, inst_dict
 
     def setGlobaldict(self, globaldict):
-        self.globaldict = globaldict 
+        self.globaldict = globaldict
+        self.calculateDependencies()
                 
     def calculateDependencies(self):
         self.dependencyGraph = DiGraph()   # clear the old dependency graph in case parameters got removed
@@ -225,13 +237,16 @@ class VariableDictionary(SequenceDict):
             
     def recalculateAll(self):
         g = self.dependencyGraph.reverse()
-        for node, indegree in g.in_degree_iter():
+
+        # for node, indegree in g.in_degree():
+        for node, indegree in nx_indegree_iter(g):  # work around the incompatibility between networkx 1 and 2
             if indegree==0:
                 for calcnode in dfs_postorder_nodes(g, node):
                     self.recalculateNode(calcnode)
                     
     def bareDictionaryCopy(self):
         return SequenceDict( self )
+
 
 if __name__=="__main__":
     class variable:

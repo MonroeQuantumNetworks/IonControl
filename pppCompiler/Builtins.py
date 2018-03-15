@@ -45,15 +45,23 @@ def set_inv_shutter( symboltable, arg=list(), kwarg=dict() ):
         raise CompileException("cannot set shutter for variable type '{0}'".format(symbol.type_))
     return code
 
-def set_counter( symboltable, arg=list(), kwarg=dict() ):
+
+def set_counter(symboltable, arg=list(), kwarg=dict()):
     """
-    set_counter( counter )
+    set_counter( counter, [sendmask=bitmask] )
     Set the counterchannels to be enabled after the next update.
+    By default all channel counts are transmitted via USB. If sendmask is given,
+    then only the channels for which the corresponding bit is 1 will be sent via USB.
+    The bitmask persists on the FPGA until it is again explicitly written to.
     """
-    if len(arg)!=2:
-        raise CompileException( "expected exactly one argument in set_counter" )
-    symbol = symboltable.getVar( arg[1] )
-    return ["  COUNTERMASK {0}".format(symbol.name)]
+    if len(arg) != 2:
+        raise CompileException("expected exactly one argument in set_counter")
+    symbol = symboltable.getVar(arg[1])
+    code = ["  COUNTERMASK {0}".format(symbol.name)]
+    if 'sendmask' in kwarg:
+        mask = symboltable.getVar(kwarg['sendmask'])
+        code.append("  SENDENABLEMASK {}".format(mask))
+    return code
 
 def clear_counter( symboltable, arg=list(), kwarg=dict() ):
     """
@@ -110,9 +118,9 @@ def rand_seed(symboltable, arg=list(), kwarg=dict()):
     with a true random number generator based on a oscillating gate. Thus, seeding
     will NOT allow to generate repeatable random numbers.
     """
-    if len(arg)!=2:
+    if len(arg)!=1:
         raise CompileException( "expected exactly one argument in rand_seed()" )
-    symbol = symboltable.getVar( arg[1] )
+    symbol = symboltable.getVar( arg[0] )
     return ["  RANDSEED {0}".format(symbol.name)]
 
 def set_trigger( symboltable, arg=list(), kwarg=dict()):
@@ -300,6 +308,23 @@ def wait_dds( symboltable, arg=list(), kwarg=dict()):
     """
     return ["  WAITDDSWRITEDONE"]
 
+def set_sync_time(symboltable, arg=list(), kwarg=dict()):
+    """
+    set_sync_time( parameter )
+    Set the time for a periodic sync signal.
+    """
+    if len(arg)!=2:
+        raise CompileException( "expected exactly one argument in set_sync_time" )
+    symbol = symboltable.getVar( arg[1] )
+    return [ "  SETSYNCTIME {0}".format(symbol.name)]
+
+def wait_sync(symboltable, arg=list(), kwarg=dict()):
+    """
+    wait_sync( parameter )
+    wait for internal sync trigger
+    """
+    return ["  WAITFORSYNC"]
+
 def wait_trigger( symboltable, arg=list(), kwarg=dict()):
     """
     wait_trigger( parameter )
@@ -322,13 +347,19 @@ def apply_next_scan_point( symboltable, arg=list(), kwarg=dict()):
     """
     if len(arg)!=1:
         raise CompileException( "apply_next_scan_point does not take arguments" )
-    return [  "  JMPNINTERRUPT apply_next_scan_point",
+    return [  "  JMPNINTERRUPT apply_next_scan_point_label_0",
               "  LDWR INTERRUPT_EXITCODE",
               "  WAIT", "  WRITEPIPE", "  END",
-              "apply_next_scan_point:  READPIPEINDF",
+              "apply_next_scan_point_label_0:  READPIPEINDF",
               "  WRITEPIPEINDF",
               "  READPIPE",
               "  WRITEPIPE",
               "  STWI",
-              "  JMPCMP apply_next_scan_point"  ]
-    
+              "  JMPCMP apply_next_scan_point_label_0"  ]
+
+
+def nop(symboltable, arg=list(), kwarg=dict()):
+    """
+    Add pp NOP command to delay execution by a clock cycle
+    """
+    return ["NOP"]

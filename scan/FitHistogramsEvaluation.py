@@ -5,13 +5,13 @@
 # *****************************************************************
 
 from modules.quantity import Q
-from .EvaluationBase import EvaluationBase
+from .EvaluationBase import EvaluationBase, EvaluationResult
 import numpy
 import logging
 from scipy.optimize import leastsq
 from math import sqrt
 from trace.TraceCollection import TraceCollection
-import xml.etree.ElementTree as ElementTree
+import lxml.etree as ElementTree
 from itertools import zip_longest
 from copy import deepcopy
 from os import path
@@ -28,7 +28,7 @@ class HistogramFitFunction:
         return self.functionEval(x, self.param) * self.totalCounts
     
     def functionEval(self, x, p ):
-        return numpy.array( [ p[0] * self.ZeroBright[el] + p[1] * self.OneBright[el] + (1-p[0]-p[1]) * self.TwoBright[el] for el in x ] )
+        return numpy.array( [ p[0] * self.ZeroBright[el] + p[1] * self.OneBright[el] + (1-p[0]-p[1]) * self.TwoBright[el] for el in x.astype(int) ] )
 
     def residuals(self, p, y, x):
         penalty = 0
@@ -81,7 +81,7 @@ class FitHistogramEvaluation(EvaluationBase):
                 if path.exists(filename):
                     t = TraceCollection()
                     t.loadTrace(filename)
-                    yColumnName = t.tracePlottingList[0].yColumn
+                    yColumnName = t.plottingList[0]._yColumn
                     setattr(self.fitFunction, name, self.normalizeHistogram(t[yColumnName]))
                 else:
                     logging.getLogger(__name__).error("Reference data file '{0}' does not exist.".format(filename))
@@ -90,6 +90,7 @@ class FitHistogramEvaluation(EvaluationBase):
         self.dataLoaded = True
         
     def setDefault(self):
+        super().setDefault()
         self.settings.setdefault('Path', r'C:\Users\Public\Documents')
         self.settings.setdefault('ZeroBright', 'ZeroBright')
         self.settings.setdefault('OneBright', 'OneBright')
@@ -121,15 +122,15 @@ class FitHistogramEvaluation(EvaluationBase):
             confidence.append( (confidence[0]+confidence[1]) if confidence[0] is not None and confidence[1] is not None else None)  # don't know what to do :(
             data.evaluated['FitHistogramsResult'] = (params, confidence, self.chisq/self.dof)
         if self.settings['Mode']=='Parity':
-            return params[0]+params[2]-params[1], None, params[0]+params[2]-params[1]
+            return EvaluationResult(params[0]+params[2]-params[1], None, params[0]+params[2]-params[1])
         elif self.settings['Mode']=='Zero':
-            return params[0], (confidence[0],  confidence[0]), params[0]
+            return EvaluationResult(params[0], (confidence[0],  confidence[0]), params[0])
         elif self.settings['Mode']=='One':
-            return params[1], (confidence[1],  confidence[1]), params[1]
+            return EvaluationResult(params[1], (confidence[1],  confidence[1]), params[1])
         elif self.settings['Mode']=='Two':
-            return params[2], (confidence[2],  confidence[2]), params[2]
+            return EvaluationResult(params[2], (confidence[2],  confidence[2]), params[2])
         elif self.settings['Mode']=='Residuals':
-            return reducedchisq, None, reducedchisq
+            return EvaluationResult(reducedchisq, None, reducedchisq)
 
     def parameters(self):
         parameterDict = super(FitHistogramEvaluation, self).parameters()
@@ -144,7 +145,8 @@ class FitHistogramEvaluation(EvaluationBase):
         parameterDict['Load Reference Data'] = Parameter(name='Load Reference Data', dataType='action', value='loadReferenceData')
         return parameterDict
 
-    def leastsq(self, x, y, parameters=None, sigma=None):
+    def leastsq(self, x, y, parameters=None, sigma=None, filt=None):
+        # TODO: Need to honor filtering
         logger = logging.getLogger(__name__)
         if parameters is None:
             parameters = [0.3, 0.3]
@@ -219,7 +221,7 @@ class TwoIonFidelityEvaluation(EvaluationBase):
         #countarray = evaluation.getChannelData(data)
         params, confidence, reducedchisq = data.evaluated.get('FitHistogramsResult', (None, None, None))
         if params is None:
-            return 0, None, 0
+            return EvaluationResult()
         elif expected is not None:
             if self.settings['Mode']=='Zero':
                 p = 1.0-abs(params[0] - self.ExpectedLookup[expected][0])
@@ -242,8 +244,8 @@ class TwoIonFidelityEvaluation(EvaluationBase):
                 ptop = confidence[2]
                 x = params[0]+params[1]+params[2]
         else:
-            return 0, None, 0
-        return p, (pbottom, ptop), x
+            return EvaluationResult()
+        return EvaluationResult(p, (pbottom, ptop), x)
 
     def parameters(self):
         parameterDict = super(TwoIonFidelityEvaluation, self).parameters()

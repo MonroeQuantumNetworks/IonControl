@@ -3,12 +3,13 @@
 # This Software is released under the GPL license detailed
 # in the file "license.txt" in the top-level IonControl directory
 # *****************************************************************
-from pyparsing import ParserElement
-ParserElement.enablePackrat()
+#from cPyparsing import ParserElement
+#ParserElement.enablePackrat()
 from unittests import loggingConfig
 from pppCompiler import pppCompiler
-from unittest import TestCase, main
 import os.path
+import pytest
+
 
 def ppCompile(assemblerfile):
     from pulseProgram.PulseProgram import PulseProgram
@@ -27,31 +28,21 @@ def ppCompile(assemblerfile):
 
 resultMessage = {None: 'no comparison', False: 'failed', True: 'passed'}
 folder = "test"
-testfiles = [ "Condition", "Assignements", "if_then_else", "ShiftOperations", "RealWorld", "ProcedureCalls",
-              "PulseCommand",
-              "indented_blocks",
-              "Master_uWave_program_v2",
-              "Declarations"]
-
-def test_generator(name):
-    def test(self):
-        self.assertTrue(pppCompiler.pppcompile(os.path.join(folder, name + ".ppp"), os.path.join(folder, name + ".ppc"),
-                               os.path.join(folder, name + ".ppc.reference")))
-    return test
+testfiles = ["Condition", "Assignements", "if_then_else", "ShiftOperations", "RealWorld", "ProcedureCalls",
+             "PulseCommand",
+             "indented_blocks",
+             "Master_uWave_program_v2",
+             "Declarations",
+             "Microwave",
+             "Division",
+             "BinOp"
+             ]
 
 
-class pppCompilerTest(TestCase):
-    pass
-
-
-for name in testfiles:
-    test_name = "test_{0}".format(name)
-    test = test_generator(name)
-    setattr(pppCompilerTest, test_name, test)
-
-
-if __name__ == "__main__":
-    main()
+@pytest.mark.parametrize("name", testfiles)
+def test_compile(name):
+    assert pppCompiler.pppcompile(os.path.join(folder, name + ".ppp"), os.path.join(folder, name + ".ppc"),
+                                  os.path.join(folder, name + ".ppc.reference"))
 
 
 

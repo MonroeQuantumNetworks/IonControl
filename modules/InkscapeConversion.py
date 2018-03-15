@@ -15,6 +15,11 @@ def convertSvgEmf(inkscapeExecutable, filename):
     emfname = basename + ".emf"
     subprocess.call([inkscapeExecutable, filename, "--export-emf={0}".format(emfname)])
 
+def convertSvgWmf(inkscapeExecutable, filename):
+    basename, ext = os.path.splitext(filename)
+    emfname = basename + ".wmf"
+    subprocess.call([inkscapeExecutable, filename, "--export-wmf={0}".format(emfname)])
+
 def convertSvgPdf(inkscapeExecutable, filename, depfiles=None):
     basename, ext = os.path.splitext(filename)
     pdfname = basename + ".pdf"
