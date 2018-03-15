@@ -12,12 +12,12 @@ class DeformableMirror():
     tldfm_dll = ctypes.WinDLL(r'C:\Program Files\IVI Foundation\VISA\Win64\Bin\TLDFM_64.dll')
     tldfmx_dll = ctypes.WinDLL(r'C:\Program Files\IVI Foundation\VISA\Win64\Bin\TLDFMX_64.dll')
 
-    def __init__(self):  # deviceNum must be less than the total number of devices - 1 and can be 0
+    def __init__(self, deviceNum):  # deviceNum must be less than the total number of devices - 1 and can be 0
         logger = logging.getLogger(__name__)
         self.errmsg = ''
         self.instHdl = 0
-        self.deviceNum = 0
-        self.get_device_information()
+        self.deviceNum = int(deviceNum)
+        self.get_device_information(self.deviceNum)
         if self.deviceAvailable == 0:
             logger.warning('Device {0} is not available'.format(int(self.deviceNum + 1)))
         else:
@@ -48,7 +48,7 @@ class DeformableMirror():
                     else:
                         self.mirror_reset()
 
-    def get_device_information(self):
+    def get_device_information(self, i):
         # Calls the TLDFM_get_device_information function, and decodes the results from the function
         # to make them usable in Python.
 
@@ -59,7 +59,7 @@ class DeformableMirror():
         # Initialization for C-type Boolean that says whether the device is available
         rsrcName = ctypes.create_string_buffer(256)
         # Initialization for resource name to be used as an argument in the TLDFM_init function
-        n = ctypes.c_int(0)
+        n = ctypes.c_int(int(i))
         try:
             err = (self.tldfm_dll.TLDFM_get_device_information(ctypes.c_long(0), n, ctypes.byref(manufacturer),
                                                           ctypes.byref(instName),ctypes.byref(serialNum),

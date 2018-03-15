@@ -469,7 +469,7 @@ if deformableMirrorEnabled:
             super().__init__(name, config, globalDict)
             logger.info("trying to open '{0}'".format(instrument))
             try:
-                self.dm = DeformableMirror()
+                self.dm = DeformableMirror(name)
                 self.dm.relax_mirror()
                 self.dm.relax_tilt()
                 self.mirr_hyst_status = self.dm.hysteresis_compensation_status(0)
