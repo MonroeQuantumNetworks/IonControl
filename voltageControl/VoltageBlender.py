@@ -376,7 +376,7 @@ class VoltageBlender(QtCore.QObject):
         return h
     
     def shuttlingDataValid(self):
-        valid = self.shuttlingDataHash() == self.uploadedDataHash
+        valid = (self.shuttlingDataHash() == self.uploadedDataHash)
         if not valid:
             logging.getLogger(__name__).info("Shuttling data hash: {:x}, uploaded data hash {:x}".format(self.shuttlingDataHash(), self.uploadedDataHash))
         return valid
