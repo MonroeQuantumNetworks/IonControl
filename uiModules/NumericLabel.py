@@ -33,7 +33,11 @@ class NumericLabel(QLabel):
         elif is_Q(v):
             self.setText(self.formatStrQ.format(v))
         else:
-            self.setText(self.formatStr.format(v))
+            try:
+                self.setText(self.formatStr.format(v))
+            except:
+                self.setText(str(v))
+
 
     def keyReleaseEvent(self, event):
         if event.key() == QtCore.Qt.Key_Plus:
