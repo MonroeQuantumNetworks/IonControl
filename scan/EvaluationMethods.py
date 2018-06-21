@@ -861,3 +861,62 @@ class FourIonEvaluation(EvaluationBase):
             parameterDict[name] = Parameter(name=name, dataType='magnitude', value=self.settings[name],
                                             text=self.settings.get( (name, 'text') ), tooltip=tooltip)
         return parameterDict
+
+class ArbitraryExpressionEvaluation(EvaluationBase):
+    """Takes in a list of other evaluations, in a comma separated list with no spaces (for example: eval1,eval2,eval3) and assigns the values of those evaluations to an array as x[0],x[1],x[2], etc.  Then it calculates and returns an expression which uses these variables.  numpy is available."""
+    name = 'ArbitraryExpressionEvaluation'
+    tooltip = 'Takes in a list of other evaluations, in a comma separated list with no spaces (for example: eval1,eval2,eval3) and assigns the values of those evaluations to a numpy array as x[0],x[1],x[2], etc.  Then it calculates and returns an expression which uses these variables.  numpy is available.'
+    hasChannel = False
+
+    def __init__(self, globalDict=None, settings=None):
+        EvaluationBase.__init__(self, globalDict, settings)
+
+    def setDefault(self):
+        super().setDefault()
+        self.settings.setdefault('evaluation_list', 'evaluation1,evaluation2,evaluation3')
+        self.settings.setdefault('expression', 'x[1]/(x[0]+x[1])')
+        self.settings.setdefault('error_top_expression', 'np.sqrt(x[0])')
+        self.settings.setdefault('error_bottom_expression', 'np.sqrt(x[0])')
+
+    def evaluate(self, data, evaluation, expected=None, ppDict=None, globalDict=None ):
+        evaluation_name_list = self.settings['evaluation_list'].split(',')
+        evaluation_value_list = [data.evaluated.get(a) for a in evaluation_name_list]
+
+        # check that all the referenced evaluations exist
+        for value, name in zip(evaluation_value_list,evaluation_name_list):
+            if value is None:
+                raise EvaluationException("Cannot find data {0}".format(name))
+
+        # cast the evaluated values to a numpy array, and make "np" and "x" available in the expressions
+        np = numpy
+        x = np.array(evaluation_value_list)
+        # giving the user access to arbitrary "eval" is not secure, but all users are superusers anyway.
+        p = eval(self.settings['expression'])
+        top = eval(self.settings['error_top_expression'])
+        bottom = eval(self.settings['error_bottom_expression'])
+
+        if expected is not None:
+            p = abs(expected-p)
+            bottom = abs(expected-bottom)
+            top = abs(expected-top)
+
+        # store the result value in a way that it can be accessed by other evaluations
+        if evaluation.name:
+            data.evaluated[evaluation.name] = p
+
+        # return the evaluated expression, error bars, and use 1 for the length
+        return EvaluationResult(p, (p - bottom, top - p), 1)
+
+    def parameters(self):
+        parameterDict = super(ArbitraryExpressionEvaluation, self).parameters()
+
+        self.settings.setdefault('expression', 'x[1]/(x[0]+x[1]+x[2]')
+        parameterDict['evaluation_list'] = Parameter(name='evaluation_list', dataType='str', value=self.settings['evaluation_list'],
+                                           tooltip='A comma separated list, no spaces, of other evaluations')
+        parameterDict['expression'] = Parameter(name='expression', dataType='str', value=self.settings['expression'],
+                                           tooltip='An expression for the result, using the values from other evaluations as numpy array x[0],x[1],etc.')
+        parameterDict['error_top_expression'] = Parameter(name='error_top_expression', dataType='str', value=self.settings['error_top_expression'],
+                                                tooltip='An expression for the top error bar, using the values from other evaluations as numpy array x[0],x[1],etc.')
+        parameterDict['error_bottom_expression'] = Parameter(name='error_bottom_expression', dataType='str', value=self.settings['error_bottom_expression'],
+                                                tooltip='An expression for the bottom error bar, using the values from other evaluations as numpy array x[0],x[1],etc.')
+        return parameterDict
