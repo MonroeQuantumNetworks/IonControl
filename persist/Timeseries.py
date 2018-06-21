@@ -17,10 +17,10 @@ try:
             self.initialized = False
 
         def initDB(self):
+            self.active = False
             if TimeseriesPersist.store is None:
                 prj = getProject()
                 self.projectName = prj.name
-                self.active = False
                 if 'Timeseries Database' in prj.software:
                     dbs = prj.software['Timeseries Database']
                     if dbs:
@@ -29,6 +29,7 @@ try:
                                                                  database=db.get('database'))
                         self.active = True
             self.initialized = True
+            return self.active
 
         def persist(self, space, source, time, value, minval=None, maxval=None, unit=None):
             if not self.active:
@@ -40,12 +41,12 @@ try:
                     "measurement": source,
                     "tags": {
                         "space": space,
-                        "project": self.projectName,
+                        "project": getProject().name,
                     },
                     "fields": {
-                        "value": float(value),
-                        "minval": float(minval),
-                        "maxval": float(maxval),
+                        "valuef": float(value) if value is not None else None,
+                        "minvalf": float(minval) if minval is not None else None,
+                        "maxvalf": float(maxval) if maxval is not None else None,
                         "unit": unit
                     },
                      "time": time if time > 1000000000000000000 else int(time * 1000000000)
