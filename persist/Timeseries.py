@@ -1,3 +1,5 @@
+import logging
+
 from ProjectConfig.Project import getProject
 from externalParameter.persistence import persistenceProviders, persistenceDict
 
@@ -11,6 +13,7 @@ try:
         def __init__(self):
             self.initialized = False
             self.active = True
+            self.initDB()
 
         def __setstate__(self, state):
             self.__dict__.update(state)
@@ -34,23 +37,24 @@ try:
         def persist(self, space, source, time, value, minval=None, maxval=None, unit=None):
             if not self.active:
                 return
-            if not self.initialized:
-                self.initDB()
             if source:
-                 TimeseriesPersist.store.write_points([{
-                    "measurement": source,
-                    "tags": {
-                        "space": space,
-                        "project": getProject().name,
-                    },
-                    "fields": {
-                        "valuef": float(value) if value is not None else None,
-                        "minvalf": float(minval) if minval is not None else None,
-                        "maxvalf": float(maxval) if maxval is not None else None,
-                        "unit": unit
-                    },
-                     "time": time if time > 1000000000000000000 else int(time * 1000000000)
-                }])
+                try:
+                     TimeseriesPersist.store.write_points([{
+                        "measurement": source,
+                        "tags": {
+                            "space": space,
+                            "project": getProject().name,
+                        },
+                        "fields": {
+                            "valuef": float(value) if value is not None else None,
+                            "minvalf": float(minval) if minval is not None else None,
+                            "maxvalf": float(maxval) if maxval is not None else None,
+                            "unit": unit
+                        },
+                         "time": time if time > 1000000000000000000 else int(time * 1000000000)
+                    }])
+                except ConnectionError as e:
+                    logging.getLogger(__name__).warning("Cannot persist to timeseries database {}".format(e))
 
         def rename(self, space, oldsourcename, newsourcename):
             pass
