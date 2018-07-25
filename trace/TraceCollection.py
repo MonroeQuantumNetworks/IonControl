@@ -420,8 +420,12 @@ class TraceCollection(keydefaultdict):
                 self.saveMetadata(of)
                 colgroup = of.require_group('columns')
                 for name, data in self.items():
-                    colgroup.pop(name, None)
-                    colgroup.create_dataset(name, data=data)
+                    try:
+                        colgroup.pop(name, None)
+                        colgroup.create_dataset(name, data=data)
+                    except Exception as e:
+                        logging.getLogger(__name__).warning("Exception saving item to HDF5:\n{}\ntrouble saving item name:\n{}\ntrouble saving item data:\n{}".format(e,name,data))
+
         self.saved = True
 
     def plot(self,penindex):
@@ -467,7 +471,10 @@ class TraceCollection(keydefaultdict):
     def saveMetadata(self, f):
         variables = f.require_group('variables')
         for name, value in self.description.items():
-            self.saveMetadataElement(name, value, variables)
+            try:
+                self.saveMetadataElement(name, value, variables)
+            except Exception as e:
+                logging.getLogger(__name__).warning("Exception saving metadata to HDF5:\n{}\ntrouble saving metadata name:\n{}\ntrouble saving metadata value:\n{}".format(e,name,value))
 
     def saveMetadataElement(self, name, value, variables):
         if hasattr(value,'toHdf5'):
