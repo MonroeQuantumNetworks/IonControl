@@ -875,8 +875,8 @@ class ArbitraryExpressionEvaluation(EvaluationBase):
         super().setDefault()
         self.settings.setdefault('evaluation_list', 'evaluation1,evaluation2,evaluation3')
         self.settings.setdefault('expression', 'x[1]/(x[0]+x[1])')
-        self.settings.setdefault('error_top_expression', 'np.sqrt(x[0])')
-        self.settings.setdefault('error_bottom_expression', 'np.sqrt(x[0])')
+        self.settings.setdefault('error_top_expression', '0')
+        self.settings.setdefault('error_bottom_expression', '0')
 
     def evaluate(self, data, evaluation, expected=None, ppDict=None, globalDict=None ):
         evaluation_name_list = self.settings['evaluation_list'].split(',')
