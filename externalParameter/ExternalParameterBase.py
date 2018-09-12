@@ -45,7 +45,7 @@ class ExternalParameterBase(object, metaclass=InstrumentMeta):
 
     def createOutputChannels(self):
         """create all output channels"""
-        self.outputChannels = OrderedDict( [(channel, SlowAdjustOutputChannel(self, self.name, channel, self.globalDict, self.settings.channelSettings.get(channel, dict()), unit))
+        self.outputChannels = OrderedDict( [(channel, OutputChannel(self, self.name, channel, self.globalDict, self.settings.channelSettings.get(channel, dict()), unit))
                                     for channel, unit in self._outputChannels.items()] )
         
     def lastOutputValue(self, channel):

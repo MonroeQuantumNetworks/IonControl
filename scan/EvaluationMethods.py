@@ -66,6 +66,8 @@ class MeanEvaluation(EvaluationBase):
             return EvaluationResult()
         countarray = list(map(self.intConversionsLookup.get(self.settings['intConversion'], lambda x: x), countarray))
         r = self.errorBarTypeLookup[self.settings['errorBarType']](countarray)
+        if evaluation.name:
+            data.evaluated[evaluation.name] = r.value
         bottom, top = r.interval
         if self.settings['transformation']!="":
             mydict = { 'y': r.value }
@@ -76,6 +78,8 @@ class MeanEvaluation(EvaluationBase):
             plus = float(self.expression.evaluate(self.settings['transformation'], mydict))
             mydict['y'] = mean - bottom
             minus = float(self.expression.evaluate(self.settings['transformation'], mydict))
+            if evaluation.name:
+                data.evaluated[evaluation.name] = mean
             return EvaluationResult(mean, (mean-minus, plus-mean), r.raw)
         return r
 

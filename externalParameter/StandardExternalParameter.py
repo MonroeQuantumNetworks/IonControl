@@ -379,6 +379,68 @@ if visaEnabled:
         def close(self):
             del self.instrument
 
+    class Agilent33250A_burst(ExternalParameterBase):
+        """
+        Set the Agilent 33250A frequency synthesizer in burst mode.
+        Written by M. Lichtman on 2018-09-12 using HP6632B as a model.
+        """
+        className = "Agilent 33250A 80MHz Function/Arbitrary Waveform Generator"
+        _outputChannels = {"Frequency": "MHz", "Power dBm": "", "Phase": "deg", "N Cycles": ""}
+
+        def __init__(self, name, config, globalDict, instrument="GPIB0::12::INSTR"):
+            logger = logging.getLogger(__name__)
+            ExternalParameterBase.__init__(self, name, config, globalDict)
+            logger.info( "trying to open '{0}'".format(instrument) )
+            self.rm = visa.ResourceManager()
+            self.instrument = self.rm.open_resource(instrument)
+            print(type(self.instrument))
+            logger.info( "opened {0}".format(instrument) )
+            self.setDefaults()
+            self.initializeChannelsToExternals()
+            self.initOutput()
+
+        def initOutput(self):
+            # set up all the standard setting for burst mode
+            self.instrument.write("FUNCTION:SINUSOID")
+            self.instrument.write("VOLTAGE:OFFSET 0")
+            self.instrument.write("VOLTAGE:UNIT DBM")
+            self.instrument.write("OUTPUT ON")
+            self.instrument.write("OUTPUT:POLARITY NORMAL")
+            self.instrument.write("BURST:MODE TRIGGERED")
+            self.instrument.write("BURST:STATE ON")
+            self.instrument.write("BURST:ANGLE DEGREE")
+            self.instrument.write("TRIGGER:SOURCE EXTERNAL")
+            self.instrument.write("TRIGGER:DELAY 0")
+            self.instrument.write("TRIGGER:SLOPE POSITIVE")
+            # call super to make sure all the settable channels are now set up
+            super().initOutput()
+
+        def setValue(self, channel, v):
+            if channel=="Frequency":
+                command = "FREQUENCY {0} MHz".format(v.m_as('MHz'))
+            elif channel=="Power dBm":
+                command = "VOLTAGE {0:.3f} DBM".format(float(v))
+            elif channel=="Phase":
+                command = "BURST:PHASE {0}".format(v.m_as('deg'))
+            elif channel=="N Cycles":
+                command = "BURST:NCYCLES {0:d}".format(int(v))
+            self.instrument.write(command)
+            return v
+
+        def getValue(self, channel):
+            if channel=="Frequency":
+                command, unit = "FREQUENCY?", "Hz"
+            elif channel=="Power dBm":
+                command, unit = "VOLTAGE?", ""
+            elif channel=="Phase":
+                command, unit = "BURST:PHASE?", "deg"
+            elif channel=="N Cycles":
+                command, unit = "BURST:NCYCLES?", ""
+            value = Q(float(self.instrument.query(command)), unit)
+            return value
+
+        def close(self):
+            del self.instrument
 
     class PTS3500(ExternalParameterBase):
         """
