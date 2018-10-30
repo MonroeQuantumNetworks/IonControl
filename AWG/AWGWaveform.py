@@ -35,6 +35,10 @@ class AWGWaveform(object):
         self.waveformCache = waveformCache
         self.dependencies = set()
         self.updateDependencies()
+        #try:
+        #    self.updateDependencies()
+        #except:
+        #    print("Skipping AWGWaveform.updateDependencies due to first AWG run.")
 
     @property
     def sampleRate(self):

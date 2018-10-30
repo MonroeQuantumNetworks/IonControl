@@ -122,6 +122,11 @@ class AWGUi(AWGForm, AWGBase):
             self.area.addDock(dock, 'right')
             self.device.waveforms[channel] = awgChannelUi.waveform
         self.refreshVarDict()
+        #try:
+        #    self.refreshVarDict()
+        #except:
+        #    print("Skipping AWGUi.refreshVarDict due to first AWG run.")
+
 
         # Settings control
         self.saveButton.clicked.connect( self.onSave )

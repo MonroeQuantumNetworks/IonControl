@@ -129,13 +129,14 @@ class Lecroy1102(AWGDeviceBase):
         maxSamples = 2000000, #maximum number of samples to program
         sampleChunkSize = 2, #number of samples must be a multiple of sampleChunkSize
         padValue = 0, #the waveform will be padded with this number to make it a multiple of sampleChunkSize, or to make it the length of minSamples
-        minAmplitude = 0, #minimum amplitude value (raw)
-        maxAmplitude = 1.5, #maximum amplitude value (raw)
+        minAmplitude = -6, #minimum amplitude value (raw)
+        maxAmplitude = 6, #maximum amplitude value (raw)
         numChannels = 2, #Number of channels
         calibration = lambda voltage: voltage, #function that returns raw amplitude number, given voltage
         calibrationInv = lambda raw: raw #function that returns voltage, given raw amplitude number
 
         # program project hardware properties specified in the .yml file
+        # Ultrafast defaults:
         #   sampleRate = mg(244.258800, 'MHz'), #rate at which the samples programmed are output by the AWG
         #   external_clock_frequency = mg(81419600, 'Hz'), #rate at which the AWG is clocked
     )
@@ -245,7 +246,7 @@ class Lecroy1102(AWGDeviceBase):
         logger = logging.getLogger(__name__)
         if self.enabled:
             # SEND COMMAND TO TRIGGER AWG
-            self.send('TRIG')
+            self.send(b'TRIG')
             logger.info("Triggered {0}".format(self.displayName))
 
     def close(self):

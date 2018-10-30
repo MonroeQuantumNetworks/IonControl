@@ -291,15 +291,15 @@ class Lecroy1102AWG
         // *** Configure AWG ***
         
         // Set a default value for sample_frequency.  This will be overwritten if it was passed as a command string.
-        decimal sample_frequency = 244258800;
+        decimal sample_frequency = 250000000;
         ClockSource clock_type = ClockSource.External; //or .Internal
 
         // Set a default value for external_clock_frequency.  This will be overwritten if it was passed as a command string.
-        decimal external_clock_frequency = 81419600;
+        decimal external_clock_frequency = 10000000;
         
         // The rest of these settings could also be passed in from python, but for now they are hard coded here.
 
-        FrequencyInterpolation interpolation = FrequencyInterpolation.Frequency2X;  // 1X, 2X or 4X
+        FrequencyInterpolation interpolation = FrequencyInterpolation.Frequency4X;  // 1X, 2X or 4X
 
         double amplitude_correction_factor0 = 1.0;
         ulong samplig_rate_prescaler0 = 1;
